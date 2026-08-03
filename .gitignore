@@ -1,0 +1,8 @@
+.DS_Store
+
+# databases exported from the in-page SQL sandbox while testing
+*.db
+*.sqlite
+*.sqlite3
+
+node_modules/

@@ -1,0 +1,1800 @@
+[
+ {
+  "id": "sb-1",
+  "num": "S-1",
+  "title": "Why Supabase, and what you are actually getting",
+  "blocks": [
+   {
+    "type": "p",
+    "text": "This section answers the question you should ask before signing up for anything: what is Supabase, why does this course use it, and what does it cost you. By the end you will know where Supabase fits next to the other two ways this course lets you run SQL, what the free plan actually gives you, what it does not give you, and what to have ready before you start the sign-up in the next section."
+   },
+   {
+    "type": "h4",
+    "text": "What Supabase is, in plain terms"
+   },
+   {
+    "type": "p",
+    "text": "Supabase is a company that runs PostgreSQL databases for you. You create an account in a web browser, you create a project, and Supabase starts a real PostgreSQL database on its own servers. You then open `SQL Editor` in the left-hand sidebar of your project, type SQL into the editor, and click the `Run` button (or press `Ctrl+Enter` on Windows, `Cmd+Enter` on a Mac). Results appear in a panel below the editor. There is nothing to download, nothing to install, no server to start on your laptop, and no port numbers to type. For classwork it is free, and the Free plan does not ask for a credit card."
+   },
+   {
+    "type": "p",
+    "text": "The word you will see everywhere in Supabase is `project`. For our purposes one project is one database, plus some extras this course does not need (an auto-generated web API, a login system, file storage). When the documentation says \"your project,\" read it as \"your database.\" Projects are grouped under an `organization`. Supabase creates a default organization for you automatically the first time you create an account, and assigns you the `Owner` role in it, so this is not something you have to set up."
+   },
+   {
+    "type": "callout",
+    "variant": "definition",
+    "label": "PostgreSQL",
+    "text": "PostgreSQL (often shortened to \"Postgres\") is a free, open-source relational database. It belongs to the same category of software as MySQL, Oracle Database, and Microsoft SQL Server -- they are all relational databases that speak SQL, though they are separate products from different vendors and only PostgreSQL and MySQL are open source. PostgreSQL stores tables, enforces primary and foreign keys, and speaks SQL -- everything Modules 1 and 2 describe applies to it without change."
+   },
+   {
+    "type": "h4",
+    "text": "Three places you can run SQL in this course"
+   },
+   {
+    "type": "p",
+    "text": "You now have three options, and they are good at different things. None of them replaces the others."
+   },
+   {
+    "type": "table",
+    "caption": "The three ways to run SQL in this course",
+    "headers": [
+     "Where you type SQL",
+     "What it actually is",
+     "How long it lasts",
+     "Best for"
+    ],
+    "rows": [
+     [
+      "The sandbox on this page",
+      "SQLite running inside your browser tab",
+      "Until you reload the page",
+      "Trying one statement quickly, with zero setup"
+     ],
+     [
+      "A local install",
+      "MySQL or PostgreSQL installed on your own computer",
+      "Until you uninstall it or reformat the machine",
+      "Working offline, and matching Module 3's MySQL exactly"
+     ],
+     [
+      "Supabase",
+      "PostgreSQL running on Supabase's servers",
+      "Until you delete the project (an idle project pauses, but the data stays)",
+      "Homework you want to keep and reach from any computer"
+     ]
+    ]
+   },
+   {
+    "type": "p",
+    "text": "The in-page sandbox is deliberately throwaway. It is the fastest way to test whether a `SELECT` returns what you expected, and the safest place to make a mistake, but the moment you reload the page your tables are gone. A local install is permanent but it lives on exactly one machine: if you write your KimTay tables on a lab computer, they are not there when you get home, and a reformat takes them with it."
+   },
+   {
+    "type": "p",
+    "text": "Supabase sits in between. The database is real, it keeps your data, and you reach it from any computer that has a web browser -- you sign in to the Supabase dashboard with your Supabase account (your sign-up email and password, or your GitHub login). If your laptop dies the week before an assignment is due, your `REP` and `CUSTOMER` tables are still sitting on Supabase's server exactly as you left them, and you can open them from a lab machine or a library computer."
+   },
+   {
+    "type": "h4",
+    "text": "One honest catch: it is Postgres, not MySQL"
+   },
+   {
+    "type": "p",
+    "text": "Module 3 teaches MySQL-flavoured SQL. Supabase gives you PostgreSQL. The great majority of what you have learned transfers untouched -- `CREATE TABLE`, `PRIMARY KEY`, `FOREIGN KEY`, `NOT NULL`, `INSERT INTO`, `SELECT`, `UPDATE`, `DELETE`, and the `VARCHAR`, `CHAR`, `DECIMAL`, `SMALLINT`, and `DATE` types all exist in PostgreSQL and behave the same way for everything this course asks you to do. A small number of things differ. You will not use `CREATE DATABASE`: PostgreSQL does have that statement, but your project already is the database, and the statement will fail in the SQL Editor anyway because the editor wraps what you run in a transaction and PostgreSQL forbids `CREATE DATABASE` inside one. `DESCRIBE` is a MySQL command that PostgreSQL does not have at all. And PostgreSQL quietly lowercases unquoted table and column names, so `CREATE TABLE REP` actually creates a table named `rep` -- harmless as long as you never wrap a name in double quotes, which is why this course does not."
+   },
+   {
+    "type": "callout",
+    "variant": "note",
+    "label": "Where the differences are listed",
+    "text": "Do not try to memorize the differences now. Section S-6 puts the MySQL statement and the PostgreSQL statement side by side for every case Module 3 uses, including the full KimTay DDL rewritten for Postgres and the replacement for `DESCRIBE`. Work through the setup first, then use S-6 as your reference sheet."
+   },
+   {
+    "type": "h4",
+    "text": "What the free plan gives you"
+   },
+   {
+    "type": "p",
+    "text": "The Supabase Free plan is genuinely free, needs no credit card, and is more than enough for this course. Three limits are worth knowing before you start."
+   },
+   {
+    "type": "table",
+    "caption": "Free plan limits that matter for this course",
+    "headers": [
+     "Limit",
+     "What it means for you"
+    ],
+    "rows": [
+     [
+      "2 active projects",
+      "Your account can have two free projects running at the same time. This is a total across every organization where you are an Owner or Administrator -- it is not two per organization. Paused projects do not count against it, so plan on one project for KimTay and keep the second slot free."
+     ],
+     [
+      "500 MB database size per project",
+      "Each project gets its own half gigabyte of database storage. The whole KimTay database is a few kilobytes, so you will not come close."
+     ],
+     [
+      "Paused after 1 week of inactivity",
+      "If a free project goes seven days without database activity, Supabase pauses it to save resources. Supabase emails the project owner a warning roughly a week beforehand, and again once the project has actually been paused."
+     ]
+    ]
+   },
+   {
+    "type": "callout",
+    "variant": "warning",
+    "label": "Pausing is not deletion",
+    "text": "A paused project stops serving requests, but your tables, rows, and settings are all preserved on disk. To bring it back, open the Supabase dashboard, click your organization, click the paused project, then click `Resume project` and confirm. Restoring takes a few minutes. You have a one-year window to restore a paused project from the dashboard; after that the backups have expired and it may not be recoverable. What counts as \"activity\" is requests to the database, not merely loading the dashboard -- so to keep a project awake, actually run a statement in the SQL Editor (`select 1;` is enough) once or twice a week."
+   },
+   {
+    "type": "callout",
+    "variant": "warning",
+    "label": "The Free plan does not back up your data",
+    "text": "Automatic daily backups are a paid-plan feature; Free plan projects have none. Supabase keeping your database running is not the same as Supabase keeping a copy of it. Before you submit any assignment, save your own copy of the SQL that builds and fills your tables -- keep the `CREATE TABLE` and `INSERT` statements in a text file on your computer or in cloud storage. If anything ever goes wrong, you can rebuild the whole KimTay database by pasting that file back into the SQL Editor."
+   },
+   {
+    "type": "h4",
+    "text": "One security label you will see, and why it is fine here"
+   },
+   {
+    "type": "callout",
+    "variant": "note",
+    "label": "\"Unrestricted\" is expected for coursework",
+    "text": "Tables you create by typing `CREATE TABLE` in the SQL Editor do not have PostgreSQL's Row Level Security turned on, and the Table Editor will show them with a red `Unrestricted` label. For this course that label is expected and is not an error -- it simply means the database is not filtering rows per end user, which is exactly what you want while doing KimTay exercises. Supabase also stopped exposing new `public` tables to a project's auto-generated Data API by default for projects created after 30 May 2026, so a project you create today is not publishing your coursework to the internet. Two rules anyway: do not put real personal data in a course project, and if you ever reuse this project for a public application, read Supabase's Row Level Security guide first."
+   },
+   {
+    "type": "h4",
+    "text": "Two different passwords -- do not mix them up"
+   },
+   {
+    "type": "p",
+    "text": "The sign-up in S-2 involves two separate passwords, and confusing them is the most common way students get stuck. Your **account password** is what you type at the Supabase sign-in page to reach the dashboard; if you sign up with GitHub instead, your GitHub login plays this role and there is no Supabase account password. Your **database password** is a different string, created when you create the project, and the SQL Editor never asks for it -- you only need it for a desktop client such as pgAdmin or `psql` (section S-5, optional) and for connection strings."
+   },
+   {
+    "type": "p",
+    "text": "Supabase does not display the database password again after the project is created, so write it down when you create it. If you do lose it, you are not locked out of anything: you can set a new database password from the project's Database settings page in the dashboard, and your account login is unaffected either way."
+   },
+   {
+    "type": "h4",
+    "text": "What you need before the next section"
+   },
+   {
+    "type": "p",
+    "text": "Sign-up is mostly filling in a short form; Supabase then takes a few minutes to build your database before the SQL Editor will run anything. Budget about fifteen minutes and have these ready."
+   },
+   {
+    "type": "checklist",
+    "items": [
+     "An email address you can open right now -- Supabase sends a confirmation link you must click before you can sign in. (Signing up with a GitHub account also works and skips the password step; there is no Google option.)",
+     "A web browser: Chrome, Edge, Safari, or Firefox, all fine",
+     "A name for your project (`kimtay` is a good choice) and a region -- you will be asked for both, and picking the region geographically closest to you keeps queries fast",
+     "Somewhere to write down the database password the project-creation form asks you to set -- a password manager, a notes app, or paper. Supabase will not show it to you again, though you can reset it later if you lose it.",
+     "About 15 minutes, including a few minutes of waiting while the project is created",
+     "No credit card. The Free plan does not ask for payment details.",
+     "Nothing installed. If you want a desktop tool such as pgAdmin or `psql` later, section S-5 covers it, and it is optional."
+    ]
+   },
+   {
+    "type": "h4",
+    "text": "How you will know it worked"
+   },
+   {
+    "type": "p",
+    "text": "You are done with setup when you can do this, at the end of section S-2: open your project, click `SQL Editor` in the left-hand sidebar, type `select version();`, and click `Run`. Within a second or two a results panel appears below the editor showing one row in one column, and the text in it begins with the word `PostgreSQL` followed by a version number. That single line proves three things at once -- your account works, the project finished building, and you are talking to a real PostgreSQL database. If instead you see a spinner that never resolves, or a message that the project is still being set up, wait a minute and click `Run` again; the database is usually still provisioning."
+   },
+   {
+    "type": "p",
+    "text": "When you have those, continue to section S-2 and create your account."
+   }
+  ],
+  "notes": "VERIFIED AGAINST OFFICIAL DOCS (supabase.com/pricing, /docs/guides/platform/free-project-pausing, /docs/guides/platform/access-control, /docs/guides/platform/backups, /docs/guides/database/overview, and the 2026-04 Data API changelog):\n\nCONFIRMED AS WRITTEN (left intact): 500 MB database size per project; 2 active projects on Free; paused projects do not count toward that limit; pause after 1 week of inactivity; the one-year restore window; the `Resume project` button label; that the dashboard tool is called `SQL Editor`; that a default organization is created automatically at sign-up with you as `Owner`; that PostgreSQL has no `DESCRIBE`; that VARCHAR/CHAR/DECIMAL/SMALLINT/DATE all carry over from MySQL.\n\nFACTUAL ERRORS FIXED:\n1. \"you reach it from any computer with a browser and your password\" conflated two different passwords. The dashboard is reached with your Supabase ACCOUNT login; the DATABASE password is never used by the SQL Editor. Added a dedicated \"Two different passwords\" subsection \u2014 this is the single biggest beginner trap in the original.\n2. \"Supabase does not show it to you again\" implied permanent loss. False: the database password can be reset from the project's Database settings. Corrected, and the reset is now stated as a recovery path.\n3. \"you do not run CREATE DATABASE (the project is the database)\" implied Postgres lacks the statement. Postgres has it; it fails in the SQL Editor because the editor runs statements inside a transaction block and Postgres forbids CREATE DATABASE there. Rewritten accurately.\n4. \"Opening the dashboard or running a query counts as activity\" \u2014 the pausing doc defines activity as user DATABASE requests/queries. Merely loading the dashboard is not a documented keep-alive. Changed to instruct running an actual statement.\n5. \"2 active projects\" was ambiguous. The limit is counted across all organizations where you are Owner/Administrator, not per organization. Clarified.\n6. \"the same family of software as MySQL, Oracle, and SQL Server\" following \"free, open-source\" reads as though all four are free and open source. Reworded to \"same category,\" with the licensing distinction made explicit.\n7. \"a GitHub or Google account works too\" \u2014 Supabase dashboard sign-in supports email/password and GitHub (plus SAML SSO for enterprise). No Google option is documented. Google removed and explicitly negated so students stop hunting for the button.\n8. \"about ten minutes, most of which is waiting for Supabase to build your database\" \u2014 provisioning duration is not documented and is typically shorter than the form-filling. Softened to ~15 min with no false precision about the split.\n\nMATERIAL OMISSIONS ADDED:\n9. Free plan has NO automated backups (paid-plan feature). The original sold Supabase as laptop-death insurance without this caveat. Added a warning callout with the actionable fix (keep your DDL/INSERT script locally).\n10. RLS: tables created via the SQL Editor have RLS off and are shown with a red `Unrestricted` badge (the Table Editor, by contrast, enables RLS). Students WILL see this and panic. Added a callout explaining it is expected here, plus the verified 2026-05-30 change where new projects no longer auto-expose public tables to the Data API.\n11. Postgres case-folds unquoted identifiers \u2014 relevant because the course uses uppercase KimTay names (`REP`, `CUSTOMER`). Noted with the practical rule (never double-quote names).\n\nUSABILITY GAPS FIXED:\n12. The section never said HOW to run SQL. Added: `SQL Editor` in the left sidebar, `Run` button, `Ctrl+Enter` / `Cmd+Enter`, results panel below.\n13. No success criterion anywhere. Added a \"How you will know it worked\" block with a real, valid Postgres statement (`select version();`), the exact expected result shape (one row, one column, text starting with `PostgreSQL`), and what to do if it hangs.\n14. Unstated prerequisites at project creation: you must supply a project NAME and choose a REGION. Both added to the checklist.\n15. \"no credit card\" added \u2014 a real question for students that the original left unanswered.\n\nCOULD NOT FULLY VERIFY (deliberately phrased loosely rather than asserted):\n- The exact dashboard breadcrumb for resetting the database password. Docs and community posts disagree (Project Settings > Database vs Database > Settings) and Supabase has reorganized settings. Written as \"the project's Database settings page\" rather than a click path that may be stale. Recommend an author screenshot check before publication.\n- Exact on-screen position of the `Run` button (sources say top-right; older builds put it bottom-right). Position is not asserted \u2014 only the label and keyboard shortcut, both confirmed.\n- New-project provisioning time. Not documented anywhere official; stated only as \"a few minutes.\"\n- Whether the in-page sandbox is in fact SQLite-in-the-browser. This is the course's own claim about its own tool and is not externally checkable \u2014 left untouched, but the author should confirm it matches the actual implementation.\n- I did not introduce any port numbers (5432 direct / 6543 pooled) since the section does not need them and I could not verify current Supavisor defaults in this pass. If S-5 states ports, fact-check that section separately.\n- Free-tier project deletion after the 1-year paused window: docs confirm restore is unavailable past one year and that deletion is permanent, but do not state a precise auto-deletion date. Kept as \"may not be recoverable,\" matching the docs' own hedge.\n\nSources: [Supabase Pricing](https://supabase.com/pricing), [Project Pausing](https://supabase.com/docs/guides/platform/free-project-pausing), [Restore a Project Paused Over 1 Year](https://supabase.com/docs/guides/troubleshooting/restore-project-after-90-days-pause), [Access Control / Org Roles](https://supabase.com/docs/guides/platform/access-control), [Database Backups](https://supabase.com/docs/guides/platform/backups), [Row Level Security](https://supabase.com/docs/guides/database/postgres/row-level-security), [Changelog: Tables not exposed to Data and GraphQL API automatically](https://supabase.com/changelog/45329-breaking-change-tables-not-exposed-to-data-and-graphql-api-automatically), [Database Overview / SQL Editor](https://supabase.com/docs/guides/database/overview), [Reset database password](https://supabase.com/docs/guides/troubleshooting/how-do-i-reset-my-supabase-database-password-oTs5sB)"
+ },
+ {
+  "id": "sb-2",
+  "num": "S-2",
+  "title": "Create your Supabase project",
+  "blocks": [
+   {
+    "type": "p",
+    "text": "By the end of this section you will have a real PostgreSQL database running on the internet, owned by you, that you can reach from a browser in about ten minutes and without installing anything. Nothing here costs money -- Supabase's Free plan does not ask for a credit card. You will not create any tables yet; the goal is an empty, healthy database and a saved password. Read step 6 carefully, because it is the one step students skip and the only one that is genuinely painful to undo."
+   },
+   {
+    "type": "callout",
+    "variant": "note",
+    "label": "Before you start",
+    "text": "You need three things: a web browser, an email address you can check right now, and about ten minutes. You do not need to install anything, you do not need to open a terminal, and you do not need a credit card. If you already have a GitHub account, signing in with it saves a step. Before you begin, open a second window with your password manager (1Password, Bitwarden, Apple Passwords, your browser's built-in one) or, if you have none, your computer's notes app -- step 6 asks you to save something the instant it appears, and you do not want to be hunting for a place to put it."
+   },
+   {
+    "type": "steps",
+    "items": [
+     {
+      "title": "Create your Supabase account",
+      "body": "Go to `https://supabase.com/dashboard/sign-up`. You have two options. Click `Continue with GitHub` and authorize Supabase -- fastest if you already have a GitHub account. Or type an email address and a password into the form and submit it; Supabase then emails you a confirmation link, and the account is not active until you click it. Use an email you actually check, and if the message has not arrived in a couple of minutes look in your spam or junk folder. The account password must be at least 8 characters with an uppercase letter, a lowercase letter, a number, and a special character. Important: this password logs you in to the Supabase website. It is **not** the database password you create in step 6. They are two different secrets and you will end up needing both."
+     },
+     {
+      "title": "Land in an organization",
+      "body": "An organization is the container that holds your projects, and later your billing and any teammates. New accounts normally get one created automatically with you as the Owner, so there is usually nothing to do here. If instead Supabase shows you a form asking you to create one, fill it in: any name works (`keiser-db` or your own name is fine) and choose the **Free** plan when asked. One organization is all this course needs."
+     },
+     {
+      "title": "Start a new project",
+      "body": "From your organization's `Projects` page, click the `New project` button. If your dashboard is empty and you cannot find the button, go straight to `https://supabase.com/dashboard/new/_` -- the `_` on the end tells Supabase to use whichever organization you were last in. Either way you land on a page headed `Create a new project`."
+     },
+     {
+      "title": "Check the `Organization` field",
+      "body": "The first field on the form is `Organization`. If you only have one, it is already filled in and you can move on. If you somehow have more than one, pick the free organization from step 2 -- creating the project under the wrong organization is the kind of mistake that turns into a surprise bill later."
+     },
+     {
+      "title": "Name the project",
+      "body": "In the `Project name` field, type something you will still recognize in three weeks. `kimtay` is a good choice, since KimTay Pet Supplies is the database you are about to build. This name is only a label in the dashboard -- it does not become the name of the database (that is always `postgres`), and you can rename it later under `Project Settings` then `General`."
+     },
+     {
+      "title": "Generate the database password, then save it before you touch anything else",
+      "body": "Find the field labelled `Database password`. Directly beneath it is a password-strength meter with a small `Generate a password` link -- click that link. Supabase fills the field with a long random password, shown as dots because it is a password field, and a copy icon appears at the right-hand edge of the field. Click the copy icon, then immediately paste the password into your password manager or notes app. Give the entry a name like \"Supabase kimtay DATABASE password\" so you can tell it apart from your supabase.com login. Do not paste it into a file inside a project folder you will push to GitHub, and do not plan to retype it from memory. Do not click away from this form until it is saved somewhere -- the moment you create the project, the dashboard's own Database settings page will tell you that \"the database password isn't viewable after creation.\""
+     },
+     {
+      "title": "Choose the region closest to you",
+      "body": "Open the `Region` dropdown. The top group is labelled `General regions` and holds a few broad choices; below it is a longer list of specific AWS data centers, city by city. Students in Florida should pick `East US (North Virginia)`, which appears in both groups -- either entry is fine. The rest of the list is for people in other parts of the world. Pick the location physically nearest to where you sit."
+     },
+     {
+      "title": "Leave the `Security` options at their defaults",
+      "body": "Below the region is a `Security` block with checkboxes such as `Enable Data API`, `Automatically expose new tables`, and `Enable automatic RLS`. Accept whatever Supabase has pre-selected. This course drives the database from the SQL Editor and from desktop tools that connect as the `postgres` user, and none of these settings affect either path, so there is nothing to change and nothing you can break here. If you also see options named `High availability` or `Compute size`, leave them off or at the smallest default -- those are paid add-ons."
+     },
+     {
+      "title": "Click `Create new project` and wait",
+      "body": "Press the `Create new project` button at the bottom of the form. The dashboard opens immediately and shows the project in a setting-up state. Leave the tab open and give it a minute or two -- see \"What the wait is\" below."
+     }
+    ]
+   },
+   {
+    "type": "table",
+    "caption": "What each field on the New project form actually decides",
+    "headers": [
+     "Field",
+     "What it sets",
+     "Changeable later?"
+    ],
+    "rows": [
+     [
+      "`Organization`",
+      "Which container -- and therefore which plan and billing account -- owns the project",
+      "Yes -- a project can be transferred to another organization"
+     ],
+     [
+      "`Project name`",
+      "A label in your dashboard only",
+      "Yes, any time, under `Project Settings` then `General`"
+     ],
+     [
+      "`Database password`",
+      "The password for the Postgres user named `postgres`, which outside tools connect with",
+      "Only by resetting it at `Database` then `Settings`, which breaks every saved connection string"
+     ],
+     [
+      "`Region`",
+      "The physical AWS data center your database runs in",
+      "No -- you would create a new project in the new region and migrate the data across"
+     ],
+     [
+      "`Security` checkboxes",
+      "Whether the auto-generated REST API can see new tables, and whether Row Level Security is switched on automatically",
+      "Yes -- adjustable later per project and per table"
+     ]
+    ]
+   },
+   {
+    "type": "h4",
+    "text": "Why the password step is the one that bites people"
+   },
+   {
+    "type": "p",
+    "text": "That generated password is the credential every outside tool uses to connect directly to your database -- `psql`, pgAdmin, TablePlus, or an application you write later. Specifically, it is the password for the Postgres user named `postgres`. Supabase does not keep a readable copy of it: Postgres stores only a hash, so there is nothing for the dashboard to show you. The dashboard says so itself, in plain words, on the page where you would go looking: \"The database password isn't viewable after creation.\" There is no reveal button anywhere."
+   },
+   {
+    "type": "callout",
+    "variant": "warning",
+    "label": "Shown once, never shown again",
+    "text": "If you lose the database password you cannot recover it -- you can only reset it. The reset lives in the left sidebar under `Database`, then `Settings`, in the `Database password` section (`Reset database password`). A reset is not the end of the world, but the new password invalidates every connection string you have already saved in a tool or a script, so you will be re-pasting it in several places. Save it the first time. And keep it clearly labelled: this is a different password from the one you use to sign in to supabase.com, and resetting the wrong one does not help."
+   },
+   {
+    "type": "h4",
+    "text": "What the region choice actually affects"
+   },
+   {
+    "type": "p",
+    "text": "The region is the physical data center where your Postgres server lives. It affects one thing you will notice: round-trip time. Every query you run travels from your laptop to that data center and back, so a database in Virginia answers a student in Florida in a few dozen milliseconds, while one in Sydney adds a visible pause -- closer to a quarter of a second -- to every single statement. It does not change the SQL, the data types, the price, or the Free-plan limits."
+   },
+   {
+    "type": "p",
+    "text": "\"Closest to you\" is the right default for coursework because you are the only user. In a real product you would pick the region closest to your users instead, which is not always where you are. Pick carefully now: a project is bound to its region at the hardware level on every plan, not just the free one. Supabase's own guidance is that the only way to change region is to create a new project in the region you want and migrate the data across -- so for coursework, a wrong choice means building the schema again."
+   },
+   {
+    "type": "h4",
+    "text": "What the wait is"
+   },
+   {
+    "type": "p",
+    "text": "Supabase is provisioning a dedicated Postgres instance for you, creating the default database (it is called `postgres`), and starting the API, authentication, and storage services that sit in front of it. The dashboard's own wording is that your project will be ready in a few minutes; in practice it is usually one to three. You do not need to reload the page -- the status updates itself, moving from a setting-up state through `Starting` to an active project. If you open the `SQL Editor` too early and a query fails with a connection error, wait thirty seconds and run it again rather than assuming something is broken."
+   },
+   {
+    "type": "h4",
+    "text": "Confirm it worked"
+   },
+   {
+    "type": "p",
+    "text": "Once the setup banner clears, click `SQL Editor` in the left sidebar. A blank query tab normally opens by itself. If the editor is showing something else instead, click the small `+` button at the top of the SQL Editor's snippet list -- hovering it shows the tooltip `Create a new query` -- and choose `Create a new snippet`. Type or paste the statement below into the editor, then press the `Run` button, or use `Cmd+Enter` on a Mac and `Ctrl+Enter` on Windows."
+   },
+   {
+    "type": "code",
+    "text": "SELECT version();"
+   },
+   {
+    "type": "p",
+    "text": "`version()` is a built-in PostgreSQL function that reports the server's version string, and this is about the smallest valid statement that proves a database is answering you. You should get a results grid with exactly one row and one column named `version`, whose value begins with the word `PostgreSQL` followed by a version number and some build details. The details do not matter; any output at all means your database is alive and you are talking to it. If you instead get a red error about the connection or about the project not being ready, the project is still starting -- wait half a minute and press `Run` again."
+   },
+   {
+    "type": "checklist",
+    "items": [
+     "The project appears in your dashboard in an active state -- not `Paused`, not `Starting`, not still setting up.",
+     "The left sidebar shows `Table Editor`, `SQL Editor`, `Database`, `Authentication`, and `Storage` (there are more items below those, which is normal).",
+     "`SELECT version();` in the SQL Editor returns one row, in a column named `version`, whose value starts with `PostgreSQL`.",
+     "`Table Editor` opens on the `public` schema and offers to create your first table. An empty table list is the correct result here -- you have not created any yet.",
+     "Your database password is saved outside any folder you push to GitHub, somewhere you can find it in a week, and labelled clearly enough that you will know it is the *database* password and not your supabase.com login.",
+     "You can get back to everything above by visiting `https://supabase.com/dashboard` and signing in. Nothing you just built lives only on this computer."
+    ]
+   },
+   {
+    "type": "callout",
+    "variant": "warning",
+    "label": "Never commit the database password or a secret API key",
+    "text": "Two kinds of secret belong to this project. The first is the database password you just saved. The second is your project's **secret API key**, a string beginning `sb_secret_`, which you will meet later under `Project Settings` then `API Keys` (it is also surfaced in the project's `Connect` dialog). Older tutorials call this the `service_role` key; Supabase stopped issuing `service_role` and `anon` keys to newly created projects in November 2025, so on a project you create today the `sb_secret_` key is the equivalent, and the safe-to-share public one is `sb_publishable_`. Both the database password and the secret key grant full control of the database and both bypass every Row Level Security rule. Do not paste either into a file you commit to GitHub, a shared Google Doc, a Discord or group chat, a screenshot, or a homework submission. Bots scan public repositories for exactly these strings within minutes of a push. If you ever suspect one leaked: reset the database password at `Database` then `Settings`, and delete and recreate the secret key at `Project Settings` then `API Keys`."
+   },
+   {
+    "type": "callout",
+    "variant": "note",
+    "label": "Free-plan facts worth knowing now",
+    "text": "The Free plan gives you up to 2 free projects across all of your organizations, with 500 MB of database storage each -- far more than the KimTay data will ever need -- and it does not require a credit card. Supabase pauses Free-plan projects that show low activity over a 7-day window, and what it measures is real database activity, not whether you looked at the dashboard: its own guidance is that a few user requests to the database per day is enough to keep a project awake. So the reliable habit between class sessions is to open the `SQL Editor` and actually run something, even just `SELECT 1;`. Supabase does email the project owner a warning roughly a week before a pause takes effect, and after that warning arrives, simply opening the project in the dashboard is enough to stop it. A paused project keeps all of your data: select it in the dashboard, click `Resume project`, and it is back in about a minute. You have up to a year to resume a paused project, so a pause costs you a few minutes, not your work."
+   }
+  ],
+  "notes": "## Factual errors found and fixed (all verified against supabase.com/docs, supabase.com/pricing, and the live `supabase/supabase` Studio source, which is the authoritative record of the dashboard's own UI strings)\n\n**1. `service_role` key no longer exists on new projects (most serious error).**\nThe original security callout told students they \"will see [the `service_role` key] later under the `Connect` panel.\" Per Supabase's API-keys migration timeline (discussion #29260), *\"New projects no longer have `anon` and `service_role` available for use\"* as of **November 2025**. A project created today gets `sb_publishable_...` / `sb_secret_...` keys instead. Legacy keys are slated for deletion \"Late 2026, TBC.\" Rewrote the callout around `sb_secret_`, noted the `service_role` synonym so students can read older tutorials, and added `sb_publishable_` as the safe-to-share counterpart.\n\n**2. API keys are not primarily in the \"Connect\" panel.**\nOfficial location is `Settings > API Keys` (route `/project/[ref]/settings/api-keys` confirmed in the repo tree); the Connect dialog also surfaces them. Corrected to name both, primary first.\n\n**3. Project pausing claim was wrong.**\nOriginal: *\"opening the dashboard or running a query counts as activity, so visiting once during the week keeps it awake.\"* The official `free-project-pausing` doc says pausing is judged on **user database activity** \u2014 *\"Typically a few user requests to the database each day over the previous week is enough\"* \u2014 and dashboard-visiting is listed only as a remedy **after the warning email arrives**, not as general week-to-week activity. Rewrote accordingly, and added the two facts the original omitted: the warning email, and the **1-year restore window**.\n\n**4. Field label is `Database password`, not `Database Password`.**\nConfirmed in `ProjectCreation/DatabasePasswordInput.tsx` (`label=\"Database password\"`). `Project name`, `Region`, `Organization`, and the `Generate a password` link text (in `PasswordStrengthBar.tsx`) all check out as written.\n\n**5. \"The three fields on the New project form\" is out of date.**\n`ProjectCreationForm.tsx` renders: Organization \u2192 (GitHub, optional) \u2192 Project name \u2192 High Availability \u2192 (Compute size) \u2192 Database password \u2192 Region \u2192 **Security** \u2192 (Advanced). Expanded the table to 5 rows and added two new steps (check `Organization`, leave `Security` alone). This matters: as of **May 30, 2026** new projects default to *not* auto-exposing tables to the Data API (changelog #45329), and there is now an `Enable automatic RLS` checkbox that installs an event trigger enabling RLS on all new `public` tables. Neither affects this course \u2014 the SQL Editor bypasses RLS, and tables created there are owned by `postgres`, which is not subject to its own tables' policies \u2014 but a student staring at three unexplained security checkboxes will stall, so I addressed them explicitly.\n\n**6. Region change was framed as a free-plan limitation.** It is not plan-dependent \u2014 *\"it is bound to a region at the infrastructure level\"* on every plan. Rewrote.\n\n**7. \"There are 17 or more choices.\"** The regions doc lists 3 \"General regions\" + 16 specific AWS regions. Rather than commit to a count that will drift, I described the dropdown's actual two-group structure (`General regions` header confirmed in `RegionSelector.tsx`) and noted `East US (North Virginia)` appears in both \u2014 the exact string is correct and verified.\n\n**8. `New query` is no longer a labeled button.** In `SQLEditorMenu.tsx` it is a `+` icon button (`aria-label=\"Create a new query\"`, tooltip `Create a new query`) opening a dropdown whose item reads `Create a new snippet`. The instruction \"click `New query`\" would leave a student hunting. Rewrote, and noted a blank tab usually opens on its own.\n\n**9. \"Displays it exactly once\" was imprecise.** The password lands in a masked `type=\"password\"` input with a copy icon; nothing is displayed once in a modal. Reworded to describe what is actually on screen, and replaced the vague hashing assertion with the dashboard's own verbatim string from `ResetDbPassword.tsx`: *\"The database password isn't viewable after creation.\"*\n\n**10. Free-plan project count.** Pricing page says \"Limit of 2 active projects\"; the Studio's own admonition is more precise \u2014 *\"You can have up to 2 free projects across all organizations.\"* Used the latter. 500 MB database size and no-credit-card confirmed.\n\n## Verified correct, left alone\nSign-up URL `supabase.com/dashboard/sign-up` (live; `Continue with GitHub` confirmed) \u00b7 `supabase.com/dashboard/new/_` (the `_` slug is handled by `pages/new/[slug].tsx` and is the URL Supabase's own quickstarts link to) \u00b7 button `Create new project` and panel heading `Create a new project` (`ProjectCreationFooter.tsx`) \u00b7 sidebar labels `Table Editor`, `SQL Editor`, `Database`, `Authentication`, `Storage` (all exact, from `NavigationBar.utils.tsx`) \u00b7 `Run` button + `Cmd/Ctrl+Enter` (`RunButton.tsx` uses `['Meta','Enter']`) \u00b7 password reset at `Database` \u2192 `Settings` (route `/project/[ref]/database/settings`, contains `ResetDbPassword`) \u00b7 status label `Paused` and the `Resume project` action \u00b7 `SELECT version();` is valid PostgreSQL, returns exactly one row in a column named `version` beginning `PostgreSQL`, and does do what the text claims \u00b7 the default org / Owner-role claim (access-control docs).\n\n## Usability gaps closed\nAdded a prerequisites callout (browser, checkable email, ~10 min, no terminal, no card, have a password manager open *before* step 6). Split the account password from the database password explicitly \u2014 this is the single most common beginner confusion here and the original never distinguished them. Added the spam-folder fallback and the account password complexity rule. Made \"save it somewhere you control\" concrete for someone who has never used a terminal (named actual password managers and notes apps, and said what to call the entry). Added the branch for users who land on a create-organization form instead of a pre-made org, and told them to pick Free. Added what to do when you see High availability / Compute size (paid). Explained what `version()` *is* and what a correct result grid looks like, plus the failure branch. Added a checklist item for getting back in later (`supabase.com/dashboard`), since nothing was local.\n\n## Could not fully verify\n(a) The exact on-screen placement of `New project` \u2014 I confirmed the label and its `/new/{slug}` link in `EmptyStates.tsx` but not that it sits in the top right, so I dropped the positional claim rather than assert it. (b) The default Postgres major version for new *cloud* projects: the self-hosted image moved to PG 17 in June 2026 and PG 14 support ended July 2026, but I found no authoritative statement for hosted new-project defaults \u2014 so the checklist deliberately only requires the string to start with `PostgreSQL`, which holds for any version. (c) Whether a Free-tier org sees the `High availability` / `Compute size` controls at all; the JSX renders High Availability unconditionally and Compute size behind a `canChooseInstanceSize` flag, so I phrased it as \"if you also see.\" (d) Precise Virginia\u2194Florida and Sydney latency figures are engineering estimates, kept qualitative. (e) Project-transfer-between-organizations is confirmed to exist (the pausing doc instructs you to transfer a paid project to a Free org), but I did not verify its exact free-tier constraints, so the table says only that it is possible."
+ },
+ {
+  "id": "sb-3",
+  "num": "S-3",
+  "title": "Run your first SQL in the Supabase SQL Editor",
+  "blocks": [
+   {
+    "type": "p",
+    "text": "This is the section where the account you made starts paying off. In the next ten minutes you will open Supabase's SQL Editor, prove your connection works with a one-line query, then build the KimTay `REP` table and load the three reps -- the same table you built in Module 3, except this time the rows live on a real Postgres server and are still there tomorrow. Everything happens in your browser. You will not open a terminal, install anything, or type a password at a command prompt."
+   },
+   {
+    "type": "callout",
+    "variant": "note",
+    "label": "Before you start",
+    "text": "You need the free Supabase account and the project you created in the previous section, and you need to be signed in. If you just created the project, look at its status on the dashboard first -- a brand-new project spends a minute or two setting up, and SQL run against it before it is ready will fail with a connection error rather than a SQL error. Wait until the project opens normally and stops saying it is being set up."
+   },
+   {
+    "type": "h4",
+    "text": "Open the SQL Editor and prove the connection works"
+   },
+   {
+    "type": "steps",
+    "items": [
+     {
+      "title": "Open your project",
+      "body": "Go to `supabase.com/dashboard` and click the project you created. If you belong to more than one organization, pick the organization first, then the project. You land on the project dashboard, with a narrow icon sidebar down the left edge. **How you know it worked:** the project name appears at the top of the page and the sidebar is visible."
+     },
+     {
+      "title": "Click SQL Editor",
+      "body": "In the left sidebar, click `SQL Editor`. On a narrow window the sidebar collapses to icons only -- hover over each icon and the name appears in a tooltip; `SQL Editor` is the one shaped like a small terminal window. If you are already signed in, the address `supabase.com/dashboard/project/_/sql/new` also works: the `_` is a placeholder that Supabase swaps for whichever project you used last, so check the project name at the top before you run anything."
+     },
+     {
+      "title": "Start a new query",
+      "body": "Click `New query`. You get an empty text area on top and an empty results panel underneath. This is where every statement in this section goes. **How you know it worked:** there is a tab or entry named `Untitled query`, and the text area is empty and accepts typing."
+     },
+     {
+      "title": "Run one line",
+      "body": "Click inside the text area, type the statement below, then click the green `Run` button (or press `Cmd+Enter` on a Mac, `Ctrl+Enter` on Windows or Linux). The results panel replaces its empty state with a small table."
+     }
+    ]
+   },
+   {
+    "type": "code",
+    "text": "SELECT version();"
+   },
+   {
+    "type": "p",
+    "text": "The results panel shows one row with one column, headed `version`, holding a long line of text that begins with the word `PostgreSQL` followed by a version number. The line is wider than the panel, so you may have to scroll the results sideways to read all of it -- you do not need to. Seeing `PostgreSQL` at the front is your proof: your browser reached a real Postgres server, the server ran your SQL, and it sent an answer back. Nothing was installed on your computer to make that happen."
+   },
+   {
+    "type": "callout",
+    "variant": "note",
+    "label": "If you see a red error instead",
+    "text": "An error that mentions the project being paused means Supabase put a Free plan project to sleep, which it does after roughly a week of very little activity. Go back to `supabase.com/dashboard`, click the project, click `Resume project`, and confirm. Give it a minute or two, then run `SELECT version();` again. If instead you get a network or connection error on a brand-new project, it is still finishing setup -- wait a minute and retry. A red error that quotes your own SQL back at you is a different thing entirely: that is a typo, and the message names the line and position to look at."
+   },
+   {
+    "type": "h4",
+    "text": "Build the REP table"
+   },
+   {
+    "type": "p",
+    "text": "Clear the editor first: click anywhere inside the text area, press `Cmd+A` on a Mac or `Ctrl+A` on Windows or Linux to select everything, then press Delete. Now paste the `CREATE TABLE` below. This is the exact KimTay `REP` definition from Module 3. Postgres accepts `CHAR`, `VARCHAR`, and `DECIMAL` with the same meanings you learned there, so nothing has to change -- with one difference worth knowing: Postgres actually enforces the sizes. The browser sandbox lets a 40-character name sit happily in a `VARCHAR(15)`; Postgres rejects it with a `value too long` error. That is the stricter, more realistic behavior, and it is one of the reasons to move here."
+   },
+   {
+    "type": "code",
+    "text": "CREATE TABLE REP (\n    REP_NUM      CHAR(2)      PRIMARY KEY,\n    LAST_NAME    VARCHAR(15)  NOT NULL,\n    FIRST_NAME   VARCHAR(15)  NOT NULL,\n    STREET       VARCHAR(20),\n    CITY         VARCHAR(15),\n    STATE        CHAR(2),\n    ZIP          CHAR(5),\n    COMMISSION   DECIMAL(8,2),\n    RATE         DECIMAL(4,2)\n);"
+   },
+   {
+    "type": "p",
+    "text": "Click `Run`. A successful `CREATE TABLE` returns no rows, so the results panel says `Success. No rows returned`. That is what you want -- it is not an empty result that failed quietly, it is the normal response to a statement that changes the database rather than asking it a question. The table now exists on the server, and it will still exist after you close the browser."
+   },
+   {
+    "type": "callout",
+    "variant": "note",
+    "label": "Why the table shows up as lowercase rep",
+    "text": "Postgres folds unquoted names to lower case, so `REP` is stored as `rep` and `REP_NUM` as `rep_num`. You can keep writing your SQL in upper case exactly as the course does -- Postgres folds your query the same way, so it still matches. The only rule to remember is not to wrap a name in double quotes unless you are willing to type those quotes every time afterwards: `CREATE TABLE \"REP\"` really does create a table whose name is upper case, and from then on `SELECT * FROM REP;` will fail with `relation \"rep\" does not exist`."
+   },
+   {
+    "type": "callout",
+    "variant": "tip",
+    "label": "How to start over if you run something twice",
+    "text": "Unlike the sandbox on this page, this database remembers. Running the `CREATE TABLE` a second time fails with `relation \"rep\" already exists`, and running the inserts twice fails with `duplicate key value violates unique constraint \"rep_pkey\"` -- both are the server correctly refusing to duplicate work, not a broken setup. To wipe the slate and rebuild, run `DROP TABLE IF EXISTS REP;` and then run the `CREATE TABLE` and the inserts again. Supabase shows a confirmation dialog before it runs a destructive statement such as `DROP` or `DELETE`; read it, then confirm."
+   },
+   {
+    "type": "h4",
+    "text": "Insert the three reps"
+   },
+   {
+    "type": "p",
+    "text": "Clear the editor again (`Cmd+A` or `Ctrl+A`, then Delete) and paste all three `INSERT` statements. Notice each one ends with a semicolon -- that is how the editor knows where one statement stops and the next begins. All three go in one run."
+   },
+   {
+    "type": "code",
+    "text": "INSERT INTO REP (REP_NUM, LAST_NAME, FIRST_NAME, STREET, CITY, STATE, ZIP, COMMISSION, RATE)\nVALUES ('20', 'Kaiser', 'Valerie', '624 Randall Dr.', 'Maple Grove', 'OH', '44601', 21560.00, 0.05);\n\nINSERT INTO REP (REP_NUM, LAST_NAME, FIRST_NAME, STREET, CITY, STATE, ZIP, COMMISSION, RATE)\nVALUES ('35', 'Hull', 'Richard', '313 Palma Dr.', 'Maple Grove', 'OH', '44601', 39355.00, 0.07);\n\nINSERT INTO REP (REP_NUM, LAST_NAME, FIRST_NAME, STREET, CITY, STATE, ZIP, COMMISSION, RATE)\nVALUES ('65', 'Perez', 'Juan', '2632 Marshall Ave.', 'Brookville', 'OH', '44403', 23764.00, 0.05);"
+   },
+   {
+    "type": "p",
+    "text": "Run it. You get `Success. No rows returned` again -- inserts change the database, they do not answer a question, so there is nothing to show. Now ask for the data back:"
+   },
+   {
+    "type": "code",
+    "text": "SELECT * FROM REP ORDER BY REP_NUM;"
+   },
+   {
+    "type": "p",
+    "text": "Three rows: Kaiser, Hull, Perez. The `ORDER BY` is there on purpose -- a plain `SELECT * FROM REP;` also returns all three, but no database promises you a particular order unless you ask for one, so do not read anything into the order you happen to get. Same result as the sandbox on this page, with one difference that matters: close this tab, come back next week, run it again, and the three rows are still there."
+   },
+   {
+    "type": "callout",
+    "variant": "tip",
+    "label": "Run only part of your script",
+    "text": "If you highlight some text before clicking `Run` (or pressing `Cmd+Enter` / `Ctrl+Enter`), the editor runs only the highlighted statements and ignores the rest. That is the fastest way to work through a long script: keep every statement in one query and highlight just the line you want to test. If nothing is highlighted, everything in the editor runs, top to bottom -- which is also the usual reason a `DROP` you thought was safely parked at the bottom of the file suddenly runs."
+   },
+   {
+    "type": "table",
+    "caption": "The sandbox on this page vs. the Supabase SQL Editor",
+    "headers": [
+     "What",
+     "Sandbox on this page",
+     "Supabase SQL Editor"
+    ],
+    "rows": [
+     [
+      "Engine",
+      "SQLite, running inside your browser",
+      "PostgreSQL, running on a server"
+     ],
+     [
+      "Your data",
+      "Gone when you reload the page",
+      "Kept until you delete it"
+     ],
+     [
+      "Column sizes",
+      "`VARCHAR(15)` is not enforced",
+      "`VARCHAR(15)` is enforced; oversized values are rejected"
+     ],
+     [
+      "Saving work",
+      "Copy the text out yourself",
+      "Saved automatically as a snippet you can rename"
+     ],
+     [
+      "What runs",
+      "Everything in the box",
+      "Your selection, or everything if nothing is selected"
+     ],
+     [
+      "Who you are",
+      "The only user there is",
+      "An administrator, so row-security rules never hide anything from you here"
+     ]
+    ]
+   },
+   {
+    "type": "h4",
+    "text": "Name the query so you can find it again"
+   },
+   {
+    "type": "p",
+    "text": "Supabase already saved this query for you -- every query you run in the SQL Editor is kept as a snippet in your project, which is why the left-hand list is filling up with entries called `Untitled query`. The part you have to do is give it a name. Click the query's name above the editor, or open the `...` menu next to its entry in the left-hand list and choose the rename option, and call it `KimTay - create REP`. Clicking a snippet in that list loads it back into the editor. This is the Supabase version of the habit Module 3 taught you with saved `.sql` script files: write it once, keep it, run it again when you need to rebuild. Snippets live in your Supabase account, not in the database, so they are not part of your data and will not appear in a backup of your tables -- keep a copy of anything you cannot afford to lose."
+   },
+   {
+    "type": "h4",
+    "text": "The point-and-click alternative: Table Editor"
+   },
+   {
+    "type": "p",
+    "text": "You do not have to use SQL to make a table here. Click `Table Editor` in the left sidebar, then `New table`, give it a name, click `Save`, and add columns one at a time with `New column` -- pick a name and a data type, then `Save`. Your `rep` table is already in that list; if you do not see it, reload the page, because the Table Editor caches the table list and does not always notice a table created in another tab. The Table Editor is a reasonable way to look at data you already have, and clicking through a table's rows is easier than typing a `SELECT` every time. It is a poor way to learn, though, because the design decisions you made in Module 2 get buried in a form instead of written down in a script you can save, read, and hand to someone else. Build with SQL, browse with the Table Editor."
+   },
+   {
+    "type": "callout",
+    "variant": "warning",
+    "label": "Two separate switches control who can reach a table from outside the dashboard",
+    "text": "The first is Row Level Security, or RLS, which decides which rows a request is allowed to see. The `New table` form in the Table Editor has an `Enable Row Level Security (RLS)` box that is ticked by default, and a table with RLS on and no policies returns zero rows to any app connecting with your project's publishable key (the `anon` key on older projects) -- while the Table Editor still shows every row, because the dashboard connects as an administrator. That mismatch is the single most common \"my app is broken\" moment in Supabase, and the app is behaving exactly as configured. A table you create with SQL, like the `REP` table you just built, starts with RLS off, and Supabase marks it in the dashboard with an `Unrestricted` badge and an `RLS disabled in public` warning. The second switch is Postgres grants, which decide whether a role may touch the table at all, and this default changed during 2026: projects created before May 30, 2026 automatically granted select, insert, update, and delete on every new table in the `public` schema to the `anon`, `authenticated`, and `service_role` roles, so an RLS-off table genuinely was readable by anything holding the publishable key. Projects created on or after May 30, 2026 do not do that -- a new table in `public` is invisible to the Data API until you write an explicit `GRANT` -- and Supabase applies the same setting to all remaining older projects on October 30, 2026. None of this changes anything you did in this section, because the SQL Editor talks to the database directly with administrator privileges. It matters the moment you point an application at the database. Before you put real data in any table in the `public` schema, run `ALTER TABLE REP ENABLE ROW LEVEL SECURITY;` and write at least one policy, then grant only the access each role actually needs."
+   },
+   {
+    "type": "checklist",
+    "items": [
+     "`SELECT version();` returns one row in a column headed `version`, starting with the word `PostgreSQL`",
+     "`CREATE TABLE REP (...)` reports `Success. No rows returned`",
+     "The three `INSERT` statements run with no errors",
+     "`SELECT * FROM REP ORDER BY REP_NUM;` returns exactly three rows: Kaiser, Hull, Perez",
+     "You can recover from a mistake: `DROP TABLE IF EXISTS REP;` followed by the create and the inserts rebuilds the table from scratch",
+     "Your query is renamed from `Untitled query` and you can find it again in the SQL Editor's left-hand list",
+     "`rep` appears in the Table Editor's table list, and you can explain why it is lowercase",
+     "You can explain why the SQL Editor shows you rows that an app using the publishable key might not see"
+    ]
+   }
+  ],
+  "notes": "FACT-CHECK CORRECTIONS (all verified against supabase.com docs/changelog unless noted)\n\n1. MAJOR \u2014 the RLS callout was factually out of date. It claimed a SQL-created table with RLS off means \"anything holding the publishable key can read it.\" Supabase's breaking-change changelog (discussion/changelog 45329, published 2026-04-28) says new tables in the `public` schema are no longer auto-granted to the Data API: opt-in setting \"Automatically expose new tables and functions\" from 2026-04-28, DEFAULT for all new projects from 2026-05-30, applied to ALL existing projects on 2026-10-30. Since today is 2026-08-02, any student creating a project now gets a table that is NOT reachable by the publishable key at all until an explicit GRANT. I rewrote the callout to separate the two layers (RLS = which rows; grants = whether the role can touch the table at all) and gave both dates. Source: https://supabase.com/changelog/45329-breaking-change-tables-not-exposed-to-data-and-graphql-api-automatically\n\n2. VERIFIED, kept as written: RLS is enabled by default for Table-Editor-created tables and NOT for SQL-created tables (https://supabase.com/docs/guides/database/postgres/row-level-security \u2014 \"RLS is enabled by default on tables created with the Table Editor in the dashboard\"; \"If you create one in raw SQL or with the SQL editor, remember to enable RLS yourself\"). Note: several third-party blogs claim the Table Editor default is OFF; official docs say ON, so I followed official docs but phrased it as the ticked \"Enable Row Level Security (RLS)\" checkbox in the New table form, which is true either way.\n\n3. VERIFIED, kept: \"Resume project\" is the correct button label, not Restore. https://supabase.com/docs/guides/platform/free-project-pausing \u2014 \"Click **Resume project** and confirm.\" Pausing is triggered by low activity over a 7-day period, so \"roughly a week\" is accurate. (A separate troubleshooting doc uses \"Restore\" for projects paused >90 days / >1 year \u2014 not relevant to a student's week-old project.)\n\n4. VERIFIED, kept: run-only-the-selection is real. Supabase maintainer saltcod in discussion #14206: \"this is now possible! You can run just the selected query via cmd+return or the RUN button!\"\n\n5. VERIFIED, kept: Cmd+Enter / Ctrl+Enter, `New query`, `Run`, `Success. No rows returned`, and the `/dashboard/project/_/sql/new` underscore-placeholder URL form (Supabase's own docs link to `/dashboard/project/_/editor`). I added \"or Linux\" to the Ctrl+Enter line, which the original omitted.\n\n6. CORRECTED \u2014 the \"Save the query\" section said renaming is what saves it. Supabase auto-saves every SQL Editor query as a snippet named \"Untitled query\"; renaming only makes it findable. Reworded, and added the rename path via the `...` menu next to the entry (GitHub issues #20208 / #26118 document that the inline name field is easy to lose focus on and the menu is the reliable route). Also added that snippets live in your Supabase account, not the database.\n\n7. VERIFIED, added: Supabase shows a confirmation dialog before destructive statements (supabase/supabase PR #33801, issue #16484). Mentioned only in the new \"start over\" callout where DROP is introduced.\n\n8. Table Editor labels: docs render them as \"New Table\" / \"New Column\" / \"Save\"; I kept the section's sentence case since the live UI uses sentence case, and the words themselves are correct.\n\n9. \"Unrestricted\" badge / \"RLS disabled in public\" lint: consistently reported across multiple third-party sources and the Supabase database-linter discussion #26584, but I could not find a first-party docs page naming the badge, so I phrased it as a dashboard marker rather than an exact required string. LOWEST-CONFIDENCE ITEM in the section.\n\nUSABILITY FIXES\n- Added a prerequisites callout (signed in, project finished provisioning) \u2014 a brand-new project fails with a connection error, which the original blamed on nothing.\n- Added \"how you know it worked\" to steps 1-3, which previously said what to click but gave no success signal.\n- \"Select everything and delete it\" now spells out Cmd+A / Ctrl+A \u2014 a first-timer does not know this.\n- Added the multi-organization case and the collapsed-sidebar-on-narrow-window case.\n- Added a whole callout for the most likely real failure: re-running the script. `relation \"rep\" already exists` and `duplicate key value violates unique constraint \"rep_pkey\"` are quoted verbatim so a student can match the message, plus `DROP TABLE IF EXISTS REP;` to recover. The original had no recovery path at all.\n- Added `ORDER BY REP_NUM` to the verification SELECT and explained why \u2014 the original asserted \"three rows: Kaiser, Hull, Perez\" as if the order were guaranteed, which Postgres does not promise.\n- Explained that `version` output is wider than the panel and needs horizontal scrolling.\n- Explained that \"Success. No rows returned\" is the normal answer for a statement that changes data, not a silent failure.\n- Added the CHAR/VARCHAR length-enforcement difference: SQLite (the sandbox, confirmed as sql.js in keiser-database-course_8.html) ignores VARCHAR lengths; Postgres rejects with `value too long`. The original's \"nothing has to change\" was true for the syntax but hid a real behavioral difference students will hit.\n- Added the \"double-quoted identifier\" failure mode to the lowercase callout, so the abstract warning has a concrete symptom.\n- Table Editor: added \"reload the page if `rep` is not listed\" \u2014 the table list is cached and this trips people.\n- Comparison table gained \"Column sizes\" and \"Who you are\" rows; \"Saving work\" corrected to reflect auto-save.\n- Checklist expanded from 6 to 8 items, adding the recovery drill and the RLS/grants comprehension check.\n\nDATA VERIFICATION\nThe KimTay REP rows (20/Kaiser, 35/Hull, 65/Perez, all OH, 21560.00/39355.00/23764.00) do NOT match the published Cengage KimTay/Premiere Products dataset, which uses Florida addresses and different commission figures (20 Kaiser, 624 Randall, Grove FL 33321, 20542.50). However, I grepped /Users/joepangallo/keiser/db/keiser-database-course_8.html and this section's values match the course's own `kimtay_partial` / `kimtay_full` seed scripts exactly, including the CREATE TABLE column list and widths. So the data is internally consistent with Module 3 and I changed nothing. Flagging only in case the intent was to mirror the textbook. One cosmetic difference: the course's stored seed quotes the numerics ('21560.00', '0.05') while this section leaves them unquoted; unquoted is correct and cleaner in Postgres, so I kept the section's version.\n\nCOULD NOT VERIFY\n- Exact on-screen position of the `Run` button (sources disagree between top-right and bottom-right), so I say \"the green `Run` button\" without a location.\n- Whether the results panel string is exactly \"Success. No rows returned\" with that punctuation in the current Studio build \u2014 it is widely quoted that way in Supabase's own troubleshooting docs and GitHub issues, so I kept it.\n- The exact wording of the rename control in the current Studio (`Rename query` vs `Rename`), so the text says \"choose the rename option.\"\n- The \"Unrestricted\" badge string (see item 9 above).\n- Nothing in this section involves shell commands, install paths, PATH edits, ports, or connection poolers, so there was nothing of that kind to check."
+ },
+ {
+  "id": "sb-4",
+  "num": "S-4",
+  "title": "Connect from your own machine: Mac",
+  "blocks": [
+   {
+    "type": "p",
+    "text": "So far you have run SQL inside a browser tab. This section gets your Mac talking to your Supabase database directly, using a real SQL client that you own. The payoff is that you can open a saved script, run it against your own KimTay tables, and see results without the Supabase dashboard in the way. You will do two things: copy one connection string, then hand that string to a client. Pick either the point-and-click route (a GUI app) or the terminal route. You do not need both."
+   },
+   {
+    "type": "callout",
+    "variant": "note",
+    "label": "Before you start",
+    "text": "You need three things: (1) the Supabase project you created earlier in this course, with your KimTay tables already loaded; (2) the database password you set when you created that project, or the willingness to reset it -- resetting is safe and takes about a minute; (3) about 15 minutes. Nothing here costs money. If you are on the terminal route, you also need macOS 14 (Sonoma) or newer, which is what Homebrew supports today."
+   },
+   {
+    "type": "h4",
+    "text": "Step 1: copy the connection string"
+   },
+   {
+    "type": "p",
+    "text": "A connection string is one line of text that tells a client where the database lives and who you are. Supabase generates it for you. You never type it from memory, and you never copy one out of a tutorial -- every project has its own."
+   },
+   {
+    "type": "steps",
+    "items": [
+     {
+      "title": "Open your project",
+      "body": "Go to `supabase.com/dashboard` and click the project you created for this course."
+     },
+     {
+      "title": "Click Connect",
+      "body": "The `Connect` button sits at the top of the project dashboard and opens a panel. This is where connection strings now live. Older tutorials send you to `Project Settings` then `Database` for the connection string -- that is out of date."
+     },
+     {
+      "title": "Find the connection-string list",
+      "body": "The panel has several tabs for different tools (app frameworks, ORMs, and so on). You want the plain connection strings. In that list you will see three entries: `Direct connection`, `Transaction pooler`, and `Session pooler`. Click the copy icon next to `Session pooler`."
+     },
+     {
+      "title": "Paste it somewhere safe",
+      "body": "Paste it into a plain text file for a moment. It looks like `postgresql://postgres.abcdefghijklmnopqrst:[YOUR-PASSWORD]@aws-1-us-east-1.pooler.supabase.com:5432/postgres`. Two parts of that are yours alone: `abcdefghijklmnopqrst` is your project reference, and the host name encodes your project's region. The `[YOUR-PASSWORD]` part is a placeholder -- replace it, square brackets and all, with the database password you set when you created the project."
+     }
+    ]
+   },
+   {
+    "type": "callout",
+    "variant": "warning",
+    "label": "Do not copy the example host",
+    "text": "The host in the example above is an example. Yours will differ in both the region (`us-east-1`, `eu-central-1`, `ap-southeast-2`, ...) and the number after `aws-` -- Supabase issues `aws-0-`, `aws-1-`, and others, and there is no way to guess which one your project got. Always paste the host from your own `Connect` panel. Copying a host from a tutorial is the single most common reason a connection never resolves."
+   },
+   {
+    "type": "callout",
+    "variant": "note",
+    "label": "Why the session pooler",
+    "text": "On a free project the direct connection resolves to an IPv6 address only, unless you buy the IPv4 add-on. Most home and campus networks are IPv4 only, so a direct connection on port `5432` will sit there and eventually time out with no useful message. Both pooler endpoints are reachable over IPv4 on every plan. Session mode behaves like a normal, long-lived Postgres connection and supports prepared statements, which is exactly what a desktop client wants."
+   },
+   {
+    "type": "table",
+    "caption": "Which connection to pick for this course",
+    "headers": [
+     "Option",
+     "Host",
+     "Port",
+     "Use it for"
+    ],
+    "rows": [
+     [
+      "Direct connection",
+      "`db.[PROJECT-REF].supabase.co`",
+      "5432",
+      "Servers on IPv6, some backup tools. Not your laptop on a typical network."
+     ],
+     [
+      "Session pooler",
+      "`aws-N-[REGION].pooler.supabase.com`",
+      "5432",
+      "psql, TablePlus, pgAdmin 4. This is your choice."
+     ],
+     [
+      "Transaction pooler",
+      "`aws-N-[REGION].pooler.supabase.com`",
+      "6543",
+      "Serverless and edge functions. Does not support prepared statements. Not this course."
+     ]
+    ]
+   },
+   {
+    "type": "callout",
+    "variant": "warning",
+    "label": "Forgot the password",
+    "text": "The database password is shown only while you are creating the project, and Supabase cannot show it to you again. If you did not save it, do not guess -- reset it. In the dashboard's left sidebar click `Database`, then `Settings` (the page URL ends in `/database/settings`), and use the reset-password control there. Set the new password, then go back to `Connect` and copy the string again. Resetting does not touch your tables or data."
+   },
+   {
+    "type": "h4",
+    "text": "Step 2 (route A): connect with a GUI client"
+   },
+   {
+    "type": "p",
+    "text": "A GUI client gives you a window with your tables on the left and a query editor on the right. Two are worth your time on a Mac. Pick one -- installing both just doubles the setup."
+   },
+   {
+    "type": "twocol",
+    "cards": [
+     {
+      "title": "TablePlus",
+      "body": "Download from `tableplus.com/download`. It is fast, quiet, and the easiest of the two to learn. It is paid software, but the trial never expires; it limits you to `2` open tabs and `2` open windows at a time, which is plenty for this course. Requires macOS 10.13 or newer and runs on both Intel and Apple Silicon from a single download. Best pick if your Mac is older."
+     },
+     {
+      "title": "pgAdmin 4",
+      "body": "Download from `pgadmin.org/download/pgadmin-4-macos`. It is free and open source, built by the PostgreSQL community, with no usage limits. The interface is busier and it runs inside a browser-like window, so expect more clicking. There are separate Intel and Apple Silicon downloads -- pick the one matching your Mac (Apple menu, `About This Mac`, look at `Chip` or `Processor`). Current releases require macOS 13 (Ventura) or newer."
+     }
+    ]
+   },
+   {
+    "type": "p",
+    "text": "Both apps ask for the same five pieces of information, and all five are sitting inside the connection string you copied. Read the string left to right: after `postgresql://` (Supabase sometimes writes `postgres://` -- same thing) comes the user, then the first `:` and the password, then `@` and the host, then the last `:` and the port, then `/` and the database name."
+   },
+   {
+    "type": "table",
+    "caption": "Filling in a new connection from your string",
+    "headers": [
+     "Field",
+     "What to enter",
+     "Example"
+    ],
+    "rows": [
+     [
+      "Host",
+      "Everything between `@` and the last `:`",
+      "`aws-1-us-east-1.pooler.supabase.com`"
+     ],
+     [
+      "Port",
+      "The number after the last `:`",
+      "`5432`"
+     ],
+     [
+      "Database",
+      "The word after the final `/`",
+      "`postgres`"
+     ],
+     [
+      "User",
+      "Everything between `//` and the first `:` after it",
+      "`postgres.abcdefghijklmnopqrst`"
+     ],
+     [
+      "Password",
+      "Your project database password",
+      "the value you set or reset -- no square brackets"
+     ]
+    ]
+   },
+   {
+    "type": "callout",
+    "variant": "warning",
+    "label": "Keep the dot in the user name",
+    "text": "On the session pooler the user name is `postgres`, then a dot, then your project reference -- for example `postgres.abcdefghijklmnopqrst`. Students often shorten it to plain `postgres` and get the error `Tenant or user not found`. Copy the whole thing, dot included."
+   },
+   {
+    "type": "p",
+    "text": "In TablePlus: click `Create a new connection...`, choose `PostgreSQL`, give it a name like `KimTay`, fill the five fields, click `Test` (the fields turn green when they are reachable), then `Connect`. If TablePlus offers an `SSL mode` option, `PREFERRED` works and `REQUIRED` is stricter; either connects."
+   },
+   {
+    "type": "p",
+    "text": "In pgAdmin 4: right-click `Servers` in the left tree, choose `Register` then `Server...`. On the `General` tab put any nickname you like in `Name`. On the `Connection` tab, note that pgAdmin uses slightly different labels -- `Host name/address`, `Port`, `Maintenance database` (this is the `Database` field: enter `postgres`), `Username`, and `Password`. Tick `Save password?` so you do not retype it. pgAdmin defaults to an SSL mode of `prefer`, which already encrypts the connection to Supabase; if you want to force it, go to the `Parameters` tab, click `+`, choose `SSL mode`, and set it to `require`."
+   },
+   {
+    "type": "callout",
+    "variant": "tip",
+    "label": "How to know the GUI worked",
+    "text": "You should see your KimTay tables, not just a connected server. In TablePlus the left sidebar lists them under the `public` schema. In pgAdmin, expand the server, then `Databases`, then `postgres`, then `Schemas`, then `public`, then `Tables` -- your course tables are there. If you connect but see no tables, you are connected to the right server but looking at the wrong schema; make sure you are under `public`, not `auth` or `storage`. Right-click a table and choose the view/preview option to confirm rows come back."
+   },
+   {
+    "type": "h4",
+    "text": "Step 3 (route B, optional): the terminal route with psql"
+   },
+   {
+    "type": "p",
+    "text": "`psql` is the official PostgreSQL command-line client. It is the fastest way to run a saved `.sql` script against your database, and it is what you will see in most documentation. macOS does not ship it, so you install it. Skip this whole step if the GUI is working for you -- nothing later in the course requires it."
+   },
+   {
+    "type": "callout",
+    "variant": "note",
+    "label": "If you have never used Terminal",
+    "text": "Terminal is an app where you type one command, press `Return`, and read the text it prints back. Open it with `Command` + `Space`, type `Terminal`, press `Return`. Paste with `Command` + `V` like anywhere else. Commands below are one per line unless shown together -- press `Return` after each. Nothing here can damage your Mac, and you can close the window at any time."
+   },
+   {
+    "type": "p",
+    "text": "First check whether you already have psql. Run:"
+   },
+   {
+    "type": "code",
+    "text": "psql --version"
+   },
+   {
+    "type": "p",
+    "text": "If that prints something like `psql (PostgreSQL) 17.6`, skip ahead to the connect command. If it prints `zsh: command not found: psql`, continue. Next, check for Homebrew, the package manager most Mac developers use to install command-line tools:"
+   },
+   {
+    "type": "code",
+    "text": "brew --version"
+   },
+   {
+    "type": "p",
+    "text": "If that prints a version, skip to installing `libpq`. If it prints `command not found`, install Homebrew with the official one-line installer below. It will ask for your Mac login password (nothing appears on screen while you type it -- that is normal), it may first install Apple's Command Line Tools, which is a large download, and the whole thing can take five to fifteen minutes and print a lot of output."
+   },
+   {
+    "type": "code",
+    "text": "/bin/bash -c \"$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)\""
+   },
+   {
+    "type": "p",
+    "text": "When it finishes, read the last few lines. Homebrew prints a `Next steps:` section containing two lines it wants you to run, and those lines already contain the correct path for your Mac. Copy them out of your own Terminal and run them. On an Apple Silicon Mac they look like this:"
+   },
+   {
+    "type": "code",
+    "text": "echo 'eval \"$(/opt/homebrew/bin/brew shellenv)\"' >> ~/.zprofile\neval \"$(/opt/homebrew/bin/brew shellenv)\""
+   },
+   {
+    "type": "callout",
+    "variant": "tip",
+    "label": "Intel Macs",
+    "text": "On an Intel Mac, Homebrew installs to `/usr/local` instead of `/opt/homebrew`, so those two lines say `/usr/local/bin/brew` instead. This is why you copy the lines Homebrew printed for you rather than the ones printed here. Confirm it worked by running `brew --version` again -- it should now print a version number instead of `command not found`."
+   },
+   {
+    "type": "p",
+    "text": "Now install the client. `libpq` is the PostgreSQL client package: it gives you `psql` without installing a database server on your Mac, which you do not need -- your server is Supabase."
+   },
+   {
+    "type": "code",
+    "text": "brew install libpq"
+   },
+   {
+    "type": "p",
+    "text": "Homebrew installs `libpq` as keg-only, meaning it deliberately does not link it into your normal command folders (so it cannot collide with Apple's own copy or a full PostgreSQL install). `PATH` is the list of folders your shell searches for commands, so you add libpq's folder to it yourself. The line below appends one line to `~/.zshrc`, your shell's configuration file, then reloads it. `brew --prefix libpq` works out the right folder on both Intel and Apple Silicon, so you do not have to know which Mac you own."
+   },
+   {
+    "type": "code",
+    "text": "echo 'export PATH=\"'$(brew --prefix libpq)'/bin:$PATH\"' >> ~/.zshrc\nsource ~/.zshrc\npsql --version"
+   },
+   {
+    "type": "p",
+    "text": "That last line is the proof: you should now see `psql (PostgreSQL) 17.x` or similar. If you still get `command not found`, close the Terminal window, open a new one, and try `psql --version` again."
+   },
+   {
+    "type": "callout",
+    "variant": "tip",
+    "label": "If your shell is not zsh",
+    "text": "macOS has used zsh by default since Catalina, so `~/.zshrc` and `~/.zprofile` are almost certainly right. Check with `echo $SHELL`. If it prints something ending in `/bash`, use `~/.bash_profile` everywhere these instructions say `~/.zshrc` or `~/.zprofile`."
+   },
+   {
+    "type": "p",
+    "text": "Now connect. Wrap the connection string in single quotes, and leave the password out of the command -- psql will prompt you for it, which keeps your password out of your shell history file. Replace the user and host with your own."
+   },
+   {
+    "type": "code",
+    "text": "psql 'postgresql://postgres.[PROJECT-REF]@aws-N-[REGION].pooler.supabase.com:5432/postgres'"
+   },
+   {
+    "type": "p",
+    "text": "psql prints `Password for user postgres.[PROJECT-REF]:`. Type or paste your password and press `Return` -- nothing appears on screen while you type, which is deliberate. A successful connection changes your prompt to `postgres=>` (some setups show `postgres=#`)."
+   },
+   {
+    "type": "callout",
+    "variant": "warning",
+    "label": "Single quotes, not double",
+    "text": "If you do put the password inline, use single quotes: `psql 'postgresql://...'`. Double quotes still let zsh expand `$`, backticks, and backslashes inside the string, so a password containing `$` would be silently mangled into something else and you would get an authentication failure you cannot explain. Single quotes protect everything except a single-quote character."
+   },
+   {
+    "type": "p",
+    "text": "Prove you are talking to the right database. Run these two lines, pressing `Return` after each:"
+   },
+   {
+    "type": "code",
+    "text": "SELECT current_database(), current_user;\n\\dt"
+   },
+   {
+    "type": "p",
+    "text": "`SELECT current_database(), current_user;` is ordinary SQL and must end in a semicolon; it should report the database `postgres`. `\\dt` is a psql meta-command (not SQL, no semicolon) that lists the tables in your search path -- that is the `public` schema -- so you should see your KimTay tables. If it prints `Did not find any relations.` you are connected to an empty project, not the one holding your course data. To run a script you have saved, quit and use the `-f` flag:"
+   },
+   {
+    "type": "code",
+    "text": "psql 'postgresql://postgres.[PROJECT-REF]@aws-N-[REGION].pooler.supabase.com:5432/postgres' -f ~/Desktop/my-queries.sql"
+   },
+   {
+    "type": "p",
+    "text": "When you are done, leave psql with `\\q`, which returns you to the normal Terminal prompt:"
+   },
+   {
+    "type": "code",
+    "text": "\\q"
+   },
+   {
+    "type": "callout",
+    "variant": "definition",
+    "label": "Percent-encoding",
+    "text": "A connection string is a URL, so the characters `@`, `:`, `/`, `#`, and `?` already mean something structural in it. If your database password contains any of them and you paste it inline, the string is parsed wrongly and the connection fails. You can percent-encode them by hand (`@` becomes `%40`, `#` becomes `%23`), but it is easier to let psql prompt you for the password as shown above, or to reset the password at `Database` then `Settings` to something using only letters and digits."
+   },
+   {
+    "type": "callout",
+    "variant": "note",
+    "label": "You are connecting as an owner, so RLS does not apply",
+    "text": "Both routes log you in as the `postgres` role, which owns your tables. In PostgreSQL a table's owner is not subject to that table's Row Level Security policies unless the table was explicitly set to `FORCE ROW LEVEL SECURITY`. So a query that returns rows here may return nothing through Supabase's API, where requests run as a restricted role. That is expected, not a bug. Worth knowing for later: tables you create with the Supabase Table Editor get RLS switched on for you, while tables you create by running `CREATE TABLE` in the SQL editor do not."
+   },
+   {
+    "type": "h4",
+    "text": "When it does not work"
+   },
+   {
+    "type": "table",
+    "caption": "The errors Mac students actually hit",
+    "headers": [
+     "What you see",
+     "Why",
+     "Fix"
+    ],
+    "rows": [
+     [
+      "`zsh: command not found: psql`",
+      "`psql` is installed but not on your `PATH`, or `libpq` never installed.",
+      "Re-run the `echo ... >> ~/.zshrc` and `source ~/.zshrc` lines, or just open a new Terminal window. Confirm the package is there with `brew list libpq`."
+     ],
+     [
+      "`FATAL: password authentication failed for user ...`",
+      "The password is wrong, or you left the literal `[YOUR-PASSWORD]` placeholder in the string, or a `$` in your password was expanded by double quotes.",
+      "Reset the password at `Database` then `Settings`, choosing letters and digits only. Copy the string again and replace the whole placeholder, brackets included -- or omit the password and let psql prompt you."
+     ],
+     [
+      "`Tenant or user not found`",
+      "The user name lost its project reference. This message comes from the pooler, not from PostgreSQL.",
+      "The user must read `postgres.` followed by your project reference, not plain `postgres`. Re-copy it from the `Connect` panel."
+     ],
+     [
+      "`Connection timed out`, or the client hangs with no message at all",
+      "You used the direct connection, which is IPv6-only on the free plan, and your network is IPv4.",
+      "Go back to `Connect` and copy the `Session pooler` string instead. Confirm the host ends in `pooler.supabase.com` and the port is `5432`."
+     ],
+     [
+      "`could not translate host name ... to address` or `nodename nor servname provided`",
+      "The host name is wrong -- usually a typo, a truncated paste, or a host copied from a tutorial with the wrong `aws-N` prefix or region.",
+      "Re-copy the host from your own `Connect` panel with the copy icon. Do not retype it by hand."
+     ],
+     [
+      "`server does not support SSL, but SSL was required`",
+      "Rare against Supabase. It means the client is demanding a stricter SSL mode than it can verify -- for example `verify-full` with no root certificate loaded.",
+      "Set `SSL mode` to `require` (pgAdmin: `Parameters` tab, `+`, `SSL mode`). `prefer` also works and is the default in both apps. Supabase does not force SSL by default, so plain `prefer` will connect and still encrypts."
+     ]
+    ]
+   },
+   {
+    "type": "checklist",
+    "items": [
+     "You copied a `Session pooler` connection string from the `Connect` button, using your own project's host, not one typed from an example.",
+     "The user in your connection includes the dot and your project reference, and the password replaced the whole `[YOUR-PASSWORD]` placeholder, brackets and all.",
+     "Either TablePlus or pgAdmin 4 connects and lists your KimTay tables under the `public` schema, or `psql` gives you a `postgres=>` prompt.",
+     "`SELECT current_database(), current_user;` runs without error and reports the database `postgres`.",
+     "`\\dt` in psql, or the table list in your GUI, shows the KimTay tables -- not `Did not find any relations.`",
+     "You saved the connection in your client, or saved the connection string in a file you can find, so you do not have to redo any of this next week.",
+     "You know how to reset the database password at `Database` then `Settings` if you ever lose it."
+    ]
+   }
+  ],
+  "notes": "CORRECTIONS MADE (each verified against official docs)\n\nFactual errors fixed:\n1. Hardcoded host `aws-0-us-east-1.pooler.supabase.com` \u2014 the `aws-N` prefix is NOT always 0. Supabase issues `aws-1-` and others, and it is not derivable from the region. Confirmed via Supabase GitHub discussions #33089/#35084 and the docs, which write the host generically as `aws-[REGION].pooler.supabase.com`. Replaced with `aws-N-[REGION]` placeholders plus an explicit warning never to copy an example host. This was the most likely single cause of student failure in the original draft.\n2. \"Supabase requires an encrypted connection\" \u2014 false. Per https://supabase.com/docs/guides/platform/ssl-enforcement, \"Enforce SSL on incoming connections\" is an optional toggle in Database Settings and is off by default. Rewrote the SSL guidance: `prefer` (the default in both GUIs) connects and still encrypts; `require` is optional hardening.\n3. The `server does not support SSL` troubleshooting row described an impossible failure mode (that error means the *server* lacks SSL, which Supabase does not). Rewrote it as the realistic case (over-strict `verify-full` without a root cert) and added a genuinely common row: `could not translate host name` from a bad/typo'd host.\n4. Checklist claimed `SELECT current_database(), current_user;` \"returns `postgres` and your pooler user name.\" The `.project-ref` suffix is Supavisor routing metadata, not a Postgres role \u2014 the upstream role is `postgres`. I could not find an explicit official statement of what `current_user` returns through the pooler, so rather than assert either value I softened the checklist item to only assert the database name, which is unambiguous. FLAGGED AS UNVERIFIED \u2014 see below.\n5. Double quotes around the psql connection string are NOT safe. zsh expands `$`, backticks and backslashes inside double quotes, so a password containing `$` is silently corrupted. Switched to single quotes and, better, to omitting the password so psql prompts (also keeps it out of `~/.zsh_history`).\n6. pgAdmin 4 field labels were wrong/incomplete: the Connection tab calls the database field \"Maintenance database\", and SSL mode is NOT on the Connection tab \u2014 it is on the Parameters tab, added via the `+` button. Verified at https://www.pgadmin.org/docs/pgadmin4/latest/server_dialog.html.\n7. \"Installing it on a Mac takes three commands\" \u2014 it is five to seven. Removed the claim.\n8. Direct-connection host was never given. Added `db.[PROJECT-REF].supabase.co` (docs-confirmed) so students can recognize which string they actually copied.\n9. Transaction pooler row now notes it does not support prepared statements (docs-confirmed), which is the substantive reason it is wrong for a desktop client, not just \"serverless\".\n\nMissing prerequisites added:\n10. Homebrew officially supports macOS Sonoma (14)+ and requires Xcode Command Line Tools (docs.brew.sh/Installation). A student on macOS 12 following the terminal route would fail with no explanation. Now stated up front.\n11. pgAdmin 4 current releases require macOS 13 (Ventura)+; TablePlus supports 10.13+. The original listed neither for pgAdmin. This changes the recommendation for students on older Macs, so I added it to both cards.\n12. macOS does not ship psql \u2014 the original implied it might already be there without saying why it wouldn't be.\n13. Added a `brew --version` check as its own visible step (the original buried it inside a step body while the code blocks appeared elsewhere).\n14. Added the zsh-vs-bash check (`echo $SHELL`), since every PATH instruction depends on it.\n\nUsability fixes:\n15. Reordered so every code block immediately follows the prose that introduces it. In the original, four numbered steps were followed by three code blocks in a different grouping, and the Homebrew installer command appeared two steps after the step that told you to run it. This was the worst structural problem for a first-time terminal user.\n16. Added \"how to know it worked\" checkpoints that were missing everywhere: expected output of `psql --version`, of `brew --version` after PATH setup, of `\\dt` (including the `Did not find any relations.` failure text), the green Test button in TablePlus, and the exact pgAdmin tree path (Databases > postgres > Schemas > public > Tables) to see the KimTay tables.\n17. Split `\\q` out of the three-line code block. As written, a student pasting the block would quit psql in the same breath as running the query and likely never see the output.\n18. Explained that password entry echoes nothing (both the sudo prompt during Homebrew install and psql's own prompt). This silently stops beginners more than any error message.\n19. Told students that Homebrew prints its own two `Next steps:` lines containing the correct prefix for their machine, and to copy those, rather than presenting Apple Silicon paths as universal with the Intel case relegated to a later tip.\n20. Explained the keg-only `echo`/PATH line rather than just asserting it, and moved `psql --version` to the end of that block as the verification.\n21. Explained the difference between SQL (needs a semicolon) and psql meta-commands like `\\dt` (no semicolon) \u2014 otherwise the first `\\dt;` typo is baffling.\n22. Delivered on the intro's promise to \"open a saved script\": added the `psql '<string>' -f file.sql` form, which the original never showed.\n23. Clarified the user-field parsing rule (\"between `//` and the first `:` after it\" \u2014 the original said just \"`:`\", ambiguous since the string contains several) and noted Supabase writes both `postgres://` and `postgresql://`.\n24. Softened \"the panel lists three options\" \u2014 the Connect panel is tabbed (app frameworks, ORMs, etc.) and the three strings sit within it; the original implied the whole panel is those three.\n25. Added Command+V paste guidance and a one-line explanation of what Terminal is.\n26. Added the RLS note. The section connects students as the table-owning `postgres` role, so rows visible here may be invisible through the API; owner-bypasses-RLS is PostgreSQL 5.9 behavior (unless FORCE ROW LEVEL SECURITY), and Supabase's Table-Editor-on / SQL-editor-off RLS default is a documented gotcha. Worth 60 words to prevent a confusing week later.\n27. Labeled Steps 2 and 3 as \"route A\" / \"route B\" to match the intro's \"you do not need both\".\n\nVERIFIED CORRECT IN THE ORIGINAL (left as-is): the `Connect` button is the current location and `Project Settings > Database` is indeed the outdated path; the three connection-type labels; ports 5432 / 5432 / 6543; direct = IPv6-only on free plan while poolers are IPv4 on all tiers; session mode supports prepared statements and behaves like a direct connection; the `postgres.[project-ref]` user format and the resulting `Tenant or user not found` error; the Homebrew install one-liner (matches brew.sh exactly today); `/opt/homebrew` vs `/usr/local` prefixes; libpq being keg-only and the `brew --prefix libpq` trick working on both architectures; TablePlus's non-expiring trial limited to 2 tabs and 2 windows and its macOS 10.13+ / Intel+ARM support; pgAdmin 4 offering separate Intel and Apple Silicon builds; the `Database > Settings` path for resetting the database password (URL /project/_/database/settings) \u2014 confirmed by Supabase's own troubleshooting doc, so the original was right here even though the connection-string path had moved.\n\nCOULD NOT VERIFY:\n- What `current_user` actually returns through Supavisor session mode. Strong reasoning says `postgres` (the tenant suffix is a routing key consumed by the pooler, not a database role), and no Supabase doc claims otherwise, but I found no authoritative statement either way, so I removed the assertion rather than replace one guess with another. If you have a live project, run it once and pin the exact value into the checklist \u2014 it is a nice confidence-builder for students and worth the 30 seconds.\n- The exact location of the SSL mode control in the current TablePlus connection dialog. TablePlus definitely exposes SSL modes including PREFERRED/REQUIRED, but I could only confirm this from issue threads, not official docs, so I phrased it conditionally (\"if TablePlus offers an `SSL mode` option\").\n- The precise current layout and tab names inside the Supabase Connect panel. Supabase documents the button and the three connection types, and documents the `?showConnect=true&method=session` deep link, but does not document the modal's internal tab labels \u2014 and that UI has changed repeatedly. I deliberately wrote around it (\"the panel has several tabs... in that list you will see three entries\") so the instructions survive the next redesign. If you want tighter wording, screenshot the panel yourself before publication; that is also the one place where a screenshot would help students more than prose.\n- pgAdmin's exact current version (9.17, released 2026-07-31) is stated on the download page but I left version numbers out of the section entirely, since they will be stale by the time the course runs.\n- Whether the Connect panel labels the direct connection with an \"IPv4 incompatible\" badge on free projects. It has historically; I did not assert it."
+ },
+ {
+  "id": "sb-5",
+  "num": "S-5",
+  "title": "Connect from your own machine: Windows",
+  "blocks": [
+   {
+    "type": "p",
+    "text": "By the end of this section you will have your Supabase database open on your own Windows machine in two different ways: in `pgAdmin 4`, a point-and-click tool with a tree of tables you can browse, and in `psql`, the command-line client, run from PowerShell. Both talk to the same database you created in the browser, so a table you build here shows up in the Supabase `Table Editor` a second later. You do not need a local PostgreSQL server for any of this. You only need the client tools and your connection string."
+   },
+   {
+    "type": "callout",
+    "variant": "note",
+    "label": "Before you start",
+    "text": "You need three things: a Supabase project you already created, the database password you chose when you created it, and a Windows 10 or Windows 11 machine where you are allowed to install software. Budget about 20 minutes. On a school lab machine without administrator rights you can still install `pgAdmin 4` for the current user, and you can still edit your own `User variables` `Path`, but you cannot edit `System variables` -- the steps below say where that matters. If you cannot install anything at all, everything in this section can also be done in the Supabase `SQL Editor` in the browser."
+   },
+   {
+    "type": "h4",
+    "text": "Step 1: copy your connection string"
+   },
+   {
+    "type": "p",
+    "text": "Every tool below asks for the same five facts: host, port, database name, user, and password. Supabase hands you all five in one line of text called a connection string. It lives behind the `Connect` button at the top of your project dashboard. Older tutorials send you digging through `Project Settings`; the `Connect` button is the current path and it is faster."
+   },
+   {
+    "type": "steps",
+    "items": [
+     {
+      "title": "Open your project",
+      "body": "Go to `supabase.com/dashboard` and click your project. Free projects are paused after about a week with no database activity. If yours says `Paused`, click `Restore project` and wait for the dashboard to finish loading before continuing. You will know it worked when the project overview page shows charts instead of a paused banner."
+     },
+     {
+      "title": "Click Connect",
+      "body": "The `Connect` button sits at the top of the dashboard, near the project name. A panel opens listing several connection strings, each with its own tab or heading."
+     },
+     {
+      "title": "Choose the session-mode pooler on port 5432",
+      "body": "Pick the string labelled `Session pooler`. Some dashboards now label this group `Shared pooler` with a `Session mode` choice -- it is the same thing. Whatever the label, the string you want has `pooler.supabase.com` in the host and ends with `:5432/postgres`. Do not take the `:6543` string: that is transaction mode, which drops session features such as prepared statements and will make ordinary tools behave strangely. Do not take `Direct connection` either: that host (`db.<ref>.supabase.co`) resolves only to an IPv6 address unless the project has the paid IPv4 add-on, and most home and campus networks in the United States are still IPv4-only, so it looks like it hangs and then times out. The shared pooler answers on IPv4 on every plan, including Free."
+     },
+     {
+      "title": "Copy it and paste your password in",
+      "body": "The copied string contains the placeholder `[YOUR-PASSWORD]`, brackets included. Replace that whole placeholder, brackets and all, with the database password you chose when you created the project. Nothing else in the string changes."
+     },
+     {
+      "title": "Park it somewhere safe for the next twenty minutes",
+      "body": "Paste it into Notepad while you work through this section. Do not paste it into a shared document, a Discord channel, or a GitHub repository -- it is the key to your database."
+     }
+    ]
+   },
+   {
+    "type": "code",
+    "text": "postgresql://postgres.abcdefghijklmnopqrst:MyDbPassw0rd@aws-1-us-east-1.pooler.supabase.com:5432/postgres"
+   },
+   {
+    "type": "p",
+    "text": "That is an example, not your string. Copy yours from the `Connect` panel and never retype this one: the host prefix is `aws-0` on some projects and `aws-1` on others, and the region part changes with where your project lives. The panel may also start the string with `postgres://` instead of `postgresql://`; both are accepted, so leave whichever you were given."
+   },
+   {
+    "type": "p",
+    "text": "Read your line left to right and you have every field the tools ask for: the user is `postgres.abcdefghijklmnopqrst` (the word `postgres`, a dot, then your project reference), the password comes after the colon, the host is everything between `@` and the last colon, the port is `5432`, and the database name after the final slash is `postgres`."
+   },
+   {
+    "type": "callout",
+    "variant": "warning",
+    "label": "If your password contains punctuation",
+    "text": "A connection string is a URL, so a few characters cannot appear in the password as-is: `@`, `:`, `/`, `?`, `#`, `[`, `]` and `%`. If your password contains any of them, replace each one with its percent code inside the string -- `@` becomes `%40`, `#` becomes `%23`, `?` becomes `%3F`, `/` becomes `%2F`, `:` becomes `%3A`, `%` becomes `%25`. So `p@ss#1` is written `p%40ss%231`. Supabase does not do this escaping for you when it builds the string, which is why a correct password can still produce a confusing failure. The `-h -p -d -U` flag form shown later avoids the problem entirely, because there the password is typed at a prompt rather than embedded in a URL."
+   },
+   {
+    "type": "callout",
+    "variant": "warning",
+    "label": "Lost the password",
+    "text": "The database password is shown once, when the project is created. Supabase cannot show it to you again. If you do not have it, set a new one from the dashboard: `Database` in the left sidebar, then `Settings` (the page whose address ends in `/database/settings`), then `Reset database password`. In older dashboards the same page is `Project Settings` then `Database`. Resetting briefly restarts the database and breaks every tool you already saved the old password in, so update `pgAdmin` afterwards and copy a fresh connection string."
+   },
+   {
+    "type": "h4",
+    "text": "Step 2: connect with pgAdmin 4"
+   },
+   {
+    "type": "p",
+    "text": "`pgAdmin 4` is the free, official graphical client for PostgreSQL. If you install PostgreSQL from the EDB installer described in step 3, `pgAdmin 4` comes bundled with it and there is nothing else to download. If you would rather not install a server at all, download `pgAdmin 4` on its own from `pgadmin.org/download/pgadmin-4-windows/` -- the current release is version 9.x, the installer is digitally signed, and it supports Windows 10 and later. Either way, launch it from the Start menu by typing `pgAdmin`. The first launch takes a few seconds and opens in a window that looks like a web page; that is normal."
+   },
+   {
+    "type": "steps",
+    "items": [
+     {
+      "title": "Set a master password if you are asked for one",
+      "body": "Some installs ask you to create a `master password` on first launch. This is a local password that protects the saved server passwords on this computer; it is not your Supabase password. Since version 7.2, pgAdmin uses the Windows credential store when it can and may never ask, so do not go looking for the prompt if it does not appear. If you do get it, pick something you will remember and write it down."
+     },
+     {
+      "title": "Register the server",
+      "body": "In the left panel (the `Object Explorer`), right-click `Servers` and choose `Register` then `Server...`. In some builds this reads `Create` then `Server...`. A dialog opens with tabs across the top: `General`, `Connection`, `Parameters`, and a few more."
+     },
+     {
+      "title": "General tab",
+      "body": "In `Name`, type something you will recognise, for example `Supabase KimTay`. This name is only a label for you and has no effect on the connection."
+     },
+     {
+      "title": "Connection tab",
+      "body": "Fill in `Host name/address`, `Port`, `Maintenance database`, `Username`, and `Password` from your connection string, using the table below. Type the password in plainly here -- do not percent-encode it in pgAdmin, because this is not a URL. Tick `Save password?` so you are not retyping it every session."
+     },
+     {
+      "title": "Parameters tab",
+      "body": "Click `+` to add a parameter, choose `SSL mode`, and set it to `require`. pgAdmin's default is `prefer`, which already encrypts the connection to Supabase, so this is a belt-and-braces step rather than a requirement; `require` makes it an error rather than a silent fallback if encryption is ever unavailable. In older builds this setting sits on a tab named `SSL` instead."
+     },
+     {
+      "title": "Save and check",
+      "body": "Click `Save`. You will know it worked when the server appears in the tree with a coloured (not greyed-out) icon and no error dialog. Expand `Supabase KimTay` then `Databases` then `postgres` then `Schemas` then `public` then `Tables` to see the tables you have created. If you have not created any yet, `Tables` expands to nothing -- that is expected, not a failure."
+     }
+    ]
+   },
+   {
+    "type": "table",
+    "caption": "pgAdmin 4 Connection tab, filled in from the connection string",
+    "headers": [
+     "pgAdmin field",
+     "What to enter",
+     "Example"
+    ],
+    "rows": [
+     [
+      "Host name/address",
+      "Everything between `@` and the last `:`",
+      "`aws-1-us-east-1.pooler.supabase.com`"
+     ],
+     [
+      "Port",
+      "The number after the last `:` and before the final slash",
+      "`5432`"
+     ],
+     [
+      "Maintenance database",
+      "The word after the final slash",
+      "`postgres`"
+     ],
+     [
+      "Username",
+      "`postgres` dot your project reference (everything between `//` and the first `:`)",
+      "`postgres.abcdefghijklmnopqrst`"
+     ],
+     [
+      "Password",
+      "Your database password, typed literally (no percent codes here)",
+      "`MyDbPassw0rd`"
+     ]
+    ]
+   },
+   {
+    "type": "callout",
+    "variant": "tip",
+    "label": "Running SQL in pgAdmin",
+    "text": "With your database selected in the tree, open `Tools` then `Query Tool`. That gives you an editor exactly like the Supabase `SQL Editor`. Paste your `CREATE TABLE REP ...` statement and press `F5` to run it; the `Data Output` panel at the bottom reports how long it took, and `Messages` shows `CREATE TABLE` when it succeeded. `Tools` also has a `PSQL Tool`, which is a real `psql` session embedded in pgAdmin -- a useful fallback if step 3 gives you trouble, since it needs no PATH setup."
+   },
+   {
+    "type": "p",
+    "text": "`TablePlus` is a popular alternative with a cleaner interface, and it runs on Windows. It is paid software with a trial that has no published expiry date, but the trial limits you to two open tabs and two open windows at a time, and advanced filters are not available in the free version on Windows at all. Licences start at $99 one time for a single device. For this course `pgAdmin 4` does everything you need at no cost, so treat `TablePlus` as optional."
+   },
+   {
+    "type": "h4",
+    "text": "Step 3: get psql and run it from PowerShell"
+   },
+   {
+    "type": "p",
+    "text": "`psql` is the text client that ships with PostgreSQL. It is worth learning because every server, every tutorial, and every job posting assumes it. On Windows the usual way to get it is the EDB installer that `postgresql.org` links to, and you can install the client tools without installing a database server on your laptop."
+   },
+   {
+    "type": "steps",
+    "items": [
+     {
+      "title": "Download the installer",
+      "body": "Go to `enterprisedb.com/downloads/postgres-postgresql-downloads` and download the `Windows x86-64` installer for the newest version listed (18.4 at the time of writing). This is the download that `postgresql.org/download/windows/` links to. There is no 32-bit build any more."
+     },
+     {
+      "title": "Run it and reach Select Components",
+      "body": "Right-click the downloaded file and choose `Run as administrator` if you have that right; otherwise just run it. Accept the default install directory. On the `Select Components` screen you will see four checkboxes: `PostgreSQL Server`, `pgAdmin 4`, `Stack Builder`, and `Command Line Tools`."
+     },
+     {
+      "title": "Choose what to install",
+      "body": "`Command Line Tools` is the component that provides `psql` -- leave it checked. Leave `pgAdmin 4` checked so you get the graphical client from step 2 for free. You can uncheck `PostgreSQL Server` and `Stack Builder`, because your database lives at Supabase, not on your laptop. If you do leave the server checked, the installer will ask you to set a local superuser password and a port; that password has nothing to do with Supabase, and you can ignore the local server afterwards."
+     },
+     {
+      "title": "Note the install folder",
+      "body": "The tools land in `C:\\Program Files\\PostgreSQL\\18\\bin`, where `18` is the major version you installed -- open `C:\\Program Files\\PostgreSQL` in File Explorer and use whatever number you actually see there. Go into `bin` and confirm `psql.exe` is present. Leave the File Explorer address bar showing that full path; you are about to copy it."
+     },
+     {
+      "title": "Add that folder to PATH",
+      "body": "The installer does not put this folder on the system path, so Windows does not yet know where `psql.exe` is. Press the Windows key, type `environment`, and open `Edit the system environment variables`. In `System Properties` click `Environment Variables...`. If you have administrator rights, select `Path` under `System variables`; if you do not, select `Path` under `User variables for <your name>` instead -- either works for your own account. Click `Edit`, click `New`, paste `C:\\Program Files\\PostgreSQL\\18\\bin` (with your version number), then click `OK` on all three dialogs. There must be no quotation marks and no trailing backslash."
+     },
+     {
+      "title": "Open a fresh PowerShell and verify",
+      "body": "Close every PowerShell and Command Prompt window you already had open -- they captured the old PATH and will not see the change. Open a new one from the Start menu (type `powershell`) and run the two checks below."
+     }
+    ]
+   },
+   {
+    "type": "code",
+    "text": "where.exe psql\npsql --version"
+   },
+   {
+    "type": "p",
+    "text": "`where.exe psql` should print the full path to `psql.exe`; it is how you prove the PATH edit took effect. Use `where.exe`, with the extension, because a bare `where` in PowerShell means something else entirely. Then `psql --version` should print a line like `psql (PostgreSQL) 18.4`. If the version printed is older than the one you installed, some other copy of `psql` is earlier in your PATH -- the path from `where.exe` tells you which."
+   },
+   {
+    "type": "p",
+    "text": "Now connect. Wrap the connection string in single quotation marks. Unquoted, PowerShell treats several characters that can appear in a password as punctuation of its own: `&` is reserved and produces `The ampersand (&) character is not allowed`, `;` ends the command, `#` starts a comment, and a space splits the argument in two. Single quotes rather than double quotes matter, because inside double quotes PowerShell expands anything starting with `$`, so a password containing `$` would silently arrive wrong. If your password itself contains a single quote, double it (`''`) inside the quoted string."
+   },
+   {
+    "type": "code",
+    "text": "psql 'postgresql://postgres.abcdefghijklmnopqrst:MyDbPassw0rd@aws-1-us-east-1.pooler.supabase.com:5432/postgres'"
+   },
+   {
+    "type": "p",
+    "text": "When it connects, PowerShell prints a `psql` banner and the prompt changes to `postgres=>`. That prompt is how you know you are in. From there you are typing SQL, and every statement ends with a semicolon -- until you type the semicolon and press Enter, `psql` keeps waiting and shows a `postgres->` continuation prompt instead. A few commands start with a backslash; those are `psql`'s own shortcuts, not SQL, and they do not take a semicolon."
+   },
+   {
+    "type": "code",
+    "text": "\\dt\nSELECT REP_NUM, LAST_NAME, FIRST_NAME FROM REP;\n\\d CUSTOMER\n\\q"
+   },
+   {
+    "type": "p",
+    "text": "`\\dt` lists your tables, `\\d CUSTOMER` describes one table the way `DESCRIBE` does in MySQL, and `\\q` quits back to PowerShell. Two things will surprise you. First, `\\dt` prints your table names in lower case (`rep`, `customer`) even though you created them in capitals: PostgreSQL folds unquoted identifiers to lower case, and `psql` folds the name in `\\d CUSTOMER` the same way, which is why the capitalised version still matches. Second, `\\dt` and the `SELECT` only work once the tables exist -- if you have not run your `CREATE TABLE` statements yet, run them first, here or in the Supabase `SQL Editor`."
+   },
+   {
+    "type": "callout",
+    "variant": "tip",
+    "label": "Keep your password out of your history",
+    "text": "PowerShell records every command you type in `%APPDATA%\\Microsoft\\Windows\\PowerShell\\PSReadLine\\ConsoleHost_history.txt`, so the line above leaves your password in a plain text file that survives reboots. On a lab or shared machine, pass the pieces as flags instead and let `psql` prompt you: `psql -h aws-1-us-east-1.pooler.supabase.com -p 5432 -d postgres -U postgres.abcdefghijklmnopqrst`. This form also sidesteps percent-encoding, since the password is never part of a URL. Nothing appears on screen while you type the password, not even dots. That is normal -- type it and press Enter."
+   },
+   {
+    "type": "callout",
+    "variant": "tip",
+    "label": "If you would rather not touch PATH",
+    "text": "You can run `psql` by its full path without editing any environment variable. In PowerShell a quoted path has to be launched with the call operator `&`: `& 'C:\\Program Files\\PostgreSQL\\18\\bin\\psql.exe' 'postgresql://...'`. The `PSQL Tool` inside pgAdmin (`Tools` then `PSQL Tool`) is another PATH-free way to get the same prompt."
+   },
+   {
+    "type": "h4",
+    "text": "When it does not work"
+   },
+   {
+    "type": "table",
+    "caption": "Windows connection problems and what to do about them",
+    "headers": [
+     "What you see",
+     "What it means",
+     "What to do"
+    ],
+    "rows": [
+     [
+      "`'psql' is not recognized as the name of a cmdlet`",
+      "Windows cannot find `psql.exe`",
+      "The PATH entry is missing, mistyped, or the window is stale. Run `where.exe psql` -- if it prints nothing, re-check the `Path` entry (no quotes, no trailing backslash, correct version number), then close every PowerShell window and open a new one."
+     ],
+     [
+      "`psql: error: connection to server ... FATAL: Tenant or user not found`",
+      "The pooler did not recognise the user name",
+      "On the pooler the user must be `postgres.` plus your project reference, not plain `postgres`. Re-copy the whole string from the `Connect` panel rather than editing the old one by hand."
+     ],
+     [
+      "The password prompt repeats, or `password authentication failed for user`",
+      "Wrong password, or punctuation in the password broke the URL",
+      "Re-check the password. If it contains `@ : / ? # [ ] %`, percent-encode those characters inside the connection string, or switch to the `-h -p -d -U` flag form and type the password at the prompt. If the password is genuinely lost, reset it at `Database` then `Settings` and copy a fresh string."
+     ],
+     [
+      "`The ampersand (&) character is not allowed`",
+      "PowerShell is reading part of your connection string as a command",
+      "Wrap the whole string in single quotation marks, or use the `-h -p -d -U` flag form instead."
+     ],
+     [
+      "You connect but the password is rejected only in PowerShell, never in pgAdmin",
+      "Your password contains `$` and you used double quotes",
+      "PowerShell expanded it as a variable. Use single quotes."
+     ],
+     [
+      "`could not connect to server: Connection timed out` after a long wait",
+      "You are on the direct connection (`db.` host) and your network is IPv4-only, or a firewall blocks outbound port 5432",
+      "Use the session-mode pooler string with the `pooler.supabase.com` host. If that still times out, test on a phone hotspot to confirm the school network is the blocker, and use the Supabase `SQL Editor` in the browser meanwhile."
+     ],
+     [
+      "pgAdmin: `could not translate host name ... to address`",
+      "A typo in the host, or the square brackets were left in",
+      "Retype the host from the `Connect` panel. There should be no `[` or `]` anywhere in any field, and the prefix is `aws-0` or `aws-1` depending on the project -- do not copy the example from this page."
+     ],
+     [
+      "An SSL or certificate error in pgAdmin",
+      "The `SSL mode` parameter is set to something stricter than your setup supports",
+      "Set `SSL mode` to `require` on the `Parameters` tab. `verify-full` additionally needs the Supabase CA certificate downloaded from `Database` then `Settings`; you do not need it for this course."
+     ],
+     [
+      "You connect, but `\\dt` says `Did not find any relations`",
+      "You are connected to an empty schema",
+      "That is expected until you run your `CREATE TABLE` statements. Run them here or in the Supabase `SQL Editor`, then try `\\dt` again. Remember the names come back in lower case."
+     ]
+    ]
+   },
+   {
+    "type": "callout",
+    "variant": "note",
+    "label": "Windows Defender Firewall",
+    "text": "Windows may pop up a firewall prompt the first time `pgAdmin` or `psql` runs. These tools make outbound connections only, so you can decline the prompt asking to allow incoming connections and everything will still work. If your school network blocks outbound port 5432 entirely, no local setting will fix that -- use the browser `SQL Editor` on campus and your own network at home."
+   },
+   {
+    "type": "callout",
+    "variant": "warning",
+    "label": "Tables you create here are not protected by Row Level Security",
+    "text": "Supabase turns on Row Level Security automatically for tables made in the `Table Editor`, but not for tables created with SQL -- which is what you are doing in `psql` and in the `Query Tool`. Your new table will show up in the `Table Editor` flagged as unrestricted, meaning anyone holding your project's public API key could read it. That is acceptable for coursework data, but get in the habit now: run `ALTER TABLE REP ENABLE ROW LEVEL SECURITY;` on any table holding data you would not publish."
+   },
+   {
+    "type": "checklist",
+    "items": [
+     "`where.exe psql` prints a path ending in `\\bin\\psql.exe` in a newly opened PowerShell window.",
+     "`psql --version` prints a version number that matches the version you installed.",
+     "`psql '<your connection string>'` reaches the `postgres=>` prompt.",
+     "`\\dt` lists the tables you have created so far, in lower case, or reports none if you have not created any yet.",
+     "`pgAdmin 4` shows your server in the left tree with no error, and expands down to `Schemas` then `public` then `Tables`.",
+     "A table you create in `psql` appears in the Supabase `Table Editor` in the browser after a refresh.",
+     "Your password is stored somewhere private, not in a shared file, a repository, or a screenshot."
+    ]
+   }
+  ],
+  "notes": "VERIFIED AGAINST OFFICIAL DOCS\n\nConfirmed correct in the original: the `Connect` button is where the connection string lives (Supabase docs); session mode is port 5432 and transaction mode 6543; pooler username is `postgres.<project-ref>`; direct connection is IPv6-only without the paid IPv4 add-on while the shared pooler is IPv4 on all tiers; free projects pause after ~1 week of inactivity; the EDB installer's Select Components screen has exactly the four checkboxes named (PostgreSQL Server, pgAdmin 4, Stack Builder, Command Line Tools) and Command Line Tools is what ships psql; the installer does not add bin to PATH; `C:\\Program Files\\PostgreSQL\\<major>\\bin` is right (18.4 is the current stable release as of Aug 2026; PG 19 is only in beta); pgAdmin's Connection-tab field labels (Host name/address, Port, Maintenance database, Username, Password, Save password?) and the fact that SSL mode lives on the Parameters tab; right-click Servers -> Register -> Server; the PSReadLine history path; the exact PowerShell ampersand error text; TablePlus $99 one-time, 2-tab/2-window trial with advanced filters unavailable on Windows; `postgres=>` (not `=#`) is correct because Supabase's postgres role is not a superuser.\n\nERRORS FIXED\n1. \"Resume project\" -> Supabase's button is \"Restore project\".\n2. \"The Connect button ... not under Project Settings (older tutorials will send you to the wrong place)\" \u2014 softened; Project Settings still exists, it is just not the fast path.\n3. Example host `aws-0-us-east-1` was presented as if universal. Pooler hostnames are `aws-0` OR `aws-1` and region-specific; added an explicit \"this is an example, copy yours\" warning. Also noted the panel may emit `postgres://` rather than `postgresql://`.\n4. Added the missing and very common failure mode: passwords containing `@ : / ? # [ ] %` must be percent-encoded inside the URI, and Supabase does NOT escape them for you. This is the single biggest omission in the original.\n5. \"Supabase requires an encrypted connection\" is false \u2014 SSL enforcement is OFF by default (\"Your Supabase project supports connecting to the Postgres DB without SSL enabled to maximize client compatibility\"). Reworded to explain that pgAdmin's default `prefer` already encrypts and `require` just makes it non-optional.\n6. Dropped the `server does not support SSL` troubleshooting row \u2014 that error cannot occur against Supabase, which does support SSL. Replaced with a realistic sslmode/verify-full row and with `FATAL: Tenant or user not found`, the actual error for a wrong pooler username.\n7. pgAdmin master password is no longer guaranteed: since v7.2 desktop mode uses the OS credential store and often never prompts. Changed \"asks you\" to \"may ask\".\n8. Password reset location corrected to `Database` -> `Settings` (`/database/settings`) with `Reset database password`, and the older `Project Settings` -> `Database` path noted. Added that a reset triggers a brief database restart.\n9. PowerShell quoting advice was wrong in a way that bites: DOUBLE quotes expand `$`, so a password containing `$` breaks silently. Changed to single quotes and explained why. Also corrected the justification \u2014 the base connection string contains no `&`; the risk comes from the password (`&`, `;`, `#`, `$`, spaces).\n10. Port row in the pgAdmin table said \"the number before the final slash\", which is ambiguous with the project ref; rewritten. Username row now says how to find it in the string.\n11. Added an explicit warning not to grab the `:6543` transaction-pooler string.\n12. Table names: added that `\\dt` returns lower-case names and why `\\d CUSTOMER` still matches (unquoted identifier folding), since students who type `CREATE TABLE REP` and then see `rep` reliably think something failed.\n13. Added an RLS callout: tables created via SQL (psql / Query Tool) have RLS disabled by default, unlike Table Editor tables, and land in the public schema exposed through the auto-generated API. The original section never mentioned this despite instructing students to create tables via psql.\n14. TablePlus \"trial that does not expire\" softened to \"no published expiry date\" \u2014 TablePlus documents the feature limits but not an expiry.\n\nUSABILITY FIXES\n- Added a prerequisites callout (what you need, how long, and the no-admin-rights path).\n- PATH step now offers `User variables` for students without admin rights on lab machines, and warns about quotes/trailing backslash.\n- Added `where.exe psql` as the proof-it-worked check (and the note that bare `where` is a PowerShell alias for Where-Object), plus the case where an older psql shadows the new one.\n- Added \"how do I know it worked\" signals that were missing: the restored-project state, the non-greyed server icon in pgAdmin, the `CREATE TABLE` message in Query Tool, the psql banner, and the `postgres->` continuation prompt when a student forgets the semicolon.\n- Added the PATH-free escape hatches (pgAdmin's built-in `PSQL Tool`, and `& 'C:\\...\\psql.exe'` with the call operator, which beginners get wrong because a quoted path alone does not execute in PowerShell).\n- Told students that Tables expanding to nothing is expected, not a failure.\n- Noted that pgAdmin's password field takes the literal password, NOT the percent-encoded one \u2014 the two forms differing is a real trap once fix #4 is introduced.\n- Timing changed from \"ten minutes\" to \"twenty minutes\", which is realistic for a first-timer doing both tools plus a PATH edit.\n\nCOULD NOT FULLY VERIFY\n- The exact tab wording inside the Connect panel today. Supabase's own docs now use \"Shared pooler (Supavisor) - session mode\" while the dashboard has historically shown a \"Session pooler\" tab. I could not load the authenticated dashboard, so I hedged the text to accept either label and anchored the instruction to something stable and checkable instead: host contains `pooler.supabase.com` and the string ends `:5432/postgres`.\n- Whether the EDB 18.4 installer still skips the local-superuser-password prompt when PostgreSQL Server is unchecked. The original asserted the prompt appears only if you leave the server checked; that matches the installer's documented behaviour but I could not confirm it for 18.4 specifically, so I kept the claim conditional (\"If you do leave the server checked...\").\n- pgAdmin's exact Parameters-tab interaction (whether SSL mode is pre-listed or must be added with `+`) varies slightly across 9.x builds; I wrote it as \"click `+` to add ... or confirm\" to cover both.\n- Nothing in this section was executed \u2014 no Windows machine and no Supabase project were available, so all shell commands are verified against documentation, not run."
+ },
+ {
+  "id": "sb-6",
+  "num": "S-6",
+  "title": "Postgres vs. MySQL: what changes from Module 3",
+  "blocks": [
+   {
+    "type": "p",
+    "text": "Module 3 taught you SQL in MySQL. Supabase gives you Postgres. This section is the translation sheet: by the end of it you will know exactly which lines from your Module 3 script you can paste into the Supabase SQL Editor unchanged, which four or five lines need a small edit, why one of those edits (quoting) causes almost every error a student hits in their first Postgres hour, and how to read the error message when it happens anyway."
+   },
+   {
+    "type": "callout",
+    "variant": "note",
+    "label": "Before you start",
+    "text": "You need two things open: your Module 3 `.sql` script (the one with `CREATE DATABASE`, `CREATE TABLE`, and the KimTay `INSERT` statements), and your Supabase project dashboard from the earlier sections of this module. Everything in this section can be done in the browser. A terminal is optional and is only mentioned where it is genuinely optional -- it is never the only way to do something."
+   },
+   {
+    "type": "p",
+    "text": "The important thing to understand first: MySQL and Postgres are two products that both speak SQL. The language is standardized, so the parts you spent Module 3 on -- `SELECT`, `WHERE`, `INSERT`, table design, keys -- are the same in both. What differs is a thin layer of housekeeping around the edges: how you get a database, how you look at a table, how you spell an auto-numbered column, what quotation marks mean, and one Supabase-specific security switch that MySQL has no equivalent for. That is the whole list. It is shorter than it feels."
+   },
+   {
+    "type": "table",
+    "caption": "Module 3 (MySQL) to Supabase (Postgres): the whole difference list",
+    "headers": [
+     "What you want to do",
+     "Module 3 (MySQL)",
+     "Supabase (Postgres)"
+    ],
+    "rows": [
+     [
+      "Create a database",
+      "`CREATE DATABASE KimTay;` then `USE KimTay;`",
+      "Already done -- your project is the database. Tables go in the `public` schema."
+     ],
+     [
+      "See a table's columns",
+      "`DESCRIBE REP;`",
+      "Click the table in the Table Editor, or run the `information_schema` query below. (`\\d rep` if you have `psql`.)"
+     ],
+     [
+      "List all tables",
+      "`SHOW TABLES;`",
+      "The Table Editor sidebar, or query `information_schema.tables`. (`\\dt` if you have `psql`.)"
+     ],
+     [
+      "Auto-numbered key",
+      "`ID INT AUTO_INCREMENT PRIMARY KEY`",
+      "`id INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY`"
+     ],
+     [
+      "Quote a column or table name",
+      "backticks: `` `REP_NUM` ``",
+      "double quotes: `\"REP_NUM\"` -- but usually do not quote at all"
+     ],
+     [
+      "Quote a piece of text",
+      "`'Kaiser'` worked, and so did `\"Kaiser\"` under MySQL's default settings",
+      "`'Kaiser'` only. Double quotes always mean a column or table name."
+     ],
+     [
+      "Return the first 5 rows",
+      "`SELECT * FROM REP LIMIT 5;`",
+      "Identical: `SELECT * FROM rep LIMIT 5;`"
+     ],
+     [
+      "Skip rows then return some",
+      "`LIMIT 20, 10` **or** `LIMIT 10 OFFSET 20`",
+      "`LIMIT 10 OFFSET 20` only -- Postgres rejects the comma form"
+     ],
+     [
+      "Column types used by KimTay",
+      "`CHAR`, `VARCHAR`, `DECIMAL`, `DATE`, `SMALLINT`",
+      "Same names, no edits needed (one small `CHAR` display quirk is noted below)"
+     ],
+     [
+      "Let the outside world read the table",
+      "Not applicable -- MySQL has no built-in web API",
+      "Supabase exposes `public` over an auto-generated API, so you must turn on Row Level Security. See the warning below."
+     ]
+    ]
+   },
+   {
+    "type": "h4",
+    "text": "You do not create the database -- you already have one"
+   },
+   {
+    "type": "p",
+    "text": "In Module 3 the first line of your script was `CREATE DATABASE`. In Supabase, creating the project created the database, and the connection you set up earlier in this module already points at it. So delete the `CREATE DATABASE` and `USE` lines from your Module 3 script. Start straight at `CREATE TABLE`."
+   },
+   {
+    "type": "callout",
+    "variant": "tip",
+    "label": "How to run a statement, and how to know it worked",
+    "text": "In the Supabase dashboard, open **SQL Editor** in the left sidebar, paste your SQL into the editor pane, and click **Run** (or press Ctrl+Enter, Cmd+Enter on a Mac). A statement like `CREATE TABLE` returns no rows, so a successful run shows a green success message reading `Success. No rows returned`. That message is what \"it worked\" looks like -- it is not an error. A failed run shows a red panel with the Postgres error text; read the first line of it, then check the troubleshooting table at the end of this section. To see the table you just made, open **Table Editor** in the left sidebar; if a brand-new table is not listed yet, reload the page."
+   },
+   {
+    "type": "p",
+    "text": "New tables land in a schema called `public`. A schema is a named folder for tables inside one database. Postgres uses schemas heavily; MySQL treats the word `SCHEMA` as a plain synonym for `DATABASE`, which is why the same idea was called a database in Module 3. You can leave everything in `public` for this course. If you want the KimTay tables kept apart from anything else you build later, you can make your own folder:"
+   },
+   {
+    "type": "code",
+    "text": "CREATE SCHEMA kimtay;\n\nCREATE TABLE kimtay.rep (\n  rep_num    CHAR(2) PRIMARY KEY,\n  last_name  VARCHAR(15) NOT NULL,\n  first_name VARCHAR(15) NOT NULL\n);"
+   },
+   {
+    "type": "callout",
+    "variant": "note",
+    "label": "Stick with public",
+    "text": "The Table Editor and the auto-generated API look at `public` by default. A table in a schema of your own will not appear in the Table Editor until you change the schema dropdown at the top of the table list, and it will not be reachable through the Supabase API at all until you add the schema under **Project Settings > API > Exposed schemas** and run a set of `GRANT` statements for the `anon`, `authenticated`, and `service_role` roles. That is real work for no benefit in this course. Use `public`."
+   },
+   {
+    "type": "callout",
+    "variant": "warning",
+    "label": "Supabase-only step: turn on Row Level Security",
+    "text": "This has no MySQL equivalent, and skipping it is the single most consequential mistake you can make here. Supabase publishes every table in the `public` schema through an auto-generated web API. A table you create with the **Table Editor** gets Row Level Security (RLS) switched on for you. A table you create by running `CREATE TABLE` in the **SQL Editor** -- which is what you are about to do with your Module 3 script -- does **not**. Until you enable RLS and write a policy, the dashboard flags the table as unrestricted, and depending on your project's settings its rows may be readable by anyone holding your project's public key. Run the statements below immediately after creating each table. Enabling RLS with no policy denies all API access, which is the safe starting point -- your own SQL Editor queries keep working, because they do not go through the API."
+   },
+   {
+    "type": "code",
+    "text": "-- run this right after every CREATE TABLE in the SQL Editor\nALTER TABLE public.rep ENABLE ROW LEVEL SECURITY;\n\n-- check it: rowsecurity should be true for every table you made\nSELECT tablename, rowsecurity\nFROM pg_tables\nWHERE schemaname = 'public'\nORDER BY tablename;"
+   },
+   {
+    "type": "h4",
+    "text": "Inspecting a table: DESCRIBE has two replacements"
+   },
+   {
+    "type": "p",
+    "text": "`DESCRIBE REP;` does not exist in Postgres. There are two replacements, and the browser one needs nothing installed."
+   },
+   {
+    "type": "p",
+    "text": "The browser way: open **Table Editor** from the left sidebar and click `rep`. The columns, types, and NOT NULL settings are on screen. That is your `DESCRIBE`. If you would rather have a query you can paste into the SQL Editor, this one works on any Postgres anywhere:"
+   },
+   {
+    "type": "code",
+    "text": "SELECT column_name, data_type, is_nullable\nFROM information_schema.columns\nWHERE table_schema = 'public'\n  AND table_name   = 'rep'\nORDER BY ordinal_position;"
+   },
+   {
+    "type": "callout",
+    "variant": "note",
+    "label": "Why table_schema is in that query",
+    "text": "Without the `table_schema = 'public'` line, the query returns the columns of every table named `rep` in every schema you can see, so you would get each column listed more than once as soon as you had a second `rep` anywhere. Note also that both values are lowercase and in single quotes: `information_schema` stores identifiers as text, and Postgres stored your unquoted table name folded to lowercase. Searching for `'REP'` returns zero rows -- which is a confusing way to be told your table exists."
+   },
+   {
+    "type": "p",
+    "text": "The terminal way, for reference: `psql` is the command-line Postgres client, and it has shortcuts called meta-commands. They begin with a backslash. They are `psql` features rather than SQL, so they take no semicolon, they are never sent to the server, and they will **not** work in the Supabase SQL Editor in the browser."
+   },
+   {
+    "type": "code",
+    "text": "\\dt          -- list tables on your current search path (public, by default)\n\\d rep       -- show columns, types, and keys for the rep table\n\\d+ rep      -- same, plus storage and description details"
+   },
+   {
+    "type": "callout",
+    "variant": "note",
+    "label": "You do not need psql for this course",
+    "text": "`psql` is not a separate download; it ships with a PostgreSQL installation, so getting it means installing Postgres locally even though your database lives in Supabase. If you want to try it, get the connection string from the **Connect** button at the top of your Supabase dashboard and use the **Session pooler** string, which Supabase recommends for `psql`. Everything this section asks you to do can be done in the browser instead, and nothing later in the course depends on `psql`."
+   },
+   {
+    "type": "h4",
+    "text": "Auto-numbering: AUTO_INCREMENT becomes IDENTITY"
+   },
+   {
+    "type": "p",
+    "text": "KimTay does not use auto-numbering -- `REP_NUM` and `CUSTOMER_NUM` are `CHAR` codes that the business assigns. But you will want it in your own tables, and `AUTO_INCREMENT` is a MySQL-only keyword that Postgres rejects with a syntax error. The modern, standard spelling is `GENERATED ALWAYS AS IDENTITY`. An identity column is automatically `NOT NULL`, so you do not add that yourself:"
+   },
+   {
+    "type": "code",
+    "text": "CREATE TABLE note (\n  note_id  INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,\n  body     VARCHAR(200) NOT NULL\n);\n\nALTER TABLE public.note ENABLE ROW LEVEL SECURITY;\n\n-- leave note_id out of the INSERT and Postgres fills it in\nINSERT INTO note (body) VALUES ('Called customer 1120 about invoice.');\nINSERT INTO note (body) VALUES ('Mailed replacement part.');\n\n-- proof it worked: you should get note_id 1 and 2, which you never typed\nSELECT note_id, body FROM note ORDER BY note_id;"
+   },
+   {
+    "type": "p",
+    "text": "`ALWAYS` means Postgres owns the number: if you try `INSERT INTO note (note_id, body) VALUES (7, '...')` it refuses, which is exactly the accident you want blocked. (There is an escape hatch, `OVERRIDING SYSTEM VALUE`, for the rare times you need it.) If you want MySQL's more permissive behaviour, where supplying your own value is allowed and only a missing value is generated, write `GENERATED BY DEFAULT AS IDENTITY` instead."
+   },
+   {
+    "type": "p",
+    "text": "You will also see `SERIAL` in older tutorials (`note_id SERIAL PRIMARY KEY`). It still works and produces a similar auto-numbered column, but it is a Postgres-specific shorthand that creates a separate sequence object and lets anyone insert their own value. `GENERATED ALWAYS AS IDENTITY` is the one to learn: it is the SQL standard, and it is what current Postgres documentation steers you toward."
+   },
+   {
+    "type": "h4",
+    "text": "Quoting: the difference that causes the most confusion"
+   },
+   {
+    "type": "p",
+    "text": "In MySQL, backticks protect a name and everything keeps the case you typed. Postgres has a different rule, and it is worth reading twice: an identifier that is not quoted is folded to lowercase. `REP_NUM`, `Rep_Num`, and `rep_num` all become `rep_num`. An identifier that is wrapped in double quotes keeps its case exactly and must be double-quoted every single time you mention it afterwards. (Postgres folds down; the SQL standard actually says to fold up. Nobody agrees, which is the real reason the safe advice is to never quote and always type lowercase.)"
+   },
+   {
+    "type": "callout",
+    "variant": "warning",
+    "label": "The case-folding trap",
+    "text": "If you create a table as `CREATE TABLE \"REP\" (\"REP_NUM\" CHAR(2));` then `SELECT * FROM REP;` fails with `relation \"rep\" does not exist` -- Postgres folded your query to lowercase, but the table is genuinely named uppercase `REP`. From then on you must write `SELECT \"REP_NUM\" FROM \"REP\";` forever. Fix: never put double quotes around table or column names when you create them. Type them unquoted, in lowercase, and Postgres will let you refer to them in any case you like. If you have already done it, the repair is `ALTER TABLE \"REP\" RENAME TO rep;` -- and note you must quote the old name to say it, and must not quote the new one."
+   },
+   {
+    "type": "p",
+    "text": "So when you port the Module 3 DDL, drop the backticks and do not replace them with double quotes. This is the safe version, and after it every one of `SELECT REP_NUM FROM REP;`, `SELECT rep_num FROM rep;` and `SELECT Rep_Num FROM Rep;` returns the same rows:"
+   },
+   {
+    "type": "code",
+    "text": "CREATE TABLE rep (\n  rep_num    CHAR(2) PRIMARY KEY,\n  last_name  VARCHAR(15) NOT NULL,\n  first_name VARCHAR(15) NOT NULL,\n  street     VARCHAR(20),\n  city       VARCHAR(15),\n  state      CHAR(2),\n  zip        CHAR(5),\n  commission DECIMAL(8,2),\n  rate       DECIMAL(4,2)\n);\n\nALTER TABLE public.rep ENABLE ROW LEVEL SECURITY;"
+   },
+   {
+    "type": "callout",
+    "variant": "definition",
+    "label": "Two kinds of quote",
+    "text": "In Postgres, single quotes mean \"this is a piece of text\" and double quotes mean \"this is the name of a table or column\". They are not interchangeable. MySQL, under its default settings, let you write `\"Kaiser\"` as a string; Postgres reads that as a column named `Kaiser` and answers `column \"Kaiser\" does not exist`. Backticks are neither -- Postgres does not use them at all and reports a syntax error the moment it sees one."
+   },
+   {
+    "type": "code",
+    "text": "-- correct\nINSERT INTO rep (rep_num, last_name, first_name)\nVALUES ('20', 'Kaiser', 'Valerie');\n\n-- wrong in Postgres: double quotes make these column names\n-- ERROR:  column \"20\" does not exist\nINSERT INTO rep (rep_num, last_name, first_name)\nVALUES (\"20\", \"Kaiser\", \"Valerie\");\n\n-- proof the correct one worked\nSELECT rep_num, last_name, first_name FROM rep;"
+   },
+   {
+    "type": "callout",
+    "variant": "tip",
+    "label": "Apostrophes inside text",
+    "text": "This part did not change. To store a name like `O'Brien`, double the apostrophe: `'O''Brien'`. Those are two single quotes in a row, not one double quote. It works the same way in MySQL and Postgres."
+   },
+   {
+    "type": "h4",
+    "text": "Data types: most of them carry over untouched"
+   },
+   {
+    "type": "p",
+    "text": "Every type in the KimTay schema exists in Postgres under the same name: `CHAR(2)`, `VARCHAR(35)`, `DECIMAL(9,2)`, `DATE`, and `SMALLINT`. You can copy those column definitions across with no edits at all. `DECIMAL` is simply another name for Postgres's `NUMERIC`, so your money columns keep their exactness. `SMALLINT` holds -32768 to 32767, the same range you learned. Dates still go in as `'2026-09-14'`, year first -- that year-first ISO form is the one Postgres documents as unambiguous."
+   },
+   {
+    "type": "table",
+    "caption": "MySQL types that need a different name in Postgres",
+    "headers": [
+     "MySQL",
+     "Postgres",
+     "Why"
+    ],
+    "rows": [
+     [
+      "`INT AUTO_INCREMENT`",
+      "`INT GENERATED ALWAYS AS IDENTITY`",
+      "`AUTO_INCREMENT` is a MySQL-only keyword; Postgres reports a syntax error"
+     ],
+     [
+      "`DATETIME`",
+      "`TIMESTAMP`, or better `TIMESTAMPTZ`",
+      "There is no `datetime` type in Postgres. `TIMESTAMPTZ` (short for `timestamp with time zone`) is the Supabase default and the safer choice for real events. `DATE` is unchanged."
+     ],
+     [
+      "`TINYINT(1)` for yes/no",
+      "`BOOLEAN` with `TRUE` / `FALSE`",
+      "Postgres has a real boolean type"
+     ],
+     [
+      "`DOUBLE`",
+      "`DOUBLE PRECISION`",
+      "Postgres does not accept bare `DOUBLE`. Naming only -- but keep money in `DECIMAL`, which the Postgres docs recommend for exact amounts."
+     ]
+    ]
+   },
+   {
+    "type": "callout",
+    "variant": "note",
+    "label": "One CHAR quirk worth knowing",
+    "text": "`CHAR(n)` pads short values with spaces in both products, but they hand the value back differently: MySQL strips the trailing spaces when you read the column, while Postgres stores and displays them. For KimTay this changes nothing you can see, because `rep_num` is exactly 2 characters and `zip` is exactly 5, so there is no padding. It matters the day you put `'Kaiser'` in a `CHAR(20)`: Postgres returns it with fourteen trailing spaces. If that ever bites you, use `VARCHAR` -- which is what the Postgres documentation recommends for most columns anyway."
+   },
+   {
+    "type": "h4",
+    "text": "What does not change"
+   },
+   {
+    "type": "p",
+    "text": "Almost everything. `SELECT`, `FROM`, `WHERE`, `AND`, `OR`, `NOT`, `IN`, `BETWEEN`, `LIKE`, `IS NULL`, `ORDER BY`, `GROUP BY`, `HAVING`, `COUNT`, `SUM`, `AVG`, `MIN`, `MAX`, joins, `INSERT`, `UPDATE`, `DELETE`, `PRIMARY KEY`, `FOREIGN KEY`, `NOT NULL`, `DEFAULT` -- identical, character for character. `LIMIT 5` behaves the same in both. `NULL` still means \"no value recorded\" and still refuses to equal anything, so you still test it with `IS NULL` rather than `= NULL`."
+   },
+   {
+    "type": "p",
+    "text": "Everything from Module 2 carries over completely, because none of it was ever about a particular product. Functional dependence, candidate keys, primary keys, foreign keys, first, second, and third normal form, ER diagrams -- those are properties of the relational model itself. A design that is in 3NF in MySQL is in 3NF in Postgres. The reason Module 2 came before Module 3 is exactly this: the thinking outlasts the tool."
+   },
+   {
+    "type": "h4",
+    "text": "When it goes wrong: the five errors you will actually see"
+   },
+   {
+    "type": "p",
+    "text": "Postgres error messages are blunt but honest. Read the first line, find it here, apply the fix, and re-run. Nothing in this table requires starting over."
+   },
+   {
+    "type": "table",
+    "caption": "First-hour error messages, translated",
+    "headers": [
+     "Postgres says",
+     "What you actually did",
+     "Fix"
+    ],
+    "rows": [
+     [
+      "`syntax error at or near \"`\"`",
+      "Left a backtick in the script",
+      "Delete the backticks. Do not replace them with anything."
+     ],
+     [
+      "`relation \"rep\" does not exist`",
+      "Either the table was never created, or you created it with double quotes around an uppercase name",
+      "Confirm it exists in the Table Editor. If it is listed as `REP`, run `ALTER TABLE \"REP\" RENAME TO rep;`"
+     ],
+     [
+      "`column \"Kaiser\" does not exist`",
+      "Used double quotes around a piece of text in an `INSERT`",
+      "Change the double quotes to single quotes"
+     ],
+     [
+      "`syntax error at or near \"AUTO_INCREMENT\"`",
+      "Pasted the MySQL auto-numbering keyword",
+      "Replace with `GENERATED ALWAYS AS IDENTITY`"
+     ],
+     [
+      "`type \"datetime\" does not exist`",
+      "Pasted a MySQL `DATETIME` column",
+      "Replace with `TIMESTAMPTZ`"
+     ],
+     [
+      "`syntax error at or near \"\\\\\"`",
+      "Typed a `psql` meta-command such as `\\d rep` into the browser SQL Editor",
+      "Use the Table Editor or the `information_schema` query instead"
+     ]
+    ]
+   },
+   {
+    "type": "p",
+    "text": "So the honest summary of your port is: delete two lines at the top, drop the backticks, add one `ALTER TABLE ... ENABLE ROW LEVEL SECURITY;` per table, keep the rest. If you built the KimTay tables in the in-browser SQL sandbox during Module 3, that sandbox is a third SQL engine again, so treat your MySQL script -- not the sandbox session -- as the thing you are porting, and expect the same short edit list."
+   },
+   {
+    "type": "checklist",
+    "items": [
+     "You removed `CREATE DATABASE` and `USE` from the top of your Module 3 script",
+     "Your `CREATE TABLE` statements have no backticks and no double quotes around table or column names",
+     "All table and column names are typed in lowercase",
+     "Every piece of text in your `INSERT` statements is wrapped in single quotes, never double quotes",
+     "`CHAR`, `VARCHAR`, `DECIMAL`, `DATE`, and `SMALLINT` were left exactly as Module 3 wrote them",
+     "Each statement returned `Success. No rows returned` (or a result grid) rather than a red error panel",
+     "You ran `ALTER TABLE public.<name> ENABLE ROW LEVEL SECURITY;` for every table, and the `pg_tables` check shows `rowsecurity` true for all of them",
+     "You can see the columns of `rep` in the Table Editor, and the `information_schema` query returns the same list",
+     "`SELECT REP_NUM FROM REP;` and `SELECT rep_num FROM rep;` both return rows -- that proves you did not quote your identifiers at creation time",
+     "`SELECT COUNT(*) FROM rep;` returns the number of reps you inserted, so you know the data landed and not just the table"
+    ]
+   }
+  ],
+  "notes": "VERIFIED AGAINST OFFICIAL DOCS\n\n- postgresql.org/docs/current/sql-syntax-lexical.html \u2014 unquoted identifiers fold to LOWER case; double quotes = delimited/case-sensitive identifiers; single quotes = string constants; docs explicitly note this folding is incompatible with the SQL standard (which says fold to upper). All quoting claims in the original were correct; I only added the standard-conflict nuance and the ALTER TABLE ... RENAME repair.\n- postgresql.org/docs/current/ddl-identity-columns.html + sql-createtable.html \u2014 GENERATED ALWAYS AS IDENTITY is correct and standard; identity columns are implicitly NOT NULL; ALWAYS rejects user values unless OVERRIDING SYSTEM VALUE; BY DEFAULT is the closer match to AUTO_INCREMENT. The original's \"SERIAL does roughly the same job\" was loose \u2014 SERIAL creates a separate sequence and permits manual inserts; corrected.\n- postgresql.org/docs/current/datatype-numeric.html \u2014 decimal and numeric are equivalent; smallint range -32768..32767; DOUBLE PRECISION is the type name (bare DOUBLE is not documented/accepted); numeric is the docs' recommendation for money. Original's DOUBLE row was right.\n- postgresql.org/docs/current/datatype-datetime.html \u2014 DATETIME is NOT a Postgres type; timestamp / timestamp with time zone / timestamptz are. ISO 8601 YYYY-MM-DD is documented as the recommended input format. I upgraded the DATETIME row to recommend TIMESTAMPTZ (Supabase's convention) rather than plain TIMESTAMP.\n- postgresql.org/docs/current/datatype-character.html vs dev.mysql.com/doc/refman/8.4/en/char.html \u2014 REAL FACTUAL FIX: the original claimed the KimTay types are \"Identical \u2014 no change needed\" with the same meaning. The names and DDL are identical, but CHAR(n) retrieval differs: MySQL strips trailing spaces on retrieval by default (PAD_CHAR_TO_FULL_LENGTH off), Postgres stores AND displays the padding. Invisible for KimTay's exactly-full CHAR(2)/CHAR(5) codes, so I kept \"no edits needed\" but added a scoped callout.\n- dev.mysql.com/doc/refman/8.4/en/select.html \u2014 REAL FACTUAL FIX: MySQL supports BOTH `LIMIT 20, 10` and `LIMIT 10 OFFSET 20`. The original table implied the comma form was the MySQL way and OFFSET was a Postgres change; corrected to show MySQL accepts both and Postgres rejects only the comma form.\n- postgresql.org/docs/current/app-psql.html \u2014 meta-commands take no semicolon (original correct); \\dt lists tables on the search_path, not strictly \"the current schema\" (original wording tightened); \\d, \\d+ descriptions confirmed.\n- supabase.com/docs/guides/database/postgres/row-level-security \u2014 BIGGEST GAP FIXED: \"RLS is enabled by default on tables created with the Table Editor in the dashboard. If you create one in raw SQL or with the SQL editor, remember to enable RLS yourself.\" The original section instructs students to create every KimTay table via the SQL Editor into `public` and never mentions RLS at all. Added a warning callout + `ALTER TABLE ... ENABLE ROW LEVEL SECURITY;` after each CREATE TABLE + a `pg_tables.rowsecurity` verification query + a checklist item. Exact syntax is from the docs.\n- supabase.com/changelog/45329 \u2014 Data API auto-grants on `public` are being revoked: opt-in for new projects 2026-04-28, default for new projects 2026-05-30, applied to existing projects 2026-10-30. This is why I hedged the exposure wording to \"depending on your project's settings\" rather than asserting every new table is world-readable \u2014 as of Aug 2026 a newly created project no longer gets the automatic grants, but projects created before May 30 2026 still do until October 30 2026. Enabling RLS is correct advice under both regimes.\n- supabase.com/docs/guides/api/using-custom-schemas \u2014 a custom schema needs to be added under API settings > Exposed schemas AND needs GRANTs for anon/authenticated/service_role plus ALTER DEFAULT PRIVILEGES. The original's \"Stick with public\" note only mentioned the Table Editor picker; expanded.\n- supabase.com/docs/guides/database/psql \u2014 psql \"comes with Postgres\" (so it is an install, not a download), and Supabase recommends the Session pooler string from the Connect button. USABILITY FIX: the original made `\\d rep` in psql a required checklist item without ever installing psql or giving a connection string. Made psql explicitly optional throughout, moved the browser path first, and rewrote that checklist item.\n- supabase.com/docs/guides/database/tables \u2014 confirms the \"Table Editor\" and \"SQL Editor\" labels are current, and that tables default to `public`.\n- Supabase SQL Editor Run button / Cmd+Enter / Ctrl+Enter and the `Success. No rows returned` result message confirmed via Supabase repo discussions and third-party docs.\n\nOTHER CORRECTIONS\n- \"MySQL effectively does not [have schemas]\" was imprecise: in MySQL, SCHEMA is a documented synonym for DATABASE. Reworded.\n- The information_schema query was missing `table_schema = 'public'` \u2014 it returns duplicate rows once a same-named table exists in another schema. Added, plus an explanation of why the literals must be lowercase (a genuine beginner trap: searching for 'REP' silently returns zero rows).\n- '\"Kaiser\" worked in MySQL' is true only under MySQL's default sql_mode; ANSI_QUOTES turns double quotes into identifier quotes. Hedged to \"under MySQL's default settings\" rather than dragging beginners into sql_mode.\n\nUSABILITY CHANGES (nothing here was wrong, it was missing)\n- Added a prerequisites callout naming exactly what to have open, and stating a terminal is never required.\n- Added a \"how to run a statement and how to know it worked\" callout \u2014 the original never said where the SQL Editor is, how to execute, or what success looks like. Every code block now has a verification step (SELECT after INSERT, COUNT(*), pg_tables check, information_schema).\n- Added a six-row error-message troubleshooting table. The intro promises to explain \"almost every error a student hits in their first Postgres hour\" and the original never actually listed them.\n- Added the repair path for the case-folding trap (ALTER TABLE \"REP\" RENAME TO rep) \u2014 the original diagnosed the trap but only offered prevention, leaving anyone who had already fallen in with no way out.\n- Clarified that '' in 'O''Brien' is two single quotes, not one double quote \u2014 a classic beginner misread.\n\nCOULD NOT FULLY VERIFY\n- The exact position/label of the Table Editor's schema dropdown. Supabase's docs confirm custom schemas exist and must be exposed, but do not document the picker's on-screen location. I wrote \"the schema dropdown at the top of the table list\" (matches current Studio) \u2014 worth a quick screen check before publication, as Studio UI shifts.\n- The exact Postgres error strings in the troubleshooting table are standard, long-stable messages (42601 syntax error, 42P01 undefined_table, 42703 undefined_column, 42704 undefined_object), and the undefined_table/undefined_column wording is quoted directly in the Postgres and Supabase docs. I did not execute them against a live server, so the syntax-error variants (\"at or near ...\") are reproduced from documented behavior rather than a captured session. Recommend running the five bad statements once in a scratch Supabase project and pasting the literal output.\n- Whether the dashboard's unrestricted-table badge still reads exactly \"Unrestricted\" in the Aug 2026 Studio. I deliberately avoided quoting that string and described it as \"flags the table as unrestricted\".\n- COURSE-INTERNAL INCONSISTENCY, needs an author decision: the original closing paragraph says students built the KimTay tables \"in the sql.js sandbox during Module 3\", but sql.js is SQLite compiled to WebAssembly \u2014 not MySQL. If Module 3's exercises actually ran on SQLite, then several premises of this section are off for that path (SQLite accepts backticks AND double-quoted strings, uses AUTOINCREMENT not AUTO_INCREMENT, and is dynamically typed so CHAR/VARCHAR lengths are not enforced). I rewrote that sentence to be true either way \u2014 telling students to port the MySQL script rather than the sandbox session \u2014 but you should confirm what Module 3 actually ran on and, if it was sql.js/SQLite, the whole framing \"Module 3 taught you SQL in MySQL\" needs revisiting across the section."
+ },
+ {
+  "id": "sb-7",
+  "num": "S-7",
+  "title": "Keeping your database safe",
+  "blocks": [
+   {
+    "type": "p",
+    "text": "Your project now holds real data on a real server on the internet, which means it has secrets attached to it. This section gets you to the point where you can name every secret Supabase gave you, say out loud which one is allowed to appear in code other people can read, fix a password you accidentally pasted somewhere public, and keep a copy of your own work that survives anything that happens to the project. None of this takes long, and doing it once now saves you a bad afternoon later."
+   },
+   {
+    "type": "h4",
+    "text": "You were given three different secrets, and they do not do the same job"
+   },
+   {
+    "type": "p",
+    "text": "People new to this tend to treat every long random string as one thing called \"the key\". Supabase hands you three, and the difference between them is the difference between a safe project and a project anyone can empty. Here is what each one is for."
+   },
+   {
+    "type": "table",
+    "caption": "The three credentials on a Supabase project",
+    "headers": [
+     "Credential",
+     "What it actually is",
+     "May it appear in code a user can see?"
+    ],
+    "rows": [
+     [
+      "Database password",
+      "The password for the Postgres `postgres` user -- it is the part you paste into the connection string you use in `psql`, pgAdmin, or TablePlus.",
+      "No. It belongs in your connection tool and nowhere else."
+     ],
+     [
+      "Publishable key (starts with `sb_publishable_`; older docs and older projects call this the `anon` key)",
+      "A public, low-privilege key that identifies your project to the outside world. What it is allowed to read or change is decided by Row Level Security.",
+      "Yes. This is the only one designed to be shipped in a browser app."
+     ],
+     [
+      "Secret key (starts with `sb_secret_`; older docs and older projects call this the `service_role` key)",
+      "A key that bypasses Row Level Security completely and can read, change, or delete every row in every table.",
+      "Never. Not in a browser app, not in a public repository, not in a screenshot."
+     ]
+    ]
+   },
+   {
+    "type": "callout",
+    "variant": "note",
+    "label": "Two naming systems, same two jobs",
+    "text": "Supabase is in the middle of renaming its API keys. Projects created recently show `sb_publishable_...` and `sb_secret_...`. Older projects and most tutorials show `anon` and `service_role`, which are JSON Web Tokens (long strings with two dots in them). Both systems work today, and Supabase has said the legacy `anon` and `service_role` keys will be deprecated by the end of 2026. Whichever pair your project shows, the rule is identical: the low-privilege one (publishable / `anon`) is public, the high-privilege one (secret / `service_role`) is not."
+   },
+   {
+    "type": "p",
+    "text": "These three things live in three different places, and this trips people up:"
+   },
+   {
+    "type": "list",
+    "items": [
+     "**Connection strings** come from the `Connect` button at the top of your project dashboard. Note that the string it gives you has `[YOUR-PASSWORD]` in it as a placeholder -- Supabase does not put your real password there.",
+     "**API keys** (publishable and secret, or `anon` and `service_role`) are under `Settings` -> `API Keys`. Newer projects split them across a `Publishable and secret API keys` tab and a `Legacy API keys` tab. The publishable key also appears inside the `Connect` dialog's framework code snippets.",
+     "**The database password** is not displayed anywhere, ever. Supabase shows it to you once when you create the project and never again. If you do not have it written down, your only option is to reset it, which you do at `Database` -> `Settings`."
+    ]
+   },
+   {
+    "type": "callout",
+    "variant": "note",
+    "label": "If a tutorial sends you somewhere that does not exist",
+    "text": "Older tutorials tell you to look under `Project Settings` -> `Database` for a connection string. Supabase reorganized the dashboard, so connection strings now come from the `Connect` button and password resets live at `Database` -> `Settings`. If a tutorial's menu path does not match what you see on screen, the tutorial is out of date, not your project."
+   },
+   {
+    "type": "callout",
+    "variant": "warning",
+    "label": "The secret key is the whole database",
+    "text": "Treat the secret key (`sb_secret_...`, or `service_role` on an older project) exactly the way you would treat your own bank login. It ignores every security rule you set up, so anyone holding it can read your `CUSTOMER` table, empty your `INVOICE` table, or drop your schema. It is meant only for code running on a server you control, read from an environment variable that is not committed. If you paste it into front-end JavaScript, into a public GitHub repo, or into a Discord message asking for help, assume it is compromised. Go to `Settings` -> `API Keys` and revoke or rotate it right away -- for legacy `service_role` keys this is the `Legacy API keys` tab; for new-style keys you can revoke the one key that leaked and create a replacement."
+   },
+   {
+    "type": "h4",
+    "text": "Row Level Security, in one sentence"
+   },
+   {
+    "type": "callout",
+    "variant": "definition",
+    "label": "Row Level Security (RLS)",
+    "text": "Row Level Security is a Postgres feature that decides, row by row, whether the person asking is allowed to see or change that row -- so two users hitting the same `SELECT` can get different results."
+   },
+   {
+    "type": "p",
+    "text": "Two things surprise students here. First, whether RLS is on depends on how you made the table: tables created through the dashboard `Table Editor` get RLS enabled for you, while tables you create by running `CREATE TABLE` in the `SQL Editor` do not. Second, RLS turned on with no policies written means nobody gets any rows through the public API -- that is the correct, safe default, not a bug."
+   },
+   {
+    "type": "p",
+    "text": "That explains the classic confusion: you connect with `psql` using the database password, run `SELECT * FROM CUSTOMER;`, and see all four customers -- but a web page using the publishable key shows an empty list. Two separate reasons let `psql` through. You are connected as the `postgres` role, which owns those tables, and Postgres exempts a table's owner from that table's RLS policies unless the table was explicitly set to `FORCE ROW LEVEL SECURITY`. On top of that, the `postgres` role on Supabase carries the `BYPASSRLS` attribute. The web page has neither: it arrives as the low-privilege public role, and there is no policy telling Postgres to let it through."
+   },
+   {
+    "type": "callout",
+    "variant": "note",
+    "label": "Good enough for coursework, not for anything real",
+    "text": "For this course you are the only person touching the KimTay tables, you are reaching them over `psql` or the `SQL Editor`, and nothing is exposed to the public. Leaving RLS off on your assignment tables is fine. The moment a table holds someone else's information, or a browser app can reach it with the publishable key, RLS off means anyone on the internet can read and rewrite that table. The difference is not the software -- it is who else can reach it."
+   },
+   {
+    "type": "h4",
+    "text": "If a password leaks, rotate it"
+   },
+   {
+    "type": "p",
+    "text": "Leaking happens in ordinary ways: you paste a connection string into a class chat to ask why it fails, you commit a `.env` file, you screen-share your terminal. There is no undo for a leaked secret -- the only real fix is to replace it so the old one stops working."
+   },
+   {
+    "type": "steps",
+    "items": [
+     {
+      "title": "Open the database settings",
+      "body": "In your project, go to `Database` -> `Settings` in the left sidebar. This is where the database password lives, separately from the `Connect` panel where you copy connection strings."
+     },
+     {
+      "title": "Reset the password",
+      "body": "Find the `Database password` section and choose `Reset database password`. Let Supabase generate a strong one, then copy it into a password manager or a note before you close the dialog. You cannot read it back later -- if you lose it, your only move is to reset again. A generated password can contain characters like `@`, `#`, `/`, `:` or `?`, which is fine, but see the note below about what that means for connection strings."
+     },
+     {
+      "title": "Wait a minute, then rebuild your connection string",
+      "body": "The reset can take a couple of minutes to take effect, so do not panic if the first attempt still fails. Then go back to `Connect` at the top of the dashboard, copy the session pooler string again, and replace the placeholder `[YOUR-PASSWORD]` with your new password. Delete the square brackets too -- leaving them in is the single most common reason this step fails. The old string is dead the moment the reset finishes."
+     },
+     {
+      "title": "Test the new string before you rely on it",
+      "body": "Run `psql \"YOUR-NEW-CONNECTION-STRING\"` (quotes included) and then `SELECT 1;` at the `postgres=>` prompt. If you get back a table with a `1` in it, the string is good. Type `\\q` to quit. If you get `password authentication failed`, re-read the previous step -- brackets, or an un-encoded special character, are almost always the cause."
+     },
+     {
+      "title": "Update every place that stored the old one",
+      "body": "Saved connections in pgAdmin or TablePlus, any `.env` file, and any note on your machine. If a tool suddenly says authentication failed, this is why."
+     },
+     {
+      "title": "Clean up the leak itself",
+      "body": "Delete the chat message, and if the secret went into a Git commit, remember that deleting the line in a later commit does not remove it from history -- anyone can still read the old commit. Rotating is what makes it harmless."
+     }
+    ]
+   },
+   {
+    "type": "callout",
+    "variant": "warning",
+    "label": "Special characters in a password must be percent-encoded",
+    "text": "A connection string is a URI, and Postgres requires characters with special meaning in a URI to be percent-encoded inside it. If your generated password contains `@`, `:`, `/`, `?`, `#`, `%`, `&` or a space, you must replace it in the string: `@` becomes `%40`, `:` becomes `%3A`, `/` becomes `%2F`, `#` becomes `%23`, `%` becomes `%25`, and a space becomes `%20`. A password of `p@ss/word` goes into the string as `p%40ss%2Fword`. Symptom when you get this wrong: `password authentication failed` even though you pasted the right password, or a confusing `could not translate host name` error, because everything after an un-encoded `@` was read as a server address. If you would rather not deal with this, reset the password and pick your own using only letters, digits, `-` and `_`."
+   },
+   {
+    "type": "callout",
+    "variant": "tip",
+    "label": "Keep passwords out of your shell history",
+    "text": "When you type a full connection string on the command line, the whole thing -- password included -- gets written to a plain text history file. On a Mac with zsh that is `~/.zsh_history`; on bash it is `~/.bash_history`; in Windows PowerShell it is `%APPDATA%\\Microsoft\\Windows\\PowerShell\\PSReadLine\\ConsoleHost_history.txt`. Separately, anything you type at the `postgres=>` prompt inside `psql` is saved to `~/.psql_history`. Prefer saving the connection in pgAdmin or TablePlus, or storing the string in a file you do not commit, rather than retyping it in the terminal all day."
+   },
+   {
+    "type": "callout",
+    "variant": "tip",
+    "label": "Stop Git from ever seeing your secrets",
+    "text": "If your project folder is a Git repository, create a file named `.gitignore` in the top of that folder with these three lines in it, before you create any file that holds a secret:\n\n```\n.env\n*.env\nsecrets.txt\n```\n\nGit only ignores files it is not already tracking, so this has to happen first. To confirm it worked, run `git status` -- your `.env` file should not appear in the list. If it does appear, it is already tracked, and you need `git rm --cached .env` and then a commit."
+   },
+   {
+    "type": "h4",
+    "text": "Your real backup is a .sql file you own"
+   },
+   {
+    "type": "p",
+    "text": "A Supabase Free plan project is paused after 7 days of inactivity, and the Free plan allows only 2 active projects at a time. Supabase keeps your data while a project is paused and gives you up to 1 year to restore it from the dashboard, so this is not an emergency -- but you still do not want your only copy of a graded assignment sitting somewhere you do not control, behind a login that could be down the night before it is due. This is exactly what Module 3-9, \"Saving SQL Commands\", was preparing you for -- now you are doing it for a real reason."
+   },
+   {
+    "type": "p",
+    "text": "Keep one plain text file, in your own notes folder, containing every `CREATE TABLE` and `INSERT` you ran, in the order you ran them. That file is your backup, your rebuild script, and your submission all at once."
+   },
+   {
+    "type": "code",
+    "text": "-- kimtay-setup.sql\n-- KimTay Pet Supplies -- rebuild from empty\n-- Last run: 2026-08-02\n\nCREATE TABLE REP (\n    REP_NUM     CHAR(2)         PRIMARY KEY,\n    LAST_NAME   VARCHAR(15)     NOT NULL,\n    FIRST_NAME  VARCHAR(15)     NOT NULL,\n    STREET      VARCHAR(20),\n    CITY        VARCHAR(15),\n    STATE       CHAR(2),\n    ZIP         CHAR(5),\n    COMMISSION  DECIMAL(8,2),\n    RATE        DECIMAL(4,2)\n);\n\n-- No column list here, so the values must be in exactly the\n-- same order as the columns above. If you ever reorder the\n-- CREATE TABLE, this INSERT breaks silently or loudly.\nINSERT INTO REP VALUES\n    ('20','Kaiser','Valerie','624 Randall','Grove','FL','33321',20542.50,0.05);\n\n-- ...then CUSTOMER, ITEM, INVOICE, INVOICE_LINE in that order,\n-- because each one references the tables above it."
+   },
+   {
+    "type": "p",
+    "text": "Order matters. A table with a `REFERENCES` clause cannot be created before the table it points at, so `REP` comes before `CUSTOMER`, and `INVOICE` and `ITEM` both come before `INVOICE_LINE`. Writing the file in run order is what makes it work on a fresh project."
+   },
+   {
+    "type": "h4",
+    "text": "Prove the backup is real by running it"
+   },
+   {
+    "type": "p",
+    "text": "A backup you have never restored is a guess. Test it against an empty database -- and it has to be empty, because `CREATE TABLE REP` on a project that already has a `REP` table stops with `relation \"rep\" already exists`. Do not test it against the project holding your graded work."
+   },
+   {
+    "type": "p",
+    "text": "The easiest way: create a second project (the Free plan allows 2 active ones), wait the minute or two it takes to provision, open the `SQL Editor`, paste the whole file in, and press `Run`. If you already have 2 active projects, pause one you are not using from its dashboard first."
+   },
+   {
+    "type": "p",
+    "text": "If you have `psql` installed, you can do the same from a terminal. Two things to get right: you must be in the folder that holds the file, and you must add `-v ON_ERROR_STOP=1`. By default `psql` prints an error and keeps going, so a broken script can scroll a failure off your screen and still finish looking successful. That flag makes it stop at the first error, which is the whole point of a test."
+   },
+   {
+    "type": "code",
+    "text": "# 1. Move into the folder that holds the file.\n#    On Mac/Linux, type `cd ` (with the space), then drag the\n#    folder from Finder onto the terminal window and press Enter.\ncd ~/Documents/database-course\n\n# 2. Confirm the file is actually here before you run anything.\nls kimtay-setup.sql          # Mac/Linux\n# dir kimtay-setup.sql       # Windows PowerShell\n\n# 3. Run it. The quotes around the connection string are required.\npsql \"YOUR-SESSION-POOLER-CONNECTION-STRING\" -v ON_ERROR_STOP=1 -f kimtay-setup.sql"
+   },
+   {
+    "type": "p",
+    "text": "How you know it worked: `psql` echoes one line per statement -- `CREATE TABLE` for each table, `INSERT 0 1` for each single-row insert -- and returns you to your normal shell prompt with no red `ERROR:` text. In the `SQL Editor`, a green success message and no error panel means the same thing. Either way, do not take the absence of an error as proof. Ask the database what it actually has:"
+   },
+   {
+    "type": "code",
+    "text": "-- Which tables exist now?\nSELECT table_name\nFROM   information_schema.tables\nWHERE  table_schema = 'public'\nORDER  BY table_name;\n\n-- Did the rows land?\nSELECT COUNT(*) FROM REP;\nSELECT COUNT(*) FROM CUSTOMER;"
+   },
+   {
+    "type": "callout",
+    "variant": "note",
+    "label": "Why your tables come back lowercase",
+    "text": "That first query lists `customer`, `invoice`, `invoice_line`, `item`, `rep` -- all lowercase, even though you typed `CREATE TABLE REP`. Postgres folds unquoted identifiers to lowercase. Nothing is wrong, and `SELECT * FROM REP;` still works, because that name gets folded the same way. You would only need to care if you had wrapped a name in double quotes when you created it."
+   },
+   {
+    "type": "callout",
+    "variant": "note",
+    "label": "What must never go in that file",
+    "text": "The `.sql` file holds SQL only. No password, no connection string, no keys. Then it is safe to email to yourself, drop in cloud storage, or commit to a repository -- which is the entire point of keeping the secrets somewhere else."
+   },
+   {
+    "type": "checklist",
+    "items": [
+     "You can say which of the three secrets is safe in front-end code, and it is the publishable key (the `anon` key on an older project) -- not the database password, not the secret / `service_role` key.",
+     "Your secret / `service_role` key exists only in the Supabase dashboard, or in a server-side file you have never committed.",
+     "You know the three different locations: connection strings from `Connect`, API keys at `Settings` -> `API Keys`, password reset at `Database` -> `Settings` -- and that the password itself is never displayed anywhere.",
+     "Your database password is written down somewhere you will still have it next month, because Supabase will not show it to you again.",
+     "You can explain in one sentence why `psql` shows rows that a browser app using the publishable key does not.",
+     "RLS being off on your KimTay tables is a decision you made knowingly, not a default you never looked at.",
+     "A `kimtay-setup.sql` file with every `CREATE TABLE` and `INSERT`, in run order, is saved in your own notes.",
+     "You have run that file once against an empty database with `-v ON_ERROR_STOP=1` (or in a fresh project's `SQL Editor`) and then confirmed with a `COUNT(*)` that the rows are really there -- not just that nothing turned red.",
+     "No file you have shared, committed, or pasted into a chat contains a password or a connection string, and `git status` does not list your `.env`."
+    ]
+   }
+  ],
+  "notes": "FACTUAL ERRORS FOUND AND FIXED\n\n1. \"You will find all of these behind the Connect button\" \u2014 wrong for two of the three. Verified: API keys live at `Settings` -> `API Keys` (split into \"Publishable and secret API keys\" / \"Legacy API keys\" tabs; the publishable key also appears in Connect's framework snippets), and the database password is NOT displayed anywhere at all \u2014 Connect hands you a string containing the literal placeholder `[YOUR-PASSWORD]`. Replaced with a three-item list separating the locations, plus a new checklist item telling students to write the password down because they cannot get it back.\n\n2. Key naming was half-migrated. The section correctly flagged \"publishable (older docs call it anon)\" but then kept calling the privileged key `service_role` with no equivalent note. Per supabase.com/docs/guides/getting-started/api-keys, the current pair is publishable (`sb_publishable_...`) / secret (`sb_secret_...`), and the legacy `anon` / `service_role` JWTs \"will be deprecated by the end of 2026\". Renamed the third table row symmetrically and added a \"Two naming systems\" callout so students recognise whichever pair their project shows. Also fixed the remediation advice: the original said \"regenerate it in the dashboard\" with no path; new-style secret keys are individually revocable at `Settings` -> `API Keys`, legacy ones under the Legacy tab.\n\n3. Free-tier numbers were vague or wrong. \"pauses after about a week\" -> verified 7 days of inactivity. \"can only be restored for a limited window\" implies urgency that does not exist \u2014 verified up to 1 year to restore from the dashboard, so I stated the real number and re-justified the backup on a better reason (availability, not data loss). \"the free plan allows two active ones\" is correct (confirmed on supabase.com/pricing) and I added that a student already at 2 must pause one first.\n\n4. MOST IMPORTANT BUG \u2014 the verification step did not verify. `psql -f` does NOT stop on error by default; it prints the error, continues, and still exits 0. A student whose `CREATE TABLE CUSTOMER` failed would watch the rest of the file run and conclude \"no error, genuine backup\". Added `-v ON_ERROR_STOP=1` to the command (confirmed against postgresql.org/docs/current/app-psql.html) and added an explicit ask-the-database verification pass (`information_schema.tables` + `COUNT(*)`), since \"it didn't error\" is not evidence.\n\n5. RLS bypass explanation was imprecise. \"The psql connection is the database owner and bypasses RLS\" conflates two separate mechanisms. Corrected to: Postgres exempts a table's owner from its own RLS policies unless `FORCE ROW LEVEL SECURITY` is set, AND the Supabase `postgres` role additionally carries `BYPASSRLS`. Both facts are load-bearing and either alone explains the behaviour.\n\n6. Rewrote \"RLS is off or on depending on how you made the table\" (grammatically garbled) while keeping the verified claim: Table Editor enables RLS, raw `CREATE TABLE` in the SQL Editor does not.\n\nUSABILITY GAPS FIXED (a student who has never opened a terminal)\n\n- The `[YOUR-PASSWORD]` placeholder: original said \"put the new password in place of the placeholder\" without showing the literal, and never said to delete the square brackets. That is the #1 beginner failure here.\n- Percent-encoding: entirely absent from the original and a guaranteed stuck-point, because Supabase-generated passwords routinely contain `@`, `/`, `#`. An un-encoded `@` produces a \"could not translate host name\" error that looks nothing like a password problem. Added a warning callout with the encoding table and both symptoms, verified against libpq \u00a732.1.1.2 Connection URIs.\n- Password reset lag: official troubleshooting doc notes the reset takes a few minutes; added so students do not assume they typed it wrong.\n- The rotation steps said what to do but never how to know it worked. Added a \"test the new string\" step with `SELECT 1;` and `\\q` (a first-timer otherwise has no idea how to exit psql).\n- `psql ... -f kimtay-setup.sql` assumed the student knows what \"in the folder that holds the file\" means. Added `cd`, the drag-folder-onto-terminal trick, an `ls`/`dir` existence check, and an explicit note that the quotes around the connection string are mandatory.\n- The re-run trap: the original never said the target database must be empty. Running the file twice fails with `relation \"rep\" already exists`, and a student testing against their real project could confuse themselves badly. Stated explicitly, with the warning not to test against graded work.\n- Shell history tip was Mac/zsh-only. Added bash and the Windows PowerShell PSReadLine path (`%APPDATA%\\Microsoft\\Windows\\PowerShell\\PSReadLine\\ConsoleHost_history.txt`, plain text), plus `~/.psql_history` for what you type inside psql.\n- The text warned about committing `.env` but never said how to prevent it. Added a `.gitignore` tip, including the fact that `.gitignore` does not affect already-tracked files (`git rm --cached`) and how to confirm via `git status`.\n- Added a note on Postgres lowercase identifier folding, since the verification query returns `rep` not `REP` and that looks like a failure to a beginner.\n- Added a comment on the bare `INSERT INTO REP VALUES` explaining it depends on column order. I did not rewrite it to a named-column form, on the assumption the positional style matches the textbook and earlier modules.\n\nSQL VALIDATED\nAll statements are valid PostgreSQL. `CREATE TABLE REP` (CHAR/VARCHAR/DECIMAL types, inline PRIMARY KEY, NOT NULL) is fine; the sample INSERT's 9 values match the 9 columns in order and the numeric literals fit `DECIMAL(8,2)` and `DECIMAL(4,2)`. The added `information_schema.tables` and `COUNT(*)` queries are standard. The FK ordering claim (REP before CUSTOMER; ITEM and INVOICE before INVOICE_LINE) is correct \u2014 a `REFERENCES` target must exist first.\n\nCOULD NOT VERIFY\n- Whether a newly created `sb_secret_` key can be re-revealed in the dashboard after creation. Docs are silent, so I made no claim either way.\n- Exact Supabase SQL Editor error semantics for a multi-statement paste (whether the whole batch is implicitly wrapped in a transaction and rolled back on failure). Community sources conflict and the docs only describe explicit BEGIN/COMMIT. I deliberately avoided claiming rollback and instead routed students to the COUNT(*) verification, which is correct under either behaviour.\n- The KimTay REP row itself ('20','Kaiser','Valerie',...) against the course textbook \u2014 I have no copy, so I left the data untouched. Same for the INVOICE vs INVOICES table name; the section is internally consistent at five tables, so I did not change it.\n- Live dashboard label rendering. Everything is verified against current Supabase docs, but `Database` -> `Settings` vs `Project Settings` -> `Database` is exactly the kind of thing Supabase moves. Worth one 60-second click-through before publication. I softened the original's flat \"that tutorial is out of date\" into a callout that teaches the student what to do when a menu path does not match, which survives the next reshuffle."
+ }
+]
