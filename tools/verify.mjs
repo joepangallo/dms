@@ -173,6 +173,21 @@ const chip = await page.evaluate(() => document.querySelector('.progress-chip .c
 note(/Progress \d+ \/ \d+/.test(chip), `chip reads "${chip}"`);
 
 /* ------------------------------- seed integrity, run through real SQLite */
+/* sql.js is fetched lazily: a sandbox only pulls it in once it scrolls within
+   240px of the viewport. So initSqlJs is undefined here unless some earlier
+   step happened to park a sandbox near the fold, which made this check depend
+   on page length rather than on anything it is meant to test. Boot it on
+   purpose instead. */
+await page.evaluate(() => {
+  if (typeof initSqlJs !== 'undefined') return;
+  const box = document.querySelector('[data-sandbox]');
+  if (box && box._ensureSqlBoot) { box._ensureSqlBoot(); return; }
+  const s = document.createElement('script');            // fallback: load it directly
+  s.src = 'https://cdn.jsdelivr.net/npm/sql.js@1.10.3/dist/sql-wasm.js';
+  document.head.appendChild(s);
+});
+await page.waitForFunction(() => typeof initSqlJs !== 'undefined', { timeout: 30000 });
+
 console.log('\nseed data (executed in the page\'s own sql.js engine)');
 const seed = await page.evaluate(async () => {
   const SQL = await initSqlJs({ locateFile: (f) => 'https://cdn.jsdelivr.net/npm/sql.js@1.10.3/dist/' + f });
