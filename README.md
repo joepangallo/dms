@@ -22,7 +22,7 @@ Open `db.html` in a browser. No install, no server, no build step, no account.
 | — | Supabase &amp; SQL on Mac and Windows | 7 |
 | — | Project &amp; Setup (capstone brief) | 3 |
 
-Roughly **287 questions across 75 quizzes**, **42 matching drills** (316 cards), **168 live SQL
+Roughly **287 questions across 75 quizzes**, **42 matching drills** (316 cards), **174 live SQL
 sandboxes**, and 7 slider labs.
 
 ### The interactive pieces
@@ -37,6 +37,12 @@ sandboxes**, and 7 slider labs.
 - **Slider labs** — drag a control and watch the database react: redundancy turning into
   inconsistency, a table walked from unnormalized to 3NF, `CHAR` vs `VARCHAR` storage, `DECIMAL(p,s)`
   capacity, a live `WHERE` filter, and a row-by-row `JOIN` stepper.
+- **Normalization labs (Module 2-5)** — three worked SQL walkthroughs of 1NF → 2NF → 3NF. Two are
+  built to run with a class on the projector (StayWell's repeating group; KimTay's partial and
+  transitive dependencies, ending in an `EXCEPT` proof that the decomposition is lossless); the third
+  is independent work on StayWell's property sheet, with a self-check that grades the student's
+  tables and a **Show solution** button. They use four lab-only seeds — `staywell_flat`,
+  `kimtay_flat`, `kimtay_2nf`, `staywell_sheet` — which also appear in every sandbox's data menu.
 - **Study Mode / Present Mode** — the same content as a scrolling page or one idea per screen with
   arrow-key navigation, for projecting in class.
 
@@ -70,6 +76,13 @@ JSON and re-render when changing a module wholesale; edit `db.html` directly for
 The tools drive a real headless browser, so they need Puppeteer. They resolve it from the global
 `md-to-pdf` install rather than requiring a local `node_modules`; if that isn't present, change the
 `createRequire` path at the top of each script.
+
+**Adding a sandbox seed:** a new key in `window.SANDBOX_SEEDS` must *also* be added to the
+`SEED_LABELS` array in the page script. A sandbox seeds itself from its dropdown's selected value,
+so a seed missing from `SEED_LABELS` has no option to select, and the box silently boots as an empty
+database instead of erroring. `verify.mjs` executes every seed but cannot catch that mismatch.
+Modules 1 and 2 are authored directly in `db.html` (there is no `content/module2.json`), so
+`sqlcheck.mjs` / `sbsim.mjs` / `rerun.mjs` do not cover their sandboxes — check those by hand.
 
 ```bash
 # check the whole site: structure, quizzes, matchers, seed data, responsive widths, console errors
