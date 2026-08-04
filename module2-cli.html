@@ -1,0 +1,517 @@
+<meta charset="utf-8">
+<title>Module 2 at the command line - SQLite walkthrough</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+:root{--ink:#0f172a;--body:#334155;--mut:#64748b;--line:#e2e8f0;--bg:#f8fafc;--card:#fff;
+ --brand:#1e3a8a;--brand2:#2563eb;--acc:#ea8c2b;--ok:#047857;--okbg:#ecfdf5;--warn:#b45309;--warnbg:#fffbeb;
+ --term:#0b1220;--termink:#e7ecff;
+ --mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;
+ --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Inter,Roboto,sans-serif;}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--body);font:16px/1.65 var(--sans);-webkit-text-size-adjust:100%}
+.wrap{max-width:920px;margin:0 auto;padding:0 20px 80px}
+header.top{background:linear-gradient(120deg,var(--brand),var(--brand2));color:#fff;padding:34px 0 30px;margin-bottom:30px}
+header.top .wrap{padding-bottom:0}
+.kick{display:inline-block;background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.32);
+ padding:3px 11px;border-radius:999px;font-size:.7rem;font-weight:800;letter-spacing:.07em;text-transform:uppercase}
+header.top h1{margin:12px 0 6px;font-size:clamp(1.5rem,1.1rem+1.6vw,2.1rem);line-height:1.2}
+header.top p{margin:0;color:#dbe6ff;max-width:70ch}
+h2{color:var(--ink);font-size:1.35rem;margin:44px 0 6px;padding-top:22px;border-top:2px solid var(--line)}
+h2:first-of-type{border-top:none;padding-top:0}
+h2 .part{color:var(--acc);font-size:.72rem;font-weight:800;letter-spacing:.09em;text-transform:uppercase;display:block;margin-bottom:3px}
+h3{color:var(--ink);font-size:1.03rem;margin:0}
+.lede{color:var(--mut);margin:0 0 8px}
+.step{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px 18px;margin:14px 0;
+ box-shadow:0 1px 2px rgba(15,23,42,.05)}
+.step-head{display:flex;gap:11px;align-items:baseline;margin-bottom:9px}
+.step-num{flex:none;min-width:26px;height:26px;padding:0 7px;border-radius:8px;background:var(--brand);color:#fff;
+ font-size:.76rem;font-weight:800;display:flex;align-items:center;justify-content:center}
+.step p{margin:9px 0}
+.cb{margin:11px 0;border-radius:10px;overflow:hidden;border:1px solid #1e293b}
+.cb-head{display:flex;align-items:center;gap:10px;background:#16233d;padding:6px 12px}
+.cb-tag{font:700 .68rem var(--sans);letter-spacing:.06em;text-transform:uppercase;padding:2px 8px;border-radius:5px}
+.k-shell{background:#334155;color:#cbd5e1}.k-sqlite{background:#1d4ed8;color:#dbeafe}.k-file{background:#7c2d12;color:#fed7aa}
+.cb-copy{margin-left:auto;background:#334155;color:#e2e8f0;border:0;border-radius:6px;padding:3px 11px;
+ font:700 .72rem var(--sans);cursor:pointer}
+.cb-copy:hover{background:#475569}.cb-copy.done{background:var(--ok);color:#fff}
+.cb pre{margin:0;background:var(--term);color:var(--termink);padding:13px 15px;overflow-x:auto;
+ font:.86rem/1.6 var(--mono);white-space:pre}
+.out{margin:11px 0 4px;border-left:3px solid var(--ok);background:var(--okbg);border-radius:0 9px 9px 0;padding:10px 14px}
+.out-tag{display:block;font:800 .67rem var(--sans);letter-spacing:.07em;text-transform:uppercase;color:var(--ok);margin-bottom:5px}
+.out pre{margin:0;font:.8rem/1.45 var(--mono);color:#064e3b;overflow-x:auto;white-space:pre}
+.out-note{margin:8px 0 0;font-size:.9rem;color:#065f46}
+.cal{border-radius:10px;padding:11px 15px;margin:12px 0;font-size:.94rem}
+.cal strong{display:block;font-size:.72rem;letter-spacing:.06em;text-transform:uppercase;margin-bottom:4px}
+.tip{background:#eff6ff;border-left:3px solid var(--brand2);color:#1e3a8a}
+.warn{background:var(--warnbg);border-left:3px solid var(--warn);color:#78350f}
+.tabs{display:flex;gap:6px;flex-wrap:wrap;margin:12px 0 0}
+.tabs button{background:#fff;border:1.5px solid var(--line);border-radius:999px;padding:6px 15px;
+ font:700 .84rem var(--sans);color:var(--mut);cursor:pointer}
+.tabs button.on{background:var(--brand);border-color:var(--brand);color:#fff}
+.panel{display:none}.panel.on{display:block}
+table{border-collapse:collapse;width:100%;margin:12px 0;font-size:.9rem;background:#fff}
+th,td{border:1px solid var(--line);padding:7px 11px;text-align:left;vertical-align:top}
+th{background:#f1f5f9;font-size:.74rem;text-transform:uppercase;letter-spacing:.05em;color:var(--ink)}
+td code,p code,li code{background:#eef2ff;color:#3730a3;padding:1px 5px;border-radius:4px;font:.87em var(--mono)}
+ul{padding-left:20px}li{margin:5px 0}
+.done-list li{margin:7px 0}
+footer{margin-top:46px;padding-top:18px;border-top:1px solid var(--line);color:var(--mut);font-size:.88rem}
+/* Narrow screens: let the reference tables scroll on their own rather than
+   pushing the whole page sideways. */
+@media (max-width:640px){
+  table{display:block;overflow-x:auto;-webkit-overflow-scrolling:touch}
+  td code,th code{word-break:break-word}
+  .wrap{padding:0 14px 60px}
+}
+@media print{body{background:#fff}.cb-copy,.tabs{display:none}.panel{display:block!important}
+  details[open] summary~*{display:block}details>summary{list-style:none}}
+</style>
+
+<header class="top"><div class="wrap">
+<span class="kick">Module 2 &middot; Companion</span>
+<h1>Doing the Module 2 labs at the command line</h1>
+<p>Every SQL statement from Lesson 2-5, run in a real terminal against a real database file, with the
+output you should expect at each step. No server, no accounts, no browser.</p>
+</div></header>
+
+<div class="wrap">
+<p>The browser labs in Lesson 2-5 run SQLite compiled into the page. This walkthrough does exactly the same work with the <strong>sqlite3</strong> command-line tool. The SQL is identical, character for character &mdash; what changes is that you own the database file, so your work persists between sessions and you can hand it in.</p><div class="cal tip"><strong>One difference worth knowing up front</strong><p style="margin:0">In the browser, every exercise box has its own private database, which is why each one starts from a preloaded dataset. At the command line you work in <em>one file</em> and each statement builds on the last. That is closer to real life, and it means the order of these steps matters.</p></div><h2><span class="part">Part 1</span>Get the sqlite3 tool</h2><p>You need the command-line program called <code>sqlite3</code>. Pick your operating system.</p><div class="tabs" data-tabs>
+<button class="on" data-tab="mac">macOS</button><button data-tab="win">Windows</button><button data-tab="lin">Linux</button></div><div class="panel on" data-panel="mac"><section class="step"><div class="step-head"><span class="step-num">1</span><h3>Open Terminal and check it is there</h3></div><p>macOS ships with sqlite3 already installed. Open <strong>Terminal</strong> (press <code>Cmd</code>+<code>Space</code>, type Terminal, press Enter) and run:</p><div class="cb"><div class="cb-head"><span class="cb-tag k-shell">Terminal</span><button class="cb-copy" type="button">Copy</button></div><pre><code>sqlite3 --version</code></pre></div><div class="out"><span class="out-tag">What you should see</span><pre>3.43.2 2023-10-10 13:08:14 1b37c146ee9ebb...</pre><p class="out-note">Any 3.x version is fine. If you get "command not found", install it with Homebrew: <code>brew install sqlite</code>.</p></div></section>
+</div><div class="panel" data-panel="win"><section class="step"><div class="step-head"><span class="step-num">1</span><h3>Download the tools bundle</h3></div><p>Go to <strong>sqlite.org/download.html</strong> and, under <em>Precompiled Binaries for Windows</em>, download the file named <code>sqlite-tools-win-x64-*.zip</code>. Unzip it somewhere easy to find, such as <code>C:\sqlite</code>.</p><div class="cal tip"><strong>Faster route if you have winget</strong><p style="margin:0">In PowerShell: <code>winget install SQLite.SQLite</code> installs it and puts it on your PATH for you.</p></div></section>
+<section class="step"><div class="step-head"><span class="step-num">2</span><h3>Open a terminal in that folder and check it</h3></div><p>Open <strong>Command Prompt</strong> or <strong>PowerShell</strong>, move into the folder you unzipped, and check the version:</p><div class="cb"><div class="cb-head"><span class="cb-tag k-shell">Terminal</span><button class="cb-copy" type="button">Copy</button></div><pre><code>cd C:\sqlite
+sqlite3 --version</code></pre></div><div class="out"><span class="out-tag">What you should see</span><pre>3.45.1 2024-01-30 16:01:20 e876e51a0ed5c5b3126f52e532044363a014bc59...</pre><p class="out-note">If Windows says the command is not recognised, you are not in the folder that holds <code>sqlite3.exe</code>.</p></div></section>
+</div><div class="panel" data-panel="lin"><section class="step"><div class="step-head"><span class="step-num">1</span><h3>Install and check</h3></div><div class="cb"><div class="cb-head"><span class="cb-tag k-shell">Terminal</span><button class="cb-copy" type="button">Copy</button></div><pre><code>sudo apt install sqlite3      # Debian / Ubuntu
+# sudo dnf install sqlite     # Fedora</code></pre></div><div class="cb"><div class="cb-head"><span class="cb-tag k-shell">Terminal</span><button class="cb-copy" type="button">Copy</button></div><pre><code>sqlite3 --version</code></pre></div><div class="out"><span class="out-tag">What you should see</span><pre>3.45.1 2024-01-30 16:01:20 e876e51a0ed5c5b3126f52e532044363a014bc59...</pre></div></section>
+</div><h2><span class="part">Part 2</span>Set up a folder and the starting data</h2><section class="step"><div class="step-head"><span class="step-num">2</span><h3>Make a folder to work in</h3></div><p>Everything you create will live here. On macOS or Linux:</p><div class="cb"><div class="cb-head"><span class="cb-tag k-shell">Terminal</span><button class="cb-copy" type="button">Copy</button></div><pre><code>mkdir ~/module2-labs
+cd ~/module2-labs</code></pre></div><p>On Windows:</p><div class="cb"><div class="cb-head"><span class="cb-tag k-shell">Terminal</span><button class="cb-copy" type="button">Copy</button></div><pre><code>mkdir %USERPROFILE%\module2-labs
+cd %USERPROFILE%\module2-labs</code></pre></div></section>
+<section class="step"><div class="step-head"><span class="step-num">3</span><h3>Create the three starting data files</h3></div><p>These are the same three unnormalized tables the browser labs load for you. Using any text editor (TextEdit in plain-text mode, Notepad, VS Code), save each block below into your <code>module2-labs</code> folder under the filename shown. Use the <strong>Copy</strong> button, paste, and save.</p><p><strong>File 1 of 3 &mdash; <code>staywell_flat.sql</code></strong></p><div class="cb"><div class="cb-head"><span class="cb-tag k-file">Save as a file</span><button class="cb-copy" type="button">Copy</button></div><pre><code>CREATE TABLE LEASE_REPORT (
+    STUDENT_ID     CHAR(4),
+    STUDENT_NAME   VARCHAR(30),
+    PROPERTY_ID    CHAR(4),
+    PROPERTY_NAME  VARCHAR(30),
+    MANAGER_NAME   VARCHAR(30),
+    ROOM_NUM       CHAR(3),
+    ROOM_TYPE      VARCHAR(10),
+    MONTHLY_RENT   DECIMAL(7,2),
+    PAYMENT_DATES  VARCHAR(60)
+);
+
+INSERT INTO LEASE_REPORT VALUES ('S001', 'Trang Nguyen', 'P100', 'Millbrook Commons', 'Diane Ortiz', '101', 'Single', 595.00, '2026-08-01, 2026-09-01');
+INSERT INTO LEASE_REPORT VALUES ('S002', 'Miles Carter', 'P100', 'Millbrook Commons', 'Diane Ortiz', '102', 'Double', 450.00, '2026-08-01');
+INSERT INTO LEASE_REPORT VALUES ('S003', 'Layla Ibrahim', 'P200', 'Sycamore Court', 'Bruce Feldman', '201', 'Studio', 725.00, '2026-08-01');</code></pre></div><p><strong>File 2 of 3 &mdash; <code>kimtay_flat.sql</code></strong></p><div class="cb"><div class="cb-head"><span class="cb-tag k-file">Save as a file</span><button class="cb-copy" type="button">Copy</button></div><pre><code>CREATE TABLE INVOICE_FLAT (
+    INVOICE_NUM       CHAR(5),
+    ITEM_ID           CHAR(4),
+    INVOICE_DATE      DATE,
+    CUSTOMER_NUM      CHAR(4),
+    CUSTOMER_NAME     VARCHAR(35),
+    CUSTOMER_CITY     VARCHAR(15),
+    ITEM_DESCRIPTION  VARCHAR(30),
+    CATEGORY          VARCHAR(15),
+    NUM_ORDERED       SMALLINT,
+    QUOTED_PRICE      DECIMAL(7,2)
+);
+
+INSERT INTO INVOICE_FLAT VALUES ('50710', 'CF21', '2026-06-14', '1120', 'Access Pet Center', 'Maple Grove', 'Grain-Free Dry Food 30lb', 'Food', 3, 42.50);
+INSERT INTO INVOICE_FLAT VALUES ('50710', 'DG04', '2026-06-14', '1120', 'Access Pet Center', 'Maple Grove', 'Nylon Dog Leash 6ft', 'Accessory', 2, 11.99);
+INSERT INTO INVOICE_FLAT VALUES ('50711', 'CF21', '2026-06-14', '1420', 'Whiskers &amp; Wags Boutique', 'Brookville', 'Grain-Free Dry Food 30lb', 'Food', 2, 42.50);
+INSERT INTO INVOICE_FLAT VALUES ('50711', 'GR15', '2026-06-14', '1420', 'Whiskers &amp; Wags Boutique', 'Brookville', 'Small Animal Grooming Kit', 'Grooming', 1, 15.25);
+INSERT INTO INVOICE_FLAT VALUES ('50712', 'AV07', '2026-06-15', '1225', 'Downtown Aquarium &amp; Pets', 'Northfield', 'Aviary Starter Cage', 'Habitat', 1, 64.99);
+INSERT INTO INVOICE_FLAT VALUES ('50712', 'FT88', '2026-06-15', '1225', 'Downtown Aquarium &amp; Pets', 'Northfield', 'Fish Tank Filter Kit', 'Habitat', 2, 27.75);</code></pre></div><p><strong>File 3 of 3 &mdash; <code>property_sheet.sql</code></strong></p><div class="cb"><div class="cb-head"><span class="cb-tag k-file">Save as a file</span><button class="cb-copy" type="button">Copy</button></div><pre><code>CREATE TABLE PROPERTY_SHEET (
+    PROPERTY_ID    CHAR(4),
+    PROPERTY_NAME  VARCHAR(30),
+    PROPERTY_CITY  VARCHAR(15),
+    MANAGER_ID     CHAR(3),
+    MANAGER_NAME   VARCHAR(30),
+    MANAGER_PHONE  CHAR(12),
+    AMENITIES      VARCHAR(60),
+    ROOM_NUM       CHAR(3),
+    ROOM_TYPE      VARCHAR(10),
+    MONTHLY_RENT   DECIMAL(7,2),
+    MAX_OCCUPANTS  SMALLINT
+);
+
+INSERT INTO PROPERTY_SHEET VALUES ('P100', 'Millbrook Commons', 'Millbrook', 'M01', 'Diane Ortiz', '555-201-3344', 'Laundry, Parking', '101', 'Single', 595.00, 1);
+INSERT INTO PROPERTY_SHEET VALUES ('P100', 'Millbrook Commons', 'Millbrook', 'M01', 'Diane Ortiz', '555-201-3344', 'Laundry, Parking', '102', 'Double', 450.00, 2);
+INSERT INTO PROPERTY_SHEET VALUES ('P200', 'Sycamore Court', 'Millbrook', 'M02', 'Bruce Feldman', '555-201-7790', 'Laundry, Gym, Parking', '101', 'Single', 610.00, 1);
+INSERT INTO PROPERTY_SHEET VALUES ('P200', 'Sycamore Court', 'Millbrook', 'M02', 'Bruce Feldman', '555-201-7790', 'Laundry, Gym, Parking', '201', 'Studio', 725.00, 1);
+INSERT INTO PROPERTY_SHEET VALUES ('P200', 'Sycamore Court', 'Millbrook', 'M02', 'Bruce Feldman', '555-201-7790', 'Laundry, Gym, Parking', '202', 'Double', 465.00, 2);</code></pre></div><div class="cal warn"><strong>Save as plain text</strong><p style="margin:0">If you use TextEdit on a Mac, choose <em>Format &rarr; Make Plain Text</em> first, or it will save an RTF file that SQLite cannot read. Make sure the name ends in <code>.sql</code> and not <code>.sql.txt</code>.</p></div></section>
+<h2><span class="part">Part 3</span>The sqlite3 survival kit</h2><p>Two kinds of thing get typed at the <code>sqlite&gt;</code> prompt, and telling them apart saves a lot of confusion.</p><table><thead><tr><th>Kind</th><th>Looks like</th><th>Rule</th></tr></thead><tbody>
+<tr><td><strong>SQL statements</strong></td><td><code>SELECT COUNT(*) FROM LEASE_REPORT;</code></td>
+<td>Must end with a semicolon. Until you type one, SQLite keeps waiting and shows <code>...&gt;</code>.</td></tr>
+<tr><td><strong>Dot commands</strong></td><td><code>.tables</code></td>
+<td>Instructions to the tool itself, not the database. One per line, <strong>no</strong> semicolon.</td></tr>
+</tbody></table><p>The dot commands worth knowing for these labs:</p><table><thead><tr><th>Command</th><th>What it does</th></tr></thead><tbody>
+<tr><td><code>.headers on</code></td><td>Show column names above results. Do this every session.</td></tr>
+<tr><td><code>.mode box</code></td><td>Draw results in a bordered table. Makes everything readable.</td></tr>
+<tr><td><code>.tables</code></td><td>List the tables in the database right now.</td></tr>
+<tr><td><code>.schema TABLENAME</code></td><td>Show the CREATE TABLE statement behind a table.</td></tr>
+<tr><td><code>.read filename.sql</code></td><td>Run every statement in a file.</td></tr>
+<tr><td><code>.quit</code></td><td>Leave sqlite3 and go back to the terminal.</td></tr>
+</tbody></table><div class="cal tip"><strong>Stuck at a ...&gt; prompt?</strong><p style="margin:0">You forgot a semicolon. Type one and press Enter. If you are truly stuck, press <code>Ctrl</code>+<code>C</code> to abandon the line.</p></div><h2><span class="part">Part 4</span>Mini-lab 1 &mdash; First normal form</h2><p>StayWell&#39;s flat lease report has a list crammed into PAYMENT_DATES. You will ask it three ordinary questions, watch it answer all three wrong, then fix the table and ask again.</p><section class="step"><div class="step-head"><span class="step-num">4</span><h3>Create the database and load the flat report</h3></div><p>This creates a new file called <code>staywell.db</code> and drops you at the <code>sqlite&gt;</code> prompt:</p><div class="cb"><div class="cb-head"><span class="cb-tag k-shell">Terminal</span><button class="cb-copy" type="button">Copy</button></div><pre><code>sqlite3 staywell.db</code></pre></div><p>Now set up readable output and load the data:</p><div class="cb"><div class="cb-head"><span class="cb-tag k-sqlite">sqlite&gt; prompt</span><button class="cb-copy" type="button">Copy</button></div><pre><code>.headers on
+.mode box
+.read staywell_flat.sql
+.tables</code></pre></div><div class="out"><span class="out-tag">What you should see</span><pre>LEASE_REPORT</pre><p class="out-note">One table, three rows. If you get "cannot open" the file is not in this folder &mdash; check with <code>ls</code> (macOS/Linux) or <code>dir</code> (Windows).</p></div></section>
+<section class="step"><div class="step-head"><span class="step-num">5</span><h3>Question 1 &mdash; how many payments has StayWell received?</h3></div><p>The true answer is <strong>4</strong>. Ask the table:</p><div class="cb"><div class="cb-head"><span class="cb-tag k-sqlite">sqlite&gt; prompt</span><button class="cb-copy" type="button">Copy</button></div><pre><code>SELECT COUNT(*) AS ROWS_IN_THE_REPORT
+FROM LEASE_REPORT;</code></pre></div><div class="out"><span class="out-tag">What you should see</span><pre>┌────────────────────┐
+│ ROWS_IN_THE_REPORT │
+├────────────────────┤
+│ 3                  │
+└────────────────────┘</pre><p class="out-note">It says 3. Nothing failed and nothing was flagged &mdash; 3 is the number of <em>rows</em>, and rows stopped meaning payments the moment somebody typed a comma into a cell.</p></div></section>
+<section class="step"><div class="step-head"><span class="step-num">6</span><h3>Question 2 &mdash; what is the most recent payment date?</h3></div><p>The true answer is <strong>2026-09-01</strong>.</p><div class="cb"><div class="cb-head"><span class="cb-tag k-sqlite">sqlite&gt; prompt</span><button class="cb-copy" type="button">Copy</button></div><pre><code>SELECT MAX(PAYMENT_DATES) AS LATEST_PAYMENT
+FROM LEASE_REPORT;</code></pre></div><div class="out"><span class="out-tag">What you should see</span><pre>┌────────────────────────┐
+│     LATEST_PAYMENT     │
+├────────────────────────┤
+│ 2026-08-01, 2026-09-01 │
+└────────────────────────┘</pre><p class="out-note">This is the one that changes minds. It did not return a date at all &mdash; it returned the whole string, because SQLite compared text and that string sorted highest. A report built on this would print that into a box labelled "latest payment".</p></div></section>
+<section class="step"><div class="step-head"><span class="step-num">7</span><h3>Question 3 &mdash; how much rent have we collected?</h3></div><p>There is no expression to write. The best SQL can do is hand the lists back:</p><div class="cb"><div class="cb-head"><span class="cb-tag k-sqlite">sqlite&gt; prompt</span><button class="cb-copy" type="button">Copy</button></div><pre><code>SELECT STUDENT_ID, MONTHLY_RENT, PAYMENT_DATES
+FROM LEASE_REPORT;</code></pre></div><div class="out"><span class="out-tag">What you should see</span><pre>┌────────────┬──────────────┬────────────────────────┐
+│ STUDENT_ID │ MONTHLY_RENT │     PAYMENT_DATES      │
+├────────────┼──────────────┼────────────────────────┤
+│ S001       │ 595          │ 2026-08-01, 2026-09-01 │
+│ S002       │ 450          │ 2026-08-01             │
+│ S003       │ 725          │ 2026-08-01             │
+└────────────┴──────────────┴────────────────────────┘</pre><p class="out-note">A person has to count them by eye. That is not a database answering a question.</p></div></section>
+<section class="step"><div class="step-head"><span class="step-num">8</span><h3>Fix it &mdash; one row per payment</h3></div><p>1NF says every cell holds one value. Give each payment its own row, in its own table:</p><div class="cb"><div class="cb-head"><span class="cb-tag k-sqlite">sqlite&gt; prompt</span><button class="cb-copy" type="button">Copy</button></div><pre><code>CREATE TABLE PAYMENT_1NF (
+    STUDENT_ID    CHAR(4),
+    PAYMENT_DATE  DATE,
+    PRIMARY KEY (STUDENT_ID, PAYMENT_DATE)
+);
+
+INSERT INTO PAYMENT_1NF VALUES ('S001', '2026-08-01');
+INSERT INTO PAYMENT_1NF VALUES ('S001', '2026-09-01');
+INSERT INTO PAYMENT_1NF VALUES ('S002', '2026-08-01');
+INSERT INTO PAYMENT_1NF VALUES ('S003', '2026-08-01');
+
+CREATE TABLE LEASE_1NF AS
+SELECT STUDENT_ID, STUDENT_NAME, PROPERTY_ID, PROPERTY_NAME,
+       MANAGER_NAME, ROOM_NUM, ROOM_TYPE, MONTHLY_RENT
+FROM LEASE_REPORT;</code></pre></div><p>Confirm the two new tables exist:</p><div class="cb"><div class="cb-head"><span class="cb-tag k-sqlite">sqlite&gt; prompt</span><button class="cb-copy" type="button">Copy</button></div><pre><code>.tables</code></pre></div><div class="out"><span class="out-tag">What you should see</span><pre>LEASE_1NF     LEASE_REPORT  PAYMENT_1NF</pre><p class="out-note">SQLite says nothing when a CREATE or INSERT succeeds. Silence means it worked.</p></div></section>
+<section class="step"><div class="step-head"><span class="step-num">9</span><h3>Ask all three questions again</h3></div><div class="cb"><div class="cb-head"><span class="cb-tag k-sqlite">sqlite&gt; prompt</span><button class="cb-copy" type="button">Copy</button></div><pre><code>SELECT COUNT(*) AS PAYMENTS_RECEIVED FROM PAYMENT_1NF;</code></pre></div><div class="out"><span class="out-tag">What you should see</span><pre>┌───────────────────┐
+│ PAYMENTS_RECEIVED │
+├───────────────────┤
+│ 4                 │
+└───────────────────┘</pre></div><div class="cb"><div class="cb-head"><span class="cb-tag k-sqlite">sqlite&gt; prompt</span><button class="cb-copy" type="button">Copy</button></div><pre><code>SELECT MAX(PAYMENT_DATE) AS LATEST_PAYMENT FROM PAYMENT_1NF;</code></pre></div><div class="out"><span class="out-tag">What you should see</span><pre>┌────────────────┐
+│ LATEST_PAYMENT │
+├────────────────┤
+│ 2026-09-01     │
+└────────────────┘</pre></div><div class="cb"><div class="cb-head"><span class="cb-tag k-sqlite">sqlite&gt; prompt</span><button class="cb-copy" type="button">Copy</button></div><pre><code>SELECT l.STUDENT_ID,
+       l.STUDENT_NAME,
+       COUNT(p.PAYMENT_DATE)                  AS PAYMENTS_MADE,
+       COUNT(p.PAYMENT_DATE) * l.MONTHLY_RENT AS COLLECTED
+FROM LEASE_1NF l
+LEFT JOIN PAYMENT_1NF p ON l.STUDENT_ID = p.STUDENT_ID
+GROUP BY l.STUDENT_ID, l.STUDENT_NAME, l.MONTHLY_RENT
+ORDER BY l.STUDENT_ID;</code></pre></div><div class="out"><span class="out-tag">What you should see</span><pre>┌────────────┬───────────────┬───────────────┬───────────┐
+│ STUDENT_ID │ STUDENT_NAME  │ PAYMENTS_MADE │ COLLECTED │
+├────────────┼───────────────┼───────────────┼───────────┤
+│ S001       │ Trang Nguyen  │ 2             │ 1190      │
+│ S002       │ Miles Carter  │ 1             │ 450       │
+│ S003       │ Layla Ibrahim │ 1             │ 725       │
+└────────────┴───────────────┴───────────────┴───────────┘</pre><p class="out-note">Every answer is now right, and notice why: nothing clever happened. There are four rows and each row is one payment.</p></div><p>Leave sqlite3 when you are done:</p><div class="cb"><div class="cb-head"><span class="cb-tag k-sqlite">sqlite&gt; prompt</span><button class="cb-copy" type="button">Copy</button></div><pre><code>.quit</code></pre></div></section>
+<h2><span class="part">Part 5</span>Mini-lab 2 &mdash; Second and third normal form</h2><p>KimTay&#39;s flat invoice report is already in 1NF and a long way from 3NF. You will damage it on purpose to see the three anomalies, then start clean and normalize it properly.</p><div class="cal tip"><strong>Two database files on purpose</strong><p style="margin:0">The first half of this lab deliberately corrupts the data. Do that work in a throwaway file (<code>kimtay_anomalies.db</code>) and the normalization in a clean one (<code>kimtay.db</code>). In the browser this is what the <em>Reset</em> button did for you.</p></div><section class="step"><div class="step-head"><span class="step-num">10</span><h3>Open a throwaway database for the anomalies</h3></div><div class="cb"><div class="cb-head"><span class="cb-tag k-shell">Terminal</span><button class="cb-copy" type="button">Copy</button></div><pre><code>sqlite3 kimtay_anomalies.db</code></pre></div><div class="cb"><div class="cb-head"><span class="cb-tag k-sqlite">sqlite&gt; prompt</span><button class="cb-copy" type="button">Copy</button></div><pre><code>.headers on
+.mode box
+.read kimtay_flat.sql</code></pre></div></section>
+<section class="step"><div class="step-head"><span class="step-num">11</span><h3>Update anomaly &mdash; one item, two names</h3></div><p>Marketing renames CF21 and somebody updates the line they were looking at:</p><div class="cb"><div class="cb-head"><span class="cb-tag k-sqlite">sqlite&gt; prompt</span><button class="cb-copy" type="button">Copy</button></div><pre><code>UPDATE INVOICE_FLAT
+SET ITEM_DESCRIPTION = 'Grain-Free Dry Dog Food 30lb'
+WHERE INVOICE_NUM = '50710' AND ITEM_ID = 'CF21';
+
+SELECT DISTINCT ITEM_ID, ITEM_DESCRIPTION
+FROM INVOICE_FLAT
+WHERE ITEM_ID = 'CF21';</code></pre></div><div class="out"><span class="out-tag">What you should see</span><pre>┌─────────┬──────────────────────────────┐
+│ ITEM_ID │       ITEM_DESCRIPTION       │
+├─────────┼──────────────────────────────┤
+│ CF21    │ Grain-Free Dry Dog Food 30lb │
+│ CF21    │ Grain-Free Dry Food 30lb     │
+└─────────┴──────────────────────────────┘</pre><p class="out-note">The database now contradicts itself. Nobody typed anything invalid and no constraint could have caught it.</p></div></section>
+<section class="step"><div class="step-head"><span class="step-num">12</span><h3>Insertion anomaly &mdash; nowhere to put a new item</h3></div><p>KimTay wants to stock BD10 before anyone has ordered it. The only way in is to invent an invoice line:</p><div class="cb"><div class="cb-head"><span class="cb-tag k-sqlite">sqlite&gt; prompt</span><button class="cb-copy" type="button">Copy</button></div><pre><code>INSERT INTO INVOICE_FLAT
+VALUES ('?????', 'BD10', NULL, NULL, NULL, NULL, 'Ceramic Bird Bath', 'Habitat', 0, 0.00);
+
+SELECT COUNT(DISTINCT INVOICE_NUM) AS INVOICES_ACCORDING_TO_THE_TABLE
+FROM INVOICE_FLAT;</code></pre></div><div class="out"><span class="out-tag">What you should see</span><pre>┌─────────────────────────────────┐
+│ INVOICES_ACCORDING_TO_THE_TABLE │
+├─────────────────────────────────┤
+│ 4                               │
+└─────────────────────────────────┘</pre><p class="out-note">It says 4. KimTay has issued 3. Every report that counts invoices is now wrong.</p></div></section>
+<section class="step"><div class="step-head"><span class="step-num">13</span><h3>Deletion anomaly &mdash; losing facts you never touched</h3></div><div class="cb"><div class="cb-head"><span class="cb-tag k-sqlite">sqlite&gt; prompt</span><button class="cb-copy" type="button">Copy</button></div><pre><code>DELETE FROM INVOICE_FLAT WHERE INVOICE_NUM = '50712';
+
+SELECT DISTINCT ITEM_ID FROM INVOICE_FLAT ORDER BY ITEM_ID;</code></pre></div><div class="out"><span class="out-tag">What you should see</span><pre>┌─────────┐
+│ ITEM_ID │
+├─────────┤
+│ BD10    │
+│ CF21    │
+│ DG04    │
+│ GR15    │
+└─────────┘</pre><p class="out-note">AV07 and FT88 have stopped existing, and so has customer 1225 &mdash; none of which had anything to do with the voided invoice.</p></div><p>That file has served its purpose. Leave it and start clean:</p><div class="cb"><div class="cb-head"><span class="cb-tag k-sqlite">sqlite&gt; prompt</span><button class="cb-copy" type="button">Copy</button></div><pre><code>.quit</code></pre></div></section>
+<section class="step"><div class="step-head"><span class="step-num">14</span><h3>Start a clean database and test the dependencies</h3></div><div class="cb"><div class="cb-head"><span class="cb-tag k-shell">Terminal</span><button class="cb-copy" type="button">Copy</button></div><pre><code>sqlite3 kimtay.db</code></pre></div><div class="cb"><div class="cb-head"><span class="cb-tag k-sqlite">sqlite&gt; prompt</span><button class="cb-copy" type="button">Copy</button></div><pre><code>.headers on
+.mode box
+.read kimtay_flat.sql</code></pre></div><p>The key is (INVOICE_NUM, ITEM_ID). 2NF asks which columns need <em>both</em> halves. Do not guess &mdash; test it. If INVOICE_NUM really determines the date, no invoice number can carry two different dates:</p><div class="cb"><div class="cb-head"><span class="cb-tag k-sqlite">sqlite&gt; prompt</span><button class="cb-copy" type="button">Copy</button></div><pre><code>SELECT INVOICE_NUM,
+       COUNT(DISTINCT INVOICE_DATE) AS DATES,
+       COUNT(DISTINCT CUSTOMER_NUM) AS CUSTOMERS
+FROM INVOICE_FLAT
+GROUP BY INVOICE_NUM;</code></pre></div><div class="out"><span class="out-tag">What you should see</span><pre>┌─────────────┬───────┬───────────┐
+│ INVOICE_NUM │ DATES │ CUSTOMERS │
+├─────────────┼───────┼───────────┤
+│ 50710       │ 1     │ 1         │
+│ 50711       │ 1     │ 1         │
+│ 50712       │ 1     │ 1         │
+└─────────────┴───────┴───────────┘</pre><p class="out-note">Every count is 1, so INVOICE_NUM alone fixes both. That is a partial dependency.</p></div></section>
+<section class="step"><div class="step-head"><span class="step-num">15</span><h3>The test that fails &mdash; and why that matters</h3></div><p>Run the same shape of test on the quantity:</p><div class="cb"><div class="cb-head"><span class="cb-tag k-sqlite">sqlite&gt; prompt</span><button class="cb-copy" type="button">Copy</button></div><pre><code>SELECT ITEM_ID,
+       COUNT(DISTINCT NUM_ORDERED) AS QUANTITIES
+FROM INVOICE_FLAT
+GROUP BY ITEM_ID;</code></pre></div><div class="out"><span class="out-tag">What you should see</span><pre>┌─────────┬────────────┐
+│ ITEM_ID │ QUANTITIES │
+├─────────┼────────────┤
+│ AV07    │ 1          │
+│ CF21    │ 2          │
+│ DG04    │ 1          │
+│ FT88    │ 1          │
+│ GR15    │ 1          │
+└─────────┴────────────┘</pre><p class="out-note">CF21 comes back with a 2, because someone ordered 3 of it on one invoice and 2 on another. ITEM_ID alone does not fix the quantity, so NUM_ORDERED needs the whole key and stays put. That single 2 is the difference between a column that must move and one that must not.</p></div></section>
+<section class="step"><div class="step-head"><span class="step-num">16</span><h3>Split off the partial dependencies (2NF)</h3></div><div class="cb"><div class="cb-head"><span class="cb-tag k-sqlite">sqlite&gt; prompt</span><button class="cb-copy" type="button">Copy</button></div><pre><code>CREATE TABLE INVOICE_2NF (
+    INVOICE_NUM    CHAR(5)   PRIMARY KEY,
+    INVOICE_DATE   DATE,
+    CUSTOMER_NUM   CHAR(4),
+    CUSTOMER_NAME  VARCHAR(35),
+    CUSTOMER_CITY  VARCHAR(15)
+);
+INSERT INTO INVOICE_2NF
+SELECT DISTINCT INVOICE_NUM, INVOICE_DATE, CUSTOMER_NUM, CUSTOMER_NAME, CUSTOMER_CITY
+FROM INVOICE_FLAT;
+
+CREATE TABLE ITEM_2NF (
+    ITEM_ID      CHAR(4)      PRIMARY KEY,
+    DESCRIPTION  VARCHAR(30),
+    CATEGORY     VARCHAR(15)
+);
+INSERT INTO ITEM_2NF
+SELECT DISTINCT ITEM_ID, ITEM_DESCRIPTION, CATEGORY FROM INVOICE_FLAT;
+
+CREATE TABLE INVOICE_LINE_2NF (
+    INVOICE_NUM   CHAR(5),
+    ITEM_ID       CHAR(4),
+    NUM_ORDERED   SMALLINT,
+    QUOTED_PRICE  DECIMAL(7,2),
+    PRIMARY KEY (INVOICE_NUM, ITEM_ID)
+);
+INSERT INTO INVOICE_LINE_2NF
+SELECT INVOICE_NUM, ITEM_ID, NUM_ORDERED, QUOTED_PRICE FROM INVOICE_FLAT;</code></pre></div><div class="cb"><div class="cb-head"><span class="cb-tag k-sqlite">sqlite&gt; prompt</span><button class="cb-copy" type="button">Copy</button></div><pre><code>SELECT (SELECT COUNT(*) FROM INVOICE_2NF)      AS INVOICE_ROWS,
+       (SELECT COUNT(*) FROM ITEM_2NF)         AS ITEM_ROWS,
+       (SELECT COUNT(*) FROM INVOICE_LINE_2NF) AS LINE_ROWS;</code></pre></div><div class="out"><span class="out-tag">What you should see</span><pre>┌──────────────┬───────────┬───────────┐
+│ INVOICE_ROWS │ ITEM_ROWS │ LINE_ROWS │
+├──────────────┼───────────┼───────────┤
+│ 3            │ 5         │ 6         │
+└──────────────┴───────────┴───────────┘</pre><p class="out-note">Six repetitive rows became 3 invoices, 5 items and 6 lines. CF21&#39;s description is now written down exactly once, so it can only ever be renamed once.</p></div></section>
+<section class="step"><div class="step-head"><span class="step-num">17</span><h3>Remove the transitive dependency (3NF)</h3></div><p>INVOICE_2NF still repeats itself: CUSTOMER_NAME is fixed by CUSTOMER_NUM, which is not this table&#39;s key. Check it the same way, then split:</p><div class="cb"><div class="cb-head"><span class="cb-tag k-sqlite">sqlite&gt; prompt</span><button class="cb-copy" type="button">Copy</button></div><pre><code>SELECT CUSTOMER_NUM,
+       COUNT(DISTINCT CUSTOMER_NAME) AS NAMES,
+       COUNT(DISTINCT CUSTOMER_CITY) AS CITIES
+FROM INVOICE_2NF
+GROUP BY CUSTOMER_NUM;</code></pre></div><div class="cb"><div class="cb-head"><span class="cb-tag k-sqlite">sqlite&gt; prompt</span><button class="cb-copy" type="button">Copy</button></div><pre><code>CREATE TABLE CUSTOMER_3NF (
+    CUSTOMER_NUM   CHAR(4)      PRIMARY KEY,
+    CUSTOMER_NAME  VARCHAR(35),
+    CUSTOMER_CITY  VARCHAR(15)
+);
+INSERT INTO CUSTOMER_3NF
+SELECT DISTINCT CUSTOMER_NUM, CUSTOMER_NAME, CUSTOMER_CITY FROM INVOICE_2NF;
+
+CREATE TABLE INVOICE_3NF (
+    INVOICE_NUM   CHAR(5)  PRIMARY KEY,
+    INVOICE_DATE  DATE,
+    CUSTOMER_NUM  CHAR(4),
+    FOREIGN KEY (CUSTOMER_NUM) REFERENCES CUSTOMER_3NF(CUSTOMER_NUM)
+);
+INSERT INTO INVOICE_3NF
+SELECT INVOICE_NUM, INVOICE_DATE, CUSTOMER_NUM FROM INVOICE_2NF;</code></pre></div></section>
+<section class="step"><div class="step-head"><span class="step-num">18</span><h3>Prove you lost nothing</h3></div><p>Stitch the four small tables back into one wide table, then ask the database whether it matches the original:</p><div class="cb"><div class="cb-head"><span class="cb-tag k-sqlite">sqlite&gt; prompt</span><button class="cb-copy" type="button">Copy</button></div><pre><code>CREATE TABLE REBUILT AS
+SELECT il.INVOICE_NUM, il.ITEM_ID, i.INVOICE_DATE, c.CUSTOMER_NUM,
+       c.CUSTOMER_NAME, c.CUSTOMER_CITY, it.DESCRIPTION AS ITEM_DESCRIPTION,
+       it.CATEGORY, il.NUM_ORDERED, il.QUOTED_PRICE
+FROM INVOICE_LINE_2NF il
+JOIN INVOICE_3NF  i  ON il.INVOICE_NUM = i.INVOICE_NUM
+JOIN CUSTOMER_3NF c  ON i.CUSTOMER_NUM = c.CUSTOMER_NUM
+JOIN ITEM_2NF     it ON il.ITEM_ID     = it.ITEM_ID;</code></pre></div><div class="cb"><div class="cb-head"><span class="cb-tag k-sqlite">sqlite&gt; prompt</span><button class="cb-copy" type="button">Copy</button></div><pre><code>SELECT CASE
+         WHEN (SELECT COUNT(*) FROM (SELECT * FROM REBUILT EXCEPT SELECT * FROM INVOICE_FLAT)) = 0
+          AND (SELECT COUNT(*) FROM (SELECT * FROM INVOICE_FLAT EXCEPT SELECT * FROM REBUILT)) = 0
+         THEN 'LOSSLESS - the four 3NF tables rebuild the report exactly'
+         ELSE 'LOSSY - the split changed the data'
+       END AS VERDICT;</code></pre></div><div class="out"><span class="out-tag">What you should see</span><pre>┌───────────────────────────────────────────────────────────┐
+│                          VERDICT                          │
+├───────────────────────────────────────────────────────────┤
+│ LOSSLESS - the four 3NF tables rebuild the report exactly │
+└───────────────────────────────────────────────────────────┘</pre><p class="out-note">EXCEPT lists rows on the left that are missing on the right, so running it both ways asks "did we lose anything?" and "did we invent anything?" at once. Both come back empty.</p></div><p>And look where you landed &mdash; INVOICE, INVOICE_LINE, ITEM, CUSTOMER. That is the KimTay schema from Module 1, produced by the flat report plus three mechanical rules.</p><div class="cb"><div class="cb-head"><span class="cb-tag k-sqlite">sqlite&gt; prompt</span><button class="cb-copy" type="button">Copy</button></div><pre><code>.quit</code></pre></div></section>
+<h2><span class="part">Part 6</span>Lab 3 &mdash; On your own</h2><p>StayWell&#39;s property sheet has all three faults in it. Take it to 3NF yourself. A self-check is provided that grades your work in one query, and the answer is at the bottom of this page &mdash; try it first.</p><section class="step"><div class="step-head"><span class="step-num">19</span><h3>Load the sheet and look at it</h3></div><div class="cb"><div class="cb-head"><span class="cb-tag k-shell">Terminal</span><button class="cb-copy" type="button">Copy</button></div><pre><code>sqlite3 property.db</code></pre></div><div class="cb"><div class="cb-head"><span class="cb-tag k-sqlite">sqlite&gt; prompt</span><button class="cb-copy" type="button">Copy</button></div><pre><code>.headers on
+.mode box
+.read property_sheet.sql
+SELECT * FROM PROPERTY_SHEET;</code></pre></div></section>
+<section class="step"><div class="step-head"><span class="step-num">20</span><h3>Build four tables, with these exact names</h3></div><p>The self-check looks for these, so match the names and columns:</p><ul class="done-list">
+<li><code>MY_MANAGER</code> &mdash; MANAGER_ID primary key, MANAGER_NAME, MANAGER_PHONE</li>
+<li><code>MY_PROPERTY</code> &mdash; PROPERTY_ID primary key, PROPERTY_NAME, PROPERTY_CITY, MANAGER_ID foreign key</li>
+<li><code>MY_ROOM</code> &mdash; composite primary key (PROPERTY_ID, ROOM_NUM), ROOM_TYPE, MONTHLY_RENT, MAX_OCCUPANTS; PROPERTY_ID also a foreign key</li>
+<li><code>MY_AMENITY</code> &mdash; composite primary key (PROPERTY_ID, AMENITY); PROPERTY_ID also a foreign key</li>
+</ul><p>Two techniques save typing. <code>INSERT INTO ... SELECT DISTINCT ...</code> fills a table straight from the sheet, so you never retype a value. The amenities are the one part you type by hand, because splitting a list is exactly what SQL is bad at.</p></section>
+<section class="step"><div class="step-head"><span class="step-num">21</span><h3>Grade yourself</h3></div><p>Paste this whole thing at the prompt. It is one statement and returns one table, one row per check:</p><div class="cb"><div class="cb-head"><span class="cb-tag k-sqlite">sqlite&gt; prompt</span><button class="cb-copy" type="button">Copy</button></div><pre><code>WITH EXPECTED_AMENITY(PROPERTY_ID, AMENITY) AS (VALUES
+       ('P100','Laundry'), ('P100','Parking'),
+       ('P200','Laundry'), ('P200','Gym'), ('P200','Parking')),
+     REBUILT AS (
+       SELECT p.PROPERTY_ID, p.PROPERTY_NAME, p.PROPERTY_CITY,
+              m.MANAGER_ID, m.MANAGER_NAME, m.MANAGER_PHONE,
+              r.ROOM_NUM, r.ROOM_TYPE, r.MONTHLY_RENT, r.MAX_OCCUPANTS
+       FROM MY_ROOM r
+       JOIN MY_PROPERTY p ON r.PROPERTY_ID = p.PROPERTY_ID
+       JOIN MY_MANAGER  m ON p.MANAGER_ID  = m.MANAGER_ID),
+     SHEET AS (
+       SELECT PROPERTY_ID, PROPERTY_NAME, PROPERTY_CITY, MANAGER_ID, MANAGER_NAME,
+              MANAGER_PHONE, ROOM_NUM, ROOM_TYPE, MONTHLY_RENT, MAX_OCCUPANTS
+       FROM PROPERTY_SHEET)
+SELECT '1. MY_MANAGER  - one row per manager' AS CHECK_NAME,
+       CASE WHEN (SELECT COUNT(*) FROM MY_MANAGER) = 2 THEN 'PASS' ELSE 'FAIL' END AS RESULT,
+       'expected 2, found ' || (SELECT COUNT(*) FROM MY_MANAGER) AS DETAIL
+UNION ALL
+SELECT '2. MY_PROPERTY - one row per property',
+       CASE WHEN (SELECT COUNT(*) FROM MY_PROPERTY) = 2 THEN 'PASS' ELSE 'FAIL' END,
+       'expected 2, found ' || (SELECT COUNT(*) FROM MY_PROPERTY)
+UNION ALL
+SELECT '3. MY_ROOM     - one row per room',
+       CASE WHEN (SELECT COUNT(*) FROM MY_ROOM) = 5 THEN 'PASS' ELSE 'FAIL' END,
+       'expected 5, found ' || (SELECT COUNT(*) FROM MY_ROOM)
+UNION ALL
+SELECT '4. MY_AMENITY  - one row per amenity',
+       CASE WHEN (SELECT COUNT(*) FROM MY_AMENITY) = 5 THEN 'PASS' ELSE 'FAIL' END,
+       'expected 5, found ' || (SELECT COUNT(*) FROM MY_AMENITY)
+UNION ALL
+SELECT '5. Primary and foreign keys declared',
+       CASE WHEN
+         (SELECT COUNT(*) FROM pragma_table_info('MY_MANAGER')  WHERE name='MANAGER_ID'  AND pk=1) = 1 AND
+         (SELECT COUNT(*) FROM pragma_table_info('MY_PROPERTY') WHERE name='PROPERTY_ID' AND pk=1) = 1 AND
+         (SELECT COUNT(*) FROM pragma_table_info('MY_ROOM')     WHERE name='PROPERTY_ID' AND pk=1) = 1 AND
+         (SELECT COUNT(*) FROM pragma_table_info('MY_ROOM')     WHERE name='ROOM_NUM'    AND pk=2) = 1 AND
+         (SELECT COUNT(*) FROM pragma_table_info('MY_AMENITY')  WHERE name='PROPERTY_ID' AND pk=1) = 1 AND
+         (SELECT COUNT(*) FROM pragma_table_info('MY_AMENITY')  WHERE name='AMENITY'     AND pk=2) = 1 AND
+         EXISTS (SELECT 1 FROM pragma_foreign_key_list('MY_PROPERTY') WHERE "table"='MY_MANAGER') AND
+         EXISTS (SELECT 1 FROM pragma_foreign_key_list('MY_ROOM')     WHERE "table"='MY_PROPERTY') AND
+         EXISTS (SELECT 1 FROM pragma_foreign_key_list('MY_AMENITY')  WHERE "table"='MY_PROPERTY')
+       THEN 'PASS' ELSE 'FAIL' END,
+       'composite keys on MY_ROOM and MY_AMENITY, three foreign keys'
+UNION ALL
+SELECT '6. Amenity values match the source',
+       CASE WHEN NOT EXISTS (SELECT * FROM EXPECTED_AMENITY EXCEPT SELECT PROPERTY_ID, AMENITY FROM MY_AMENITY)
+             AND NOT EXISTS (SELECT PROPERTY_ID, AMENITY FROM MY_AMENITY EXCEPT SELECT * FROM EXPECTED_AMENITY)
+       THEN 'PASS' ELSE 'FAIL' END,
+       'each amenity on the right property, none missing or extra'
+UNION ALL
+SELECT '7. Your tables rebuild the sheet exactly',
+       CASE WHEN NOT EXISTS (SELECT * FROM REBUILT EXCEPT SELECT * FROM SHEET)
+             AND NOT EXISTS (SELECT * FROM SHEET   EXCEPT SELECT * FROM REBUILT)
+       THEN 'PASS' ELSE 'FAIL' END,
+       'nothing lost and nothing invented by the split';</code></pre></div><div class="out"><span class="out-tag">What you should see</span><pre>┌──────────────────────────────────────────┬────────┬──────────────────────┐
+│                CHECK_NAME                │ RESULT │        DETAIL        │
+├──────────────────────────────────────────┼────────┼──────────────────────┤
+│ 1. MY_MANAGER  - one row per manager     │ PASS   │ expected 2, found 2  │
+│ 2. MY_PROPERTY - one row per property    │ PASS   │ expected 2, found 2  │
+│ 3. MY_ROOM     - one row per room        │ PASS   │ expected 5, found 5  │
+│ 4. MY_AMENITY  - one row per amenity     │ PASS   │ expected 5, found 5  │
+│ 5. Primary and foreign keys declared     │ PASS   │ composite keys ...   │
+│ 6. Amenity values match the source       │ PASS   │ each amenity ...     │
+│ 7. Your tables rebuild the sheet exactly │ PASS   │ nothing lost ...     │
+└──────────────────────────────────────────┴────────┴──────────────────────┘</pre><p class="out-note">The DETAIL column is trimmed here to fit. Seven PASSes means your design holds one row per real-world thing, declares every key, splits the amenity list correctly, and rebuilds the original sheet without losing or inventing a row.</p></div><div class="cal warn"><strong>Getting "no such table"?</strong><p style="margin:0">The check runs before your tables exist. That is expected on the first run &mdash; build the four tables first, then paste it again.</p></div></section>
+<section class="step"><div class="step-head"><span class="step-num">22</span><h3>Hand it in</h3></div><p>Your work is already a real database file. From the terminal, produce a plain-text script of everything you built:</p><div class="cb"><div class="cb-head"><span class="cb-tag k-shell">Terminal</span><button class="cb-copy" type="button">Copy</button></div><pre><code>sqlite3 property.db .dump &gt; my-3nf-schema.sql</code></pre></div><p>Submit <code>my-3nf-schema.sql</code>, or the <code>property.db</code> file itself if your instructor prefers.</p></section>
+<h2><span class="part">Part 7</span>When something goes wrong</h2><table><thead><tr><th>What you see</th><th>What it means</th><th>Fix</th></tr></thead><tbody>
+<tr><td><code>...&gt;</code> and nothing happens</td><td>SQLite is still waiting for the end of your statement.</td><td>Type <code>;</code> and press Enter.</td></tr>
+<tr><td><code>Error: no such table: X</code></td><td>You are in a different database file than you think, or the table was never created.</td><td>Run <code>.tables</code>. If it is empty, <code>.read</code> the right file.</td></tr>
+<tr><td><code>Error: cannot open "staywell_flat.sql"</code></td><td>The file is not in the folder you launched sqlite3 from.</td><td><code>.quit</code>, <code>cd</code> into your <code>module2-labs</code> folder, start again.</td></tr>
+<tr><td><code>Error: table X already exists</code></td><td>You ran a CREATE twice.</td><td><code>DROP TABLE X;</code> then re-run, or start a fresh database file.</td></tr>
+<tr><td>Results are an unreadable pipe-separated smear</td><td>You skipped the display setup.</td><td><code>.headers on</code> then <code>.mode box</code>.</td></tr>
+<tr><td><code>Error: UNIQUE constraint failed</code></td><td>You inserted a row whose primary key already exists.</td><td>Check for a duplicated INSERT line.</td></tr>
+<tr><td>Nothing printed after CREATE or INSERT</td><td>Nothing is wrong. SQLite is silent on success.</td><td>Confirm with <code>.tables</code> or a SELECT.</td></tr>
+</tbody></table><div class="cal tip"><strong>Starting over is cheap</strong><p style="margin:0">A SQLite database is one ordinary file. To wipe an experiment, quit and delete it: <code>rm staywell.db</code> on macOS or Linux, <code>del staywell.db</code> on Windows. Then re-run the <code>.read</code> and you are back to a clean start.</p></div><h2><span class="part">Part 8</span>Cheat sheet</h2><table><thead><tr><th>Goal</th><th>Type this</th></tr></thead><tbody>
+<tr><td>Open or create a database</td><td><code>sqlite3 mydb.db</code></td></tr>
+<tr><td>Readable output (every session)</td><td><code>.headers on</code> then <code>.mode box</code></td></tr>
+<tr><td>Run a file of SQL</td><td><code>.read setup.sql</code></td></tr>
+<tr><td>What tables exist?</td><td><code>.tables</code></td></tr>
+<tr><td>How was a table defined?</td><td><code>.schema ROOM</code></td></tr>
+<tr><td>Test a dependency A &rarr; B</td><td><code>SELECT A, COUNT(DISTINCT B) FROM T GROUP BY A;</code> &mdash; all 1s means it holds</td></tr>
+<tr><td>Export everything as SQL</td><td><code>sqlite3 mydb.db .dump &gt; backup.sql</code></td></tr>
+<tr><td>Leave</td><td><code>.quit</code></td></tr>
+</tbody></table><h2><span class="part">Solution</span>Lab 3 answer &mdash; try it yourself first</h2><p>Only open this after your own attempt has failed at least one check.</p><details><summary style="cursor:pointer;font-weight:700;color:#1e3a8a;padding:10px 0">Show the Lab 3 solution</summary><div class="cb"><div class="cb-head"><span class="cb-tag k-sqlite">sqlite&gt; prompt</span><button class="cb-copy" type="button">Copy</button></div><pre><code>DROP TABLE IF EXISTS MY_REBUILT;
+DROP TABLE IF EXISTS MY_AMENITY;
+DROP TABLE IF EXISTS MY_ROOM;
+DROP TABLE IF EXISTS MY_PROPERTY;
+DROP TABLE IF EXISTS MY_MANAGER;
+
+-- Create referenced parent tables before child tables so the inserts also work
+-- when foreign-key enforcement is enabled.
+-- ===== 3NF: MANAGER_NAME and MANAGER_PHONE depend on MANAGER_ID =====
+CREATE TABLE MY_MANAGER (
+    MANAGER_ID     CHAR(3)      PRIMARY KEY,
+    MANAGER_NAME   VARCHAR(30)  NOT NULL,
+    MANAGER_PHONE  CHAR(12)
+);
+INSERT INTO MY_MANAGER
+SELECT DISTINCT MANAGER_ID, MANAGER_NAME, MANAGER_PHONE FROM PROPERTY_SHEET;
+
+-- ===== 2NF: property facts depend on PROPERTY_ID alone =====
+-- The sheet key is (PROPERTY_ID, ROOM_NUM). PROPERTY_NAME, PROPERTY_CITY and
+-- MANAGER_ID are fixed by PROPERTY_ID by itself: partial dependencies.
+CREATE TABLE MY_PROPERTY (
+    PROPERTY_ID    CHAR(4)      PRIMARY KEY,
+    PROPERTY_NAME  VARCHAR(30)  NOT NULL,
+    PROPERTY_CITY  VARCHAR(15),
+    MANAGER_ID     CHAR(3),
+    FOREIGN KEY (MANAGER_ID) REFERENCES MY_MANAGER(MANAGER_ID)
+);
+INSERT INTO MY_PROPERTY
+SELECT DISTINCT PROPERTY_ID, PROPERTY_NAME, PROPERTY_CITY, MANAGER_ID
+FROM PROPERTY_SHEET;
+
+-- Only the per-room facts need both halves of the key, so they are what is left.
+CREATE TABLE MY_ROOM (
+    PROPERTY_ID    CHAR(4),
+    ROOM_NUM       CHAR(3),
+    ROOM_TYPE      VARCHAR(10),
+    MONTHLY_RENT   DECIMAL(7,2),
+    MAX_OCCUPANTS  SMALLINT,
+    PRIMARY KEY (PROPERTY_ID, ROOM_NUM),
+    FOREIGN KEY (PROPERTY_ID) REFERENCES MY_PROPERTY(PROPERTY_ID)
+);
+INSERT INTO MY_ROOM
+SELECT PROPERTY_ID, ROOM_NUM, ROOM_TYPE, MONTHLY_RENT, MAX_OCCUPANTS
+FROM PROPERTY_SHEET;
+
+-- ===== 1NF: the AMENITIES list becomes one row per amenity =====
+CREATE TABLE MY_AMENITY (
+    PROPERTY_ID  CHAR(4),
+    AMENITY      VARCHAR(15),
+    PRIMARY KEY (PROPERTY_ID, AMENITY),
+    FOREIGN KEY (PROPERTY_ID) REFERENCES MY_PROPERTY(PROPERTY_ID)
+);
+INSERT INTO MY_AMENITY VALUES ('P100', 'Laundry');
+INSERT INTO MY_AMENITY VALUES ('P100', 'Parking');
+INSERT INTO MY_AMENITY VALUES ('P200', 'Laundry');
+INSERT INTO MY_AMENITY VALUES ('P200', 'Gym');
+INSERT INTO MY_AMENITY VALUES ('P200', 'Parking');</code></pre></div></details><footer>
+<p><strong>Database Concepts &amp; SQL &mdash; Module 2 companion.</strong> The SQL here is identical to the
+in-browser labs in Lesson 2-5; only the way you run it differs. Keep your <code>.db</code> files &mdash; Module 3
+picks up where this leaves off.</p>
+</footer>
+</div>
+
+<script>
+document.querySelectorAll('[data-tabs] button').forEach(function(b){
+  b.addEventListener('click', function(){
+    var name = b.getAttribute('data-tab');
+    b.parentNode.querySelectorAll('button').forEach(function(x){ x.classList.toggle('on', x === b); });
+    document.querySelectorAll('[data-panel]').forEach(function(pn){
+      pn.classList.toggle('on', pn.getAttribute('data-panel') === name);
+    });
+  });
+});
+document.querySelectorAll('.cb-copy').forEach(function(btn){
+  btn.addEventListener('click', function(){
+    var t = btn.closest('.cb').querySelector('code').textContent;
+    navigator.clipboard.writeText(t).then(function(){
+      btn.textContent = 'Copied'; btn.classList.add('done');
+      setTimeout(function(){ btn.textContent = 'Copy'; btn.classList.remove('done'); }, 1400);
+    });
+  });
+});
+</script>
