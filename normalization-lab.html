@@ -1,0 +1,578 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="description" content="A clear step-by-step lesson that starts with an unnormalized database table and explains 1NF, 2NF, and 3NF in plain language.">
+<title>Database Normalization — Unnormalized Table to 3NF</title>
+<style>
+:root{
+  --page:#f5f7f9;
+  --paper:#fff;
+  --soft:#edf2f5;
+  --ink:#17212b;
+  --muted:#5d6b76;
+  --line:#cfd9e0;
+  --line-dark:#98a8b3;
+  --navy:#153f61;
+  --navy-2:#23638f;
+  --blue-soft:#e3f0f8;
+  --orange:#ca5725;
+  --orange-soft:#fce8de;
+  --teal:#087568;
+  --teal-soft:#dff3ee;
+  --green:#28734a;
+  --green-soft:#e0f2e7;
+  --red:#a83333;
+  --red-soft:#fde5e3;
+  --yellow:#946200;
+  --yellow-soft:#fff3ce;
+  --purple:#674296;
+  --purple-soft:#eee8f6;
+  --radius:11px;
+  --shadow:0 5px 18px rgba(21,44,60,.08);
+  --sans:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+  --mono:"SFMono-Regular",Consolas,"Liberation Mono",monospace;
+}
+
+*,*::before,*::after{box-sizing:border-box}
+html{scroll-behavior:smooth;scroll-padding-top:20px}
+body{margin:0;background:var(--page);color:var(--ink);font:16px/1.6 var(--sans);-webkit-font-smoothing:antialiased}
+button{font:inherit}
+:focus-visible{outline:3px solid #e3a62c;outline-offset:3px}
+code{font-family:var(--mono)}
+.wrap{width:min(1160px,calc(100% - 36px));margin:auto}
+.skip{position:absolute;left:12px;top:-60px;z-index:20;background:var(--ink);color:#fff;padding:8px 13px}.skip:focus{top:0}
+
+header{background:var(--navy);color:#fff;border-bottom:5px solid var(--orange)}
+.header-inner{padding:34px 0 30px}
+.kicker{display:block;margin-bottom:8px;color:#cce2f0;font-size:.72rem;font-weight:850;letter-spacing:.1em;text-transform:uppercase}
+h1,h2,h3,h4{margin:0;color:var(--ink);line-height:1.2}
+header h1{color:#fff;font-size:clamp(2rem,4.5vw,3.5rem);letter-spacing:-.03em}
+header p{max-width:810px;margin:12px 0 0;color:#d8e7f1;font-size:1.08rem}
+.path{display:flex;gap:7px;align-items:center;flex-wrap:wrap;margin-top:20px}.path span{padding:5px 9px;border:1px solid rgba(255,255,255,.32);border-radius:6px;color:#fff;font-size:.75rem;font-weight:750}.path i{font-style:normal;color:#9fbdd1}
+
+main>section{padding:52px 0;border-bottom:1px solid var(--line)}
+.section-head{display:grid;grid-template-columns:minmax(0,1fr) minmax(280px,.7fr);align-items:end;gap:35px;margin-bottom:21px}
+.section-number{display:block;margin-bottom:5px;color:var(--orange);font-size:.72rem;font-weight:850;letter-spacing:.1em;text-transform:uppercase}
+h2{font-size:clamp(1.65rem,3vw,2.35rem);letter-spacing:-.025em}
+h3{font-size:1.12rem}
+p{margin:0 0 1em}.section-head p{margin:0;color:var(--muted)}
+.panel{background:var(--paper);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow)}
+.definition{margin-bottom:16px;padding:14px 16px;border-left:5px solid var(--navy-2);border-radius:0 8px 8px 0;background:var(--blue-soft)}
+.definition strong{display:block;margin-bottom:3px}.definition p{margin:0;color:#314b5c;font-size:.9rem}
+.btn{min-height:38px;border:1px solid transparent;border-radius:7px;padding:7px 12px;background:var(--navy);color:#fff;font-weight:750;cursor:pointer}.btn:hover{background:var(--navy-2)}.btn.secondary{background:var(--paper);color:var(--ink);border-color:var(--line-dark)}.btn.secondary:hover{background:var(--soft)}
+.small{font-size:.82rem}
+
+/* Data tables */
+.table-panel{overflow:hidden}
+.table-toolbar{display:flex;justify-content:space-between;align-items:center;gap:15px;padding:13px 16px;border-bottom:1px solid var(--line)}
+.table-toolbar p{margin:0;color:var(--muted);font-size:.84rem}.table-toolbar strong{color:var(--ink)}
+.scroll{overflow-x:auto}
+.data-table{width:100%;min-width:1040px;border-collapse:collapse;font-size:.74rem}
+.data-table th,.data-table td{padding:8px 9px;border-right:1px solid var(--line);border-bottom:1px solid var(--line);text-align:left;vertical-align:top;white-space:nowrap}
+.data-table th:last-child,.data-table td:last-child{border-right:0}.data-table tbody tr:last-child td{border-bottom:0}
+.data-table thead tr:last-child th{background:var(--soft);font:750 .67rem/1.25 var(--mono)}
+.group{text-align:center!important;font-size:.65rem!important;letter-spacing:.06em;text-transform:uppercase}.group.invoice{background:var(--blue-soft)}.group.customer{background:var(--teal-soft)}.group.item{background:var(--purple-soft)}.group.line{background:var(--orange-soft)}.group.repeat{background:var(--red-soft);color:var(--red)}
+.key-note{display:block;margin-top:3px;color:var(--yellow);font:800 .55rem/1 var(--sans);text-transform:uppercase}
+.item-list{display:grid;gap:5px;min-width:410px;counter-reset:item}.item-list span{display:block;padding:5px 7px;border:1px solid var(--line);border-radius:5px;background:var(--paper);font-family:var(--mono);font-size:.67rem}.item-list span::before{content:"item " counter(item);counter-increment:item;margin-right:8px;color:var(--red);font:850 .6rem/1 var(--sans);text-transform:uppercase}
+.table-note{padding:11px 16px;background:var(--soft);color:var(--muted);font-size:.82rem}.table-note strong{color:var(--ink)}
+.table-panel.show-problem [data-problem]{background:var(--red-soft);box-shadow:inset 0 0 0 2px #d48b87}.table-panel.show-problem [data-problem] .item-list span{background:var(--red-soft);border-color:#d48b87}
+.table-panel.show-copies [data-copy]{background:var(--yellow-soft);box-shadow:inset 0 -2px 0 #d5aa35;font-weight:750}
+
+/* Explanations */
+.reason-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:14px}
+.reason{padding:14px 15px;background:var(--paper);border:1px solid var(--line);border-radius:9px}.reason strong{display:block;margin-bottom:4px}.reason span{display:block;color:var(--muted);font-size:.83rem}
+.example-box{margin-top:15px;padding:15px 16px;background:var(--red-soft);border:1px solid #e1a19d;border-radius:9px}.example-box h3{margin-bottom:7px;color:var(--red)}.example-box p{margin:5px 0;color:#603333;font-size:.87rem}.example-box code{background:var(--paper);padding:2px 5px;border-radius:4px}
+.lesson-grid{display:grid;grid-template-columns:360px minmax(0,1fr);gap:18px;align-items:start}
+.instructions{padding:19px}.instructions h3{margin-bottom:10px}.steps{counter-reset:step;margin:0;padding:0;list-style:none;display:grid;gap:12px}.steps li{counter-increment:step;display:grid;grid-template-columns:27px 1fr;gap:9px;color:var(--muted);font-size:.86rem}.steps li::before{content:counter(step);display:grid;place-items:center;width:27px;height:27px;border-radius:7px;background:var(--navy);color:#fff;font:850 .72rem/1 var(--mono)}.steps strong{display:block;margin-bottom:2px;color:var(--ink)}
+.result{margin-top:15px;padding:12px 13px;background:var(--green-soft);border:1px solid #aed5bd;border-radius:8px;font-size:.84rem}.result strong{display:block;margin-bottom:3px}
+.warning{margin-top:13px;padding:12px 13px;background:var(--yellow-soft);border:1px solid #e1c269;border-radius:8px;font-size:.84rem}.warning strong{display:block;margin-bottom:3px;color:#6a4b00}
+.visual{min-width:0}.visual-title{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:9px}.visual-title span{color:var(--muted);font-size:.76rem}
+.change-arrow{display:flex;align-items:center;justify-content:center;gap:12px;margin:12px 0;color:var(--orange);font-weight:850}.change-arrow::before,.change-arrow::after{content:"";height:2px;flex:1;background:var(--line)}
+
+/* Normal-form transformations */
+.normal-form-flow{display:grid;gap:18px}
+.step-instructions{padding:20px}.step-instructions>h3{margin-bottom:13px}
+.horizontal-steps{grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.horizontal-steps li{padding:13px;border:1px solid var(--line);border-radius:8px;background:var(--soft);align-content:start}
+.outcome-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.outcome-grid .result,.outcome-grid .warning{margin-top:12px}
+.compare-panel{overflow:hidden}
+.compare-toolbar{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:14px 16px;border-bottom:1px solid var(--line)}
+.compare-toolbar h3{margin-bottom:2px}.compare-toolbar p{margin:0;color:var(--muted);font-size:.8rem}
+.view-toggle{display:inline-flex;padding:3px;border:1px solid var(--line-dark);border-radius:8px;background:var(--soft)}
+.view-toggle button{min-height:34px;border:0;border-radius:5px;padding:6px 11px;background:transparent;color:var(--muted);font-weight:800;cursor:pointer}
+.view-toggle button[aria-pressed="true"]{background:var(--navy);color:#fff}
+.compare-message{padding:10px 16px;background:var(--blue-soft);border-bottom:1px solid #b7d2e2;color:#314b5c;font-size:.84rem}.compare-message strong{color:var(--ink)}
+.compare-view[hidden]{display:none}
+.compare-view .table-panel{border-radius:0;box-shadow:none;border:0}
+.schema-stage{padding:16px}.schema-stage .schema-caption{margin-bottom:0}
+.stage-heading{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:10px}.stage-heading span{color:var(--muted);font-size:.76rem}
+.dependency-legend{display:flex;flex-wrap:wrap;gap:7px;margin-top:10px}.dependency-legend span{display:flex;align-items:center;gap:6px;color:var(--muted);font-size:.74rem}.dependency-legend i{display:block;width:13px;height:13px;border:1px solid var(--line);border-radius:3px}.dependency-legend .invoice-swatch{background:var(--blue-soft)}.dependency-legend .item-swatch{background:var(--purple-soft)}.dependency-legend .line-swatch{background:var(--orange-soft)}
+.transform-count{display:grid;grid-template-columns:1fr 54px 1fr;align-items:center;gap:8px;padding:13px 16px;border-top:1px solid var(--line);background:var(--soft)}
+.transform-count>span{display:block;text-align:center;color:var(--muted);font-size:.82rem}.transform-count strong{display:block;color:var(--ink);font-size:.92rem}.transform-count i{text-align:center;color:var(--orange);font-style:normal;font-size:1.35rem;font-weight:900}
+.one-nf-design{margin-top:2px}
+.redesign-grid{display:grid;grid-template-columns:minmax(0,1.45fr) minmax(270px,.55fr);gap:12px;align-items:start}
+.schema.wide .fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}.schema.wide .fields li:nth-child(even){border-left:1px solid var(--line)}
+.redesign-note{padding:17px}.redesign-note h3{margin-bottom:10px}
+.redesign-equation{display:grid;grid-template-columns:1fr 30px 1fr;align-items:center;gap:6px;margin-bottom:13px}.redesign-equation span{padding:9px;border:1px solid var(--line);border-radius:7px;background:var(--soft);text-align:center}.redesign-equation code{display:block;color:var(--navy);font-size:.76rem;font-weight:850}.redesign-equation small{display:block;margin-top:3px;color:var(--muted);font-size:.68rem}.redesign-equation b{text-align:center;color:var(--orange)}
+.clean-list{margin:0;padding-left:19px;color:var(--muted);font-size:.84rem}.clean-list li+li{margin-top:7px}.clean-list strong{color:var(--ink)}
+
+/* Schema cards */
+.schema-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:11px}.schema-grid.four{grid-template-columns:repeat(4,minmax(0,1fr))}
+.schema{overflow:hidden;background:var(--paper);border:1px solid var(--line-dark);border-radius:9px;box-shadow:var(--shadow)}
+.schema-head{padding:10px 11px;background:var(--navy);color:#fff}.schema-head strong{display:block;font:850 .8rem/1.2 var(--mono)}.schema-head span{display:block;margin-top:3px;color:#cee1ed;font-size:.63rem}
+.fields{margin:0;padding:0;list-style:none}.fields li{display:grid;grid-template-columns:54px minmax(0,1fr);align-items:center;gap:6px;min-height:37px;padding:7px 9px;border-top:1px solid var(--line)}.fields code{font-size:.68rem;font-weight:700;white-space:nowrap}.fields li.problem-field{background:var(--yellow-soft)}.fields li.invoice-field{background:var(--blue-soft)}.fields li.item-field{background:var(--purple-soft)}.fields li.line-field{background:var(--orange-soft)}
+.badges{display:flex;gap:2px}.badge{display:inline-grid;place-items:center;min-width:25px;height:19px;padding:0 4px;border-radius:4px;font:850 .58rem/1 var(--sans)}.badge.pk{background:var(--yellow-soft);color:var(--yellow);border:1px solid #dfbd59}.badge.fk{background:var(--blue-soft);color:var(--navy-2);border:1px solid #9fc2d9}.badge.blank{border:1px solid transparent;color:transparent}
+.schema-caption{margin-top:10px;padding:10px 12px;background:var(--soft);border-radius:7px;color:var(--muted);font-size:.82rem}
+
+/* Ownership and relationships */
+.ownership-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin:0}.owner{padding:12px 13px;background:var(--paper);border:1px solid var(--line);border-radius:8px}.owner code{display:block;color:var(--navy);font-weight:800}.owner span{display:block;margin-top:4px;color:var(--muted);font-size:.78rem}
+.relationship-flow{display:grid;grid-template-columns:minmax(150px,1fr) 64px minmax(150px,1fr) 64px minmax(180px,1.15fr) 64px minmax(150px,1fr);align-items:center}
+.connector{position:relative;display:flex;justify-content:center;align-items:center;height:60px}.connector::before{content:"";position:absolute;left:4px;right:4px;height:2px;background:var(--line-dark)}.connector span{position:relative;z-index:1;padding:2px 5px;border:1px solid var(--line);border-radius:999px;background:var(--paper);color:var(--muted);font:800 .58rem/1 var(--mono);white-space:nowrap}
+.foreign-key-note{margin-top:14px;padding:12px 14px;background:var(--blue-soft);border-left:4px solid var(--navy-2);font-size:.84rem}.foreign-key-note strong{display:block}
+.jobs{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:12px}.job{padding:10px 11px;border:1px solid var(--line);border-radius:7px;background:var(--paper);font-size:.78rem}.job strong{display:block;color:var(--navy);font-family:var(--mono)}
+
+/* SQL and recap */
+.sql-panel{overflow:hidden}.sql-panel summary{display:flex;justify-content:space-between;align-items:center;padding:15px 17px;cursor:pointer;list-style:none;font-weight:800}.sql-panel summary::-webkit-details-marker{display:none}.sql-panel summary::after{content:"+";color:var(--teal);font-size:1.25rem}.sql-panel[open] summary::after{content:"−"}.sql-panel[open] summary{border-bottom:1px solid var(--line)}
+.code-head{display:flex;align-items:center;padding:8px 10px;background:#182d3d;color:#cbdde8}.code-head span{font:700 .68rem/1 var(--mono)}.copy{margin-left:auto;border:1px solid #607988;border-radius:5px;background:#29475b;color:#fff;padding:4px 8px;font-size:.7rem;cursor:pointer}pre{margin:0;padding:16px;overflow:auto;background:#0d1c26;color:#dce8ee;font:.77rem/1.65 var(--mono)}
+.recap{width:100%;border-collapse:collapse;background:var(--paper)}.recap th,.recap td{padding:11px 12px;border:1px solid var(--line);text-align:left;vertical-align:top}.recap th{background:var(--soft);font-size:.7rem;text-transform:uppercase;letter-spacing:.05em}.recap td:first-child{font:850 .8rem/1.3 var(--mono);color:var(--navy);white-space:nowrap}.recap td{font-size:.84rem}
+
+footer{padding:25px 0;color:var(--muted);font-size:.78rem}.footer-inner{display:flex;justify-content:space-between;gap:15px;flex-wrap:wrap}
+
+@media(max-width:980px){
+  .lesson-grid{grid-template-columns:1fr}.schema-grid.four{grid-template-columns:repeat(2,1fr)}
+  .relationship-flow{grid-template-columns:1fr;max-width:600px;margin:auto}.connector{height:45px}.connector::before{left:50%;right:auto;top:3px;bottom:3px;width:2px;height:auto}.jobs{grid-template-columns:repeat(2,1fr)}
+  .horizontal-steps{grid-template-columns:repeat(2,minmax(0,1fr))}.redesign-grid{grid-template-columns:1fr}
+}
+@media(max-width:700px){
+  .wrap{width:min(100% - 24px,1160px)}.header-inner{padding:27px 0 24px}.section-head{grid-template-columns:1fr;gap:8px}main>section{padding:39px 0}.reason-grid,.ownership-grid,.schema-grid,.schema-grid.four,.jobs{grid-template-columns:1fr}.table-toolbar,.compare-toolbar,.stage-heading{align-items:flex-start;flex-direction:column}.instructions,.step-instructions{padding:16px}.item-list{min-width:340px}.recap{display:block;overflow-x:auto}
+  .horizontal-steps,.outcome-grid{grid-template-columns:1fr}.transform-count{grid-template-columns:1fr}.transform-count i{transform:rotate(90deg)}.schema.wide .fields{grid-template-columns:1fr}.schema.wide .fields li:nth-child(even){border-left:0}.redesign-equation{grid-template-columns:1fr}.redesign-equation b{transform:rotate(90deg)}
+}
+@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+@media print{header{background:#fff;color:#000;border-bottom:2px solid #000}header h1,header p{color:#000}.btn,.copy{display:none!important}body{background:#fff}.panel,.schema{box-shadow:none}main>section{padding:25px 0}.relationship-flow{grid-template-columns:repeat(7,1fr)}.lesson-grid{display:block}.instructions{margin-bottom:12px}pre{white-space:pre-wrap}}
+</style>
+</head>
+<body>
+<a class="skip" href="#main">Skip to the lesson</a>
+
+<header>
+  <div class="wrap header-inner">
+    <span class="kicker">Database normalization</span>
+    <h1>Clean up a messy database table in three steps</h1>
+    <p>We will begin with an unnormalized sales table. Then we will improve it in order: first normal form, second normal form, and third normal form.</p>
+    <div class="path" aria-label="Lesson order"><span>Unnormalized table</span><i>→</i><span>1NF</span><i>→</i><span>2NF</span><i>→</i><span>3NF</span></div>
+  </div>
+</header>
+
+<main id="main">
+  <section id="start">
+    <div class="wrap">
+      <div class="section-head">
+        <div><span class="section-number">Start here</span><h2>An unnormalized table</h2></div>
+        <p>This table is unnormalized because its <code>items</code> cell holds more than one item record.</p>
+      </div>
+
+      <div class="definition"><strong>What one row means</strong><p>In this table, one row represents one whole invoice. The problem is that one invoice can contain several items, and all of those items are packed into one cell.</p></div>
+
+      <article class="panel table-panel" id="rawPanel">
+        <div class="table-toolbar"><p><strong>Table:</strong> <code>SALES_REPORT</code></p><button class="btn secondary small" id="showProblem" type="button" aria-pressed="false">Highlight the problem</button></div>
+        <div class="scroll">
+          <table class="data-table">
+            <thead>
+              <tr><th class="group invoice" colspan="2">Invoice information</th><th class="group customer" colspan="3">Customer information</th><th class="group repeat">Several item records in one cell</th></tr>
+              <tr><th>invoice_num<span class="key-note">invoice identifier</span></th><th>invoice_date</th><th>customer_num</th><th>customer_name</th><th>customer_city</th><th>items<span class="key-note">repeating group</span></th></tr>
+            </thead>
+            <tbody>
+              <tr><td>50710</td><td>2026-06-14</td><td>1120</td><td>Access Pet Center</td><td>Maple Grove</td><td data-problem><span class="item-list"><span>CF21 · Grain-Free Dry Food · qty 3 · $42.50</span><span>DG04 · Nylon Dog Leash · qty 2 · $11.99</span></span></td></tr>
+              <tr><td>50711</td><td>2026-06-14</td><td>1420</td><td>Whiskers &amp; Wags</td><td>Brookville</td><td data-problem><span class="item-list"><span>CF21 · Grain-Free Dry Food · qty 2 · $42.50</span><span>GR15 · Grooming Kit · qty 1 · $15.25</span></span></td></tr>
+              <tr><td>50712</td><td>2026-06-15</td><td>1225</td><td>Downtown Aquarium</td><td>Northfield</td><td data-problem><span class="item-list"><span>AV07 · Aviary Starter Cage · qty 1 · $64.99</span><span>FT88 · Fish Tank Filter Kit · qty 2 · $27.75</span></span></td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="table-note" id="problemNote" aria-live="polite"><strong>The problem:</strong> every <code>items</code> cell stores two separate item records.</div>
+      </article>
+
+      <div class="example-box">
+        <h3>What is a list or repeating group?</h3>
+        <p>A <strong>list</strong> is several values stored together inside one cell. Above, item IDs <code>CF21</code> and <code>DG04</code> are both inside invoice 50710’s <code>items</code> cell.</p>
+        <p>A <strong>repeating group</strong> is the same set of facts stored more than once in one row. It could be a list, or it could use columns such as <code>item_1</code>, <code>quantity_1</code>, <code>item_2</code>, and <code>quantity_2</code>.</p>
+      </div>
+
+      <div class="reason-grid">
+        <div class="reason"><strong>An item has no row of its own</strong><span>The quantity for DG04 is buried inside invoice 50710’s <code>items</code> cell.</span></div>
+        <div class="reason"><strong>The database cannot check each item</strong><span>It cannot easily require every embedded quantity to be greater than zero.</span></div>
+        <div class="reason"><strong>Searching is difficult</strong><span>Finding all invoices with CF21 requires reading and splitting the list inside every row.</span></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="first-normal-form">
+    <div class="wrap">
+      <div class="section-head">
+        <div><span class="section-number">Step 1</span><h2>First normal form: one value per cell</h2></div>
+        <p>1NF removes lists and repeating groups. Each item on an invoice receives its own row.</p>
+      </div>
+
+      <div class="definition"><strong>1NF rule</strong><p>Every cell should contain one value, and every row should have one clear meaning. After this step, one row means one item on one invoice.</p></div>
+
+      <div class="normal-form-flow">
+        <article class="panel step-instructions">
+          <h3>How to change the table</h3>
+          <ol class="steps horizontal-steps">
+            <li><span><strong>Describe the starting row.</strong>One SALES_REPORT row represents one whole invoice.</span></li>
+            <li><span><strong>Find the repeating group.</strong>The <code>items</code> cell contains several item IDs, descriptions, quantities, and prices.</span></li>
+            <li><span><strong>Create one row for each item.</strong>Invoice 50710 becomes one row for CF21 and another row for DG04.</span></li>
+            <li><span><strong>Repeat invoice information temporarily.</strong>Both new rows keep invoice 50710’s date and customer information. Later steps remove this repetition.</span></li>
+            <li><span><strong>Use both IDs as the row key.</strong><code>invoice_num</code> alone can repeat, and <code>item_id</code> alone can repeat. Together, they identify one item on one invoice.</span></li>
+          </ol>
+          <div class="outcome-grid">
+            <div class="result"><strong>After 1NF</strong>The item list is gone. Every item has its own row and its own quantity and price cells.</div>
+            <div class="warning"><strong>We are not finished.</strong>Invoice, customer, and item descriptions still repeat across rows. 2NF and 3NF will fix that.</div>
+          </div>
+        </article>
+
+        <article class="panel compare-panel" aria-labelledby="oneNfCompareTitle">
+          <div class="compare-toolbar">
+            <div><h3 id="oneNfCompareTitle">See the 1NF change</h3><p>Switch between the same sales data before and after 1NF.</p></div>
+            <div class="view-toggle" aria-label="Choose the 1NF view">
+              <button id="compareBefore" type="button" aria-pressed="true" aria-controls="oneNfBefore">Before 1NF</button>
+              <button id="compareAfter" type="button" aria-pressed="false" aria-controls="oneNfAfter">After 1NF</button>
+            </div>
+          </div>
+          <div class="compare-message" id="compareMessage" aria-live="polite"><strong>Before 1NF:</strong> each invoice has one row, but its <code>items</code> cell contains two item records.</div>
+
+          <div class="compare-view" id="oneNfBefore">
+            <div class="table-panel show-problem">
+              <div class="table-toolbar"><p><strong>Before:</strong> <code>SALES_REPORT</code> · one row per invoice</p></div>
+              <div class="scroll">
+                <table class="data-table">
+                  <thead>
+                    <tr><th class="group invoice" colspan="2">Invoice facts</th><th class="group customer" colspan="3">Customer facts</th><th class="group repeat">Several item records in one cell</th></tr>
+                    <tr><th>invoice_num</th><th>invoice_date</th><th>customer_num</th><th>customer_name</th><th>customer_city</th><th>items<span class="key-note">repeating group</span></th></tr>
+                  </thead>
+                  <tbody>
+                    <tr><td>50710</td><td>2026-06-14</td><td>1120</td><td>Access Pet Center</td><td>Maple Grove</td><td data-problem><span class="item-list"><span>CF21 · Grain-Free Dry Food · qty 3 · $42.50</span><span>DG04 · Nylon Dog Leash · qty 2 · $11.99</span></span></td></tr>
+                    <tr><td>50711</td><td>2026-06-14</td><td>1420</td><td>Whiskers &amp; Wags</td><td>Brookville</td><td data-problem><span class="item-list"><span>CF21 · Grain-Free Dry Food · qty 2 · $42.50</span><span>GR15 · Grooming Kit · qty 1 · $15.25</span></span></td></tr>
+                  </tbody>
+                </table>
+              </div>
+              <div class="table-note"><strong>Problem:</strong> two item records are packed into each highlighted <code>items</code> cell.</div>
+            </div>
+          </div>
+
+          <div class="compare-view" id="oneNfAfter" hidden>
+            <div class="table-panel" id="linePanel">
+              <div class="table-toolbar"><p><strong>After:</strong> <code>SALES_LINE</code> · one row per item on an invoice</p><button class="btn secondary small" id="showCopies" type="button" aria-pressed="false">Highlight repeated facts</button></div>
+              <div class="scroll">
+                <table class="data-table">
+                  <thead>
+                    <tr><th class="group invoice" colspan="2">Invoice facts</th><th class="group customer" colspan="3">Customer facts</th><th class="group item" colspan="3">Item facts</th><th class="group line" colspan="2">Line facts</th></tr>
+                    <tr><th>invoice_num<span class="key-note">key part 1</span></th><th>invoice_date</th><th>customer_num</th><th>customer_name</th><th>customer_city</th><th>item_id<span class="key-note">key part 2</span></th><th>item_description</th><th>category</th><th>num_ordered</th><th>quoted_price</th></tr>
+                  </thead>
+                  <tbody>
+                    <tr><td data-copy>50710</td><td data-copy>2026-06-14</td><td data-copy>1120</td><td data-copy>Access Pet Center</td><td data-copy>Maple Grove</td><td data-copy>CF21</td><td data-copy>Grain-Free Dry Food</td><td data-copy>Food</td><td>3</td><td>42.50</td></tr>
+                    <tr><td data-copy>50710</td><td data-copy>2026-06-14</td><td data-copy>1120</td><td data-copy>Access Pet Center</td><td data-copy>Maple Grove</td><td>DG04</td><td>Nylon Dog Leash</td><td>Accessory</td><td>2</td><td>11.99</td></tr>
+                    <tr><td data-copy>50711</td><td data-copy>2026-06-14</td><td data-copy>1420</td><td data-copy>Whiskers &amp; Wags</td><td data-copy>Brookville</td><td data-copy>CF21</td><td data-copy>Grain-Free Dry Food</td><td data-copy>Food</td><td>2</td><td>42.50</td></tr>
+                    <tr><td data-copy>50711</td><td data-copy>2026-06-14</td><td data-copy>1420</td><td data-copy>Whiskers &amp; Wags</td><td data-copy>Brookville</td><td>GR15</td><td>Grooming Kit</td><td>Grooming</td><td>1</td><td>15.25</td></tr>
+                  </tbody>
+                </table>
+              </div>
+              <div class="table-note" id="copyNote" aria-live="polite"><strong>Notice:</strong> the rows pass 1NF, but several facts are copied.</div>
+            </div>
+          </div>
+
+          <div class="transform-count" aria-label="The 1NF change in row structure">
+            <span><strong>Before</strong>1 invoice row contains 2 item records</span><i aria-hidden="true">→</i><span><strong>After</strong>2 rows contain 1 item record each</span>
+          </div>
+        </article>
+
+        <div class="one-nf-design">
+          <div class="visual-title"><h3>The database table has been redesigned</h3><span>Table structure after 1NF</span></div>
+          <div class="redesign-grid">
+            <article class="schema wide">
+              <div class="schema-head"><strong>SALES_LINE</strong><span>one row per item on an invoice · combined key: invoice_num + item_id</span></div>
+              <ul class="fields">
+                <li><span class="badges"><i class="badge pk">PK</i></span><code>invoice_num</code></li>
+                <li><span class="badges"><i class="badge pk">PK</i></span><code>item_id</code></li>
+                <li><span class="badges"><i class="badge blank">—</i></span><code>invoice_date</code></li>
+                <li><span class="badges"><i class="badge blank">—</i></span><code>customer_num</code></li>
+                <li><span class="badges"><i class="badge blank">—</i></span><code>customer_name</code></li>
+                <li><span class="badges"><i class="badge blank">—</i></span><code>customer_city</code></li>
+                <li><span class="badges"><i class="badge blank">—</i></span><code>item_description</code></li>
+                <li><span class="badges"><i class="badge blank">—</i></span><code>category</code></li>
+                <li><span class="badges"><i class="badge blank">—</i></span><code>num_ordered</code></li>
+                <li><span class="badges"><i class="badge blank">—</i></span><code>quoted_price</code></li>
+              </ul>
+            </article>
+            <article class="panel redesign-note">
+              <h3>What changed in the design?</h3>
+              <div class="redesign-equation"><span><code>SALES_REPORT</code><small>one row per invoice</small></span><b aria-hidden="true">→</b><span><code>SALES_LINE</code><small>one row per invoice item</small></span></div>
+              <ul class="clean-list">
+                <li>The <code>items</code> list was replaced by separate columns.</li>
+                <li><strong>Two PK badges</strong> mean the two IDs work together as one primary key.</li>
+                <li>There is still one table. 2NF will split it into INVOICE, ITEM, and INVOICE_LINE.</li>
+              </ul>
+            </article>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="second-normal-form">
+    <div class="wrap">
+      <div class="section-head">
+        <div><span class="section-number">Step 2</span><h2>Second normal form: use the whole two-part key</h2></div>
+        <p>The SALES_LINE key has two parts. 2NF moves facts that need only one part of that key.</p>
+      </div>
+
+      <div class="definition"><strong>2NF rule</strong><p>Some row keys use two columns. Every other fact in that table should need both columns. If <code>invoice_num</code> alone tells us a fact, move it to an invoice table. If <code>item_id</code> alone tells us a fact, move it to an item table.</p></div>
+
+      <div class="normal-form-flow">
+        <article class="panel step-instructions">
+          <h3>How to split the 1NF table</h3>
+          <ol class="steps horizontal-steps">
+            <li><span><strong>Look at the two-part key.</strong>The SALES_LINE key is <code>(invoice_num, item_id)</code>.</span></li>
+            <li><span><strong>Test <code>invoice_num</code> by itself.</strong>It already tells us the invoice date and customer information.</span></li>
+            <li><span><strong>Move invoice facts to INVOICE.</strong>Use <code>invoice_num</code> as the INVOICE primary key.</span></li>
+            <li><span><strong>Test <code>item_id</code> by itself.</strong>It already tells us the item description and category, so move those facts to ITEM.</span></li>
+            <li><span><strong>Keep line facts in INVOICE_LINE.</strong>Quantity and quoted price need both the invoice number and item ID.</span></li>
+          </ol>
+          <div class="outcome-grid">
+            <div class="result"><strong>After 2NF</strong>Invoice facts, item facts, and invoice-line facts now have separate tables.</div>
+            <div class="warning"><strong>One problem remains.</strong>Customer name and city are still inside INVOICE, even though they describe a customer.</div>
+          </div>
+        </article>
+
+        <div class="ownership-grid" aria-label="Which key identifies which facts">
+          <div class="owner"><code>invoice_num alone tells us</code><span>invoice_date and customer information</span></div>
+          <div class="owner"><code>item_id alone tells us</code><span>item_description and category</span></div>
+          <div class="owner"><code>invoice_num + item_id tell us</code><span>num_ordered and quoted_price</span></div>
+        </div>
+
+        <article class="panel compare-panel" aria-labelledby="twoNfCompareTitle">
+          <div class="compare-toolbar">
+            <div><h3 id="twoNfCompareTitle">See the 2NF change</h3><p>Switch between the table design before and after 2NF.</p></div>
+            <div class="view-toggle" aria-label="Choose the 2NF view">
+              <button id="compareTwoBefore" type="button" aria-pressed="true" aria-controls="twoNfBefore">Before 2NF</button>
+              <button id="compareTwoAfter" type="button" aria-pressed="false" aria-controls="twoNfAfter">After 2NF</button>
+            </div>
+          </div>
+          <div class="compare-message" id="twoNfMessage" aria-live="polite"><strong>Before 2NF:</strong> SALES_LINE passes 1NF, but one table still mixes invoice, item, and line facts.</div>
+
+          <div class="compare-view schema-stage" id="twoNfBefore">
+            <div class="stage-heading"><h3>One table before 2NF</h3><span>Colors show which key is needed</span></div>
+            <article class="schema wide">
+              <div class="schema-head"><strong>SALES_LINE</strong><span>one row per item on an invoice · primary key: invoice_num + item_id</span></div>
+              <ul class="fields">
+                <li><span class="badges"><i class="badge pk">PK</i></span><code>invoice_num</code></li>
+                <li><span class="badges"><i class="badge pk">PK</i></span><code>item_id</code></li>
+                <li class="invoice-field"><span class="badges"><i class="badge blank">—</i></span><code>invoice_date</code></li>
+                <li class="invoice-field"><span class="badges"><i class="badge blank">—</i></span><code>customer_num</code></li>
+                <li class="invoice-field"><span class="badges"><i class="badge blank">—</i></span><code>customer_name</code></li>
+                <li class="invoice-field"><span class="badges"><i class="badge blank">—</i></span><code>customer_city</code></li>
+                <li class="item-field"><span class="badges"><i class="badge blank">—</i></span><code>item_description</code></li>
+                <li class="item-field"><span class="badges"><i class="badge blank">—</i></span><code>category</code></li>
+                <li class="line-field"><span class="badges"><i class="badge blank">—</i></span><code>num_ordered</code></li>
+                <li class="line-field"><span class="badges"><i class="badge blank">—</i></span><code>quoted_price</code></li>
+              </ul>
+            </article>
+            <div class="dependency-legend" aria-label="Field color meaning"><span><i class="invoice-swatch"></i>invoice_num alone</span><span><i class="item-swatch"></i>item_id alone</span><span><i class="line-swatch"></i>both IDs together</span></div>
+          </div>
+
+          <div class="compare-view schema-stage" id="twoNfAfter" hidden>
+            <div class="stage-heading"><h3>Three tables after 2NF</h3><span>Yellow fields move during 3NF</span></div>
+            <div class="schema-grid">
+              <article class="schema"><div class="schema-head"><strong>INVOICE</strong><span>one row per invoice</span></div><ul class="fields"><li><span class="badges"><i class="badge pk">PK</i></span><code>invoice_num</code></li><li><span class="badges"><i class="badge blank">—</i></span><code>invoice_date</code></li><li><span class="badges"><i class="badge blank">—</i></span><code>customer_num</code></li><li class="problem-field"><span class="badges"><i class="badge blank">—</i></span><code>customer_name</code></li><li class="problem-field"><span class="badges"><i class="badge blank">—</i></span><code>customer_city</code></li></ul></article>
+              <article class="schema"><div class="schema-head"><strong>ITEM</strong><span>one row per item</span></div><ul class="fields"><li><span class="badges"><i class="badge pk">PK</i></span><code>item_id</code></li><li><span class="badges"><i class="badge blank">—</i></span><code>item_description</code></li><li><span class="badges"><i class="badge blank">—</i></span><code>category</code></li></ul></article>
+              <article class="schema"><div class="schema-head"><strong>INVOICE_LINE</strong><span>one row per item on an invoice</span></div><ul class="fields"><li><span class="badges"><i class="badge pk">PK</i><i class="badge fk">FK</i></span><code>invoice_num</code></li><li><span class="badges"><i class="badge pk">PK</i><i class="badge fk">FK</i></span><code>item_id</code></li><li><span class="badges"><i class="badge blank">—</i></span><code>num_ordered</code></li><li><span class="badges"><i class="badge blank">—</i></span><code>quoted_price</code></li></ul></article>
+            </div>
+            <p class="schema-caption"><strong>PK</strong> identifies a row. <strong>FK</strong> connects a row to another table. Customer name and city are yellow because 3NF will move them.</p>
+          </div>
+
+          <div class="transform-count" aria-label="The 2NF change in table structure">
+            <span><strong>Before</strong>1 table stores all three kinds of facts</span><i aria-hidden="true">→</i><span><strong>After</strong>3 tables store invoice, item, and line facts</span>
+          </div>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <section id="third-normal-form">
+    <div class="wrap">
+      <div class="section-head">
+        <div><span class="section-number">Step 3</span><h2>Third normal form: one kind of thing per table</h2></div>
+        <p>3NF moves customer details out of INVOICE because those details describe the customer, not the invoice.</p>
+      </div>
+
+      <div class="definition"><strong>3NF rule</strong><p>Store each fact with the ID that directly identifies it. <code>customer_num</code> tells us the customer name and city, so those customer facts belong in a CUSTOMER table.</p></div>
+
+      <div class="normal-form-flow">
+        <article class="panel step-instructions">
+          <h3>How to finish the design</h3>
+          <ol class="steps horizontal-steps">
+            <li><span><strong>Look inside INVOICE.</strong><code>invoice_num</code> tells us <code>customer_num</code>.</span></li>
+            <li><span><strong>Follow the customer number.</strong><code>customer_num</code> tells us the customer name and city.</span></li>
+            <li><span><strong>Create CUSTOMER.</strong>Use <code>customer_num</code> as its primary key.</span></li>
+            <li><span><strong>Move customer details.</strong>Put <code>customer_name</code> and <code>customer_city</code> in CUSTOMER.</span></li>
+            <li><span><strong>Keep the connection.</strong>Leave <code>customer_num</code> in INVOICE as a foreign key pointing to CUSTOMER.</span></li>
+          </ol>
+          <div class="result"><strong>After 3NF</strong>Each table describes one kind of thing, and the ID columns connect the tables.</div>
+        </article>
+
+        <article class="panel compare-panel" aria-labelledby="threeNfCompareTitle">
+          <div class="compare-toolbar">
+            <div><h3 id="threeNfCompareTitle">See the 3NF change</h3><p>Switch between the table design before and after 3NF.</p></div>
+            <div class="view-toggle" aria-label="Choose the 3NF view">
+              <button id="compareThreeBefore" type="button" aria-pressed="true" aria-controls="threeNfBefore">Before 3NF</button>
+              <button id="compareThreeAfter" type="button" aria-pressed="false" aria-controls="threeNfAfter">After 3NF</button>
+            </div>
+          </div>
+          <div class="compare-message" id="threeNfMessage" aria-live="polite"><strong>Before 3NF:</strong> customer name and city are stored in INVOICE, but <code>customer_num</code> directly identifies those facts.</div>
+
+          <div class="compare-view schema-stage" id="threeNfBefore">
+            <div class="stage-heading"><h3>Three tables before 3NF</h3><span>Yellow fields are in the wrong table</span></div>
+            <div class="schema-grid">
+              <article class="schema"><div class="schema-head"><strong>INVOICE</strong><span>mixes invoice facts and customer details</span></div><ul class="fields"><li><span class="badges"><i class="badge pk">PK</i></span><code>invoice_num</code></li><li><span class="badges"><i class="badge blank">—</i></span><code>invoice_date</code></li><li><span class="badges"><i class="badge blank">—</i></span><code>customer_num</code></li><li class="problem-field"><span class="badges"><i class="badge blank">—</i></span><code>customer_name</code></li><li class="problem-field"><span class="badges"><i class="badge blank">—</i></span><code>customer_city</code></li></ul></article>
+              <article class="schema"><div class="schema-head"><strong>ITEM</strong><span>one row per item</span></div><ul class="fields"><li><span class="badges"><i class="badge pk">PK</i></span><code>item_id</code></li><li><span class="badges"><i class="badge blank">—</i></span><code>item_description</code></li><li><span class="badges"><i class="badge blank">—</i></span><code>category</code></li></ul></article>
+              <article class="schema"><div class="schema-head"><strong>INVOICE_LINE</strong><span>one row per item on an invoice</span></div><ul class="fields"><li><span class="badges"><i class="badge pk">PK</i><i class="badge fk">FK</i></span><code>invoice_num</code></li><li><span class="badges"><i class="badge pk">PK</i><i class="badge fk">FK</i></span><code>item_id</code></li><li><span class="badges"><i class="badge blank">—</i></span><code>num_ordered</code></li><li><span class="badges"><i class="badge blank">—</i></span><code>quoted_price</code></li></ul></article>
+            </div>
+            <p class="schema-caption"><code>invoice_num</code> tells us the customer number, but the customer number tells us the yellow facts. That means the yellow facts belong with the customer.</p>
+          </div>
+
+          <div class="compare-view schema-stage" id="threeNfAfter" hidden>
+            <div class="stage-heading"><h3>Four connected tables after 3NF</h3><span>PK identifies · FK connects</span></div>
+            <div class="relationship-flow" aria-label="Table relationships after third normal form">
+              <article class="schema"><div class="schema-head"><strong>CUSTOMER</strong><span>one row per customer</span></div><ul class="fields"><li><span class="badges"><i class="badge pk">PK</i></span><code>customer_num</code></li><li><span class="badges"><i class="badge blank">—</i></span><code>customer_name</code></li><li><span class="badges"><i class="badge blank">—</i></span><code>customer_city</code></li></ul></article>
+              <div class="connector"><span>1 : many</span></div>
+              <article class="schema"><div class="schema-head"><strong>INVOICE</strong><span>one row per invoice</span></div><ul class="fields"><li><span class="badges"><i class="badge pk">PK</i></span><code>invoice_num</code></li><li><span class="badges"><i class="badge blank">—</i></span><code>invoice_date</code></li><li><span class="badges"><i class="badge fk">FK</i></span><code>customer_num</code></li></ul></article>
+              <div class="connector"><span>1 : many</span></div>
+              <article class="schema"><div class="schema-head"><strong>INVOICE_LINE</strong><span>one row per item on an invoice</span></div><ul class="fields"><li><span class="badges"><i class="badge pk">PK</i><i class="badge fk">FK</i></span><code>invoice_num</code></li><li><span class="badges"><i class="badge pk">PK</i><i class="badge fk">FK</i></span><code>item_id</code></li><li><span class="badges"><i class="badge blank">—</i></span><code>num_ordered</code></li><li><span class="badges"><i class="badge blank">—</i></span><code>quoted_price</code></li></ul></article>
+              <div class="connector"><span>many : 1</span></div>
+              <article class="schema"><div class="schema-head"><strong>ITEM</strong><span>one row per item</span></div><ul class="fields"><li><span class="badges"><i class="badge pk">PK</i></span><code>item_id</code></li><li><span class="badges"><i class="badge blank">—</i></span><code>item_description</code></li><li><span class="badges"><i class="badge blank">—</i></span><code>category</code></li></ul></article>
+            </div>
+
+            <div class="foreign-key-note"><strong>What moved and what stayed</strong>Customer name and city moved to CUSTOMER. <code>customer_num</code> stayed in INVOICE as a foreign key so each invoice still points to its customer.</div>
+            <div class="jobs"><div class="job"><strong>CUSTOMER</strong>stores customer facts</div><div class="job"><strong>INVOICE</strong>stores invoice facts</div><div class="job"><strong>INVOICE_LINE</strong>stores quantity and sale price</div><div class="job"><strong>ITEM</strong>stores item facts</div></div>
+          </div>
+
+          <div class="transform-count" aria-label="The 3NF change in table structure">
+            <span><strong>Before</strong>3 tables; customer details are inside INVOICE</span><i aria-hidden="true">→</i><span><strong>After</strong>4 tables; CUSTOMER owns the customer details</span>
+          </div>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="wrap">
+      <div class="section-head"><div><span class="section-number">Quick review</span><h2>What each step fixed</h2></div><p>Each step solves a different problem. The steps must be completed in order.</p></div>
+      <div class="scroll"><table class="recap"><thead><tr><th>Step</th><th>Simple question</th><th>What we changed</th></tr></thead><tbody><tr><td>1NF</td><td>Does any cell contain a list or repeating group?</td><td>We turned the <code>items</code> list into one SALES_LINE row per item.</td></tr><tr><td>2NF</td><td>With a two-part key, does a fact need only one key part?</td><td>We moved invoice facts to INVOICE and item facts to ITEM.</td></tr><tr><td>3NF</td><td>Does this table contain facts about a different kind of thing?</td><td>We moved customer name and city from INVOICE to CUSTOMER.</td></tr></tbody></table></div>
+    </div>
+  </section>
+
+  <section>
+    <div class="wrap">
+      <div class="section-head"><div><span class="section-number">Optional implementation</span><h2>SQL for the tables after 3NF</h2></div><p>The SQL uses primary keys to identify rows and foreign keys to keep the table connections valid.</p></div>
+      <details class="panel sql-panel"><summary>Open the CREATE TABLE statements</summary><div class="code-head"><span>normalized-schema.sql</span><button class="copy" id="copySql" type="button">Copy SQL</button></div><pre><code id="sqlCode">CREATE TABLE CUSTOMER (
+  customer_num  CHAR(4) PRIMARY KEY,
+  customer_name VARCHAR(80) NOT NULL,
+  customer_city VARCHAR(40) NOT NULL
+);
+
+CREATE TABLE ITEM (
+  item_id          CHAR(4) PRIMARY KEY,
+  item_description VARCHAR(100) NOT NULL,
+  category         VARCHAR(30) NOT NULL
+);
+
+CREATE TABLE INVOICE (
+  invoice_num  CHAR(5) PRIMARY KEY,
+  invoice_date DATE NOT NULL,
+  customer_num CHAR(4) NOT NULL,
+  FOREIGN KEY (customer_num) REFERENCES CUSTOMER(customer_num)
+);
+
+CREATE TABLE INVOICE_LINE (
+  invoice_num  CHAR(5) NOT NULL,
+  item_id      CHAR(4) NOT NULL,
+  num_ordered  SMALLINT NOT NULL CHECK (num_ordered &gt; 0),
+  quoted_price DECIMAL(7,2) NOT NULL,
+  PRIMARY KEY (invoice_num, item_id),
+  FOREIGN KEY (invoice_num) REFERENCES INVOICE(invoice_num),
+  FOREIGN KEY (item_id) REFERENCES ITEM(item_id)
+);</code></pre></details>
+    </div>
+  </section>
+</main>
+
+<footer><div class="wrap footer-inner"><span>Database normalization · Plain-language walkthrough</span><span>Unnormalized → 1NF → 2NF → 3NF</span></div></footer>
+
+<script>
+(() => {
+  'use strict';
+  const $ = selector => document.querySelector(selector);
+
+  $('#showProblem').addEventListener('click', () => {
+    const active = $('#rawPanel').classList.toggle('show-problem');
+    $('#showProblem').setAttribute('aria-pressed', String(active));
+    $('#showProblem').textContent = active ? 'Hide highlight' : 'Highlight the problem';
+    $('#problemNote').innerHTML = active
+      ? '<strong>Highlighted:</strong> each cell contains two item records. A cell should contain one value.'
+      : '<strong>The problem:</strong> every <code>items</code> cell stores two separate item records.';
+  });
+
+  const setupComparison = ({ beforeButton, afterButton, beforeView, afterView, message, beforeText, afterText }) => {
+    const show = view => {
+      const showBefore = view === 'before';
+      $(beforeView).hidden = !showBefore;
+      $(afterView).hidden = showBefore;
+      $(beforeButton).setAttribute('aria-pressed', String(showBefore));
+      $(afterButton).setAttribute('aria-pressed', String(!showBefore));
+      $(message).innerHTML = showBefore ? beforeText : afterText;
+    };
+    $(beforeButton).addEventListener('click', () => show('before'));
+    $(afterButton).addEventListener('click', () => show('after'));
+  };
+
+  setupComparison({
+    beforeButton: '#compareBefore', afterButton: '#compareAfter', beforeView: '#oneNfBefore', afterView: '#oneNfAfter', message: '#compareMessage',
+    beforeText: '<strong>Before 1NF:</strong> each invoice has one row, but its <code>items</code> cell contains two item records.',
+    afterText: '<strong>After 1NF:</strong> each item has its own row, and every cell contains one value.'
+  });
+
+  setupComparison({
+    beforeButton: '#compareTwoBefore', afterButton: '#compareTwoAfter', beforeView: '#twoNfBefore', afterView: '#twoNfAfter', message: '#twoNfMessage',
+    beforeText: '<strong>Before 2NF:</strong> SALES_LINE passes 1NF, but one table still mixes invoice, item, and line facts.',
+    afterText: '<strong>After 2NF:</strong> SALES_LINE has been split into INVOICE, ITEM, and INVOICE_LINE.'
+  });
+
+  setupComparison({
+    beforeButton: '#compareThreeBefore', afterButton: '#compareThreeAfter', beforeView: '#threeNfBefore', afterView: '#threeNfAfter', message: '#threeNfMessage',
+    beforeText: '<strong>Before 3NF:</strong> customer name and city are stored in INVOICE, but <code>customer_num</code> directly identifies those facts.',
+    afterText: '<strong>After 3NF:</strong> customer details are stored in CUSTOMER, and INVOICE keeps <code>customer_num</code> as a foreign key.'
+  });
+
+  $('#showCopies').addEventListener('click', () => {
+    const active = $('#linePanel').classList.toggle('show-copies');
+    $('#showCopies').setAttribute('aria-pressed', String(active));
+    $('#showCopies').textContent = active ? 'Hide repeated facts' : 'Highlight repeated facts';
+    $('#copyNote').innerHTML = active
+      ? '<strong>Highlighted:</strong> invoice, customer, and item facts repeat. 2NF and 3NF will move them.'
+      : '<strong>Notice:</strong> the rows are valid for 1NF, but several facts are copied.';
+  });
+
+  $('#copySql').addEventListener('click', async () => {
+    const text = $('#sqlCode').textContent;
+    try { await navigator.clipboard.writeText(text); }
+    catch {
+      const area = document.createElement('textarea'); area.value = text; document.body.append(area); area.select(); document.execCommand('copy'); area.remove();
+    }
+    $('#copySql').textContent = 'Copied';
+    setTimeout(() => $('#copySql').textContent = 'Copy SQL', 1300);
+  });
+})();
+</script>
+</body>
+</html>
