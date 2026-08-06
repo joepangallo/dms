@@ -2510,7 +2510,36 @@ table.data-table.wrap-cells td:last-child{white-space:normal; min-width:9ch;}
               <svg class="accordion-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M6 9l6 6 6-6" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
             </button>
           </h4>
-          <div id="m2-5-steps-p0" class="accordion-content" ><p><strong>In plain English:</strong> one box, one independently queryable value. A list such as &quot;forklift, first aid&quot; needs separate rows; ordinary punctuation inside a single atomic value does not.</p>
+          <div id="m2-5-steps-p0" class="accordion-content" ><h4>Simple 1NF example</h4>
+      <p>Two columns, two rows. One cell has a comma in it. That is all it takes to break 1NF:</p>
+
+      <div class="two-col">
+        <div class="card"><h4>&#10060; Breaks 1NF</h4>
+          <div class="table-scroll"><table class="data-table">
+            <thead><tr><th>EMPLOYEE</th><th>CERTIFICATIONS</th></tr></thead>
+            <tbody>
+              <tr><td>R. Alvarez</td><td style="background:var(--warning-100);"><strong>forklift, first aid</strong></td></tr>
+              <tr><td>T. Boyd</td><td>notary</td></tr>
+            </tbody>
+          </table></div>
+          <p>Two facts are squashed into one box. To the database that highlighted cell is a single lump of text, not two certifications.</p>
+        </div>
+        <div class="card"><h4>&#9989; Satisfies 1NF</h4>
+          <div class="table-scroll"><table class="data-table">
+            <thead><tr><th>EMPLOYEE</th><th>CERTIFICATION</th></tr></thead>
+            <tbody>
+              <tr><td>R. Alvarez</td><td>forklift</td></tr>
+              <tr><td>R. Alvarez</td><td>first aid</td></tr>
+              <tr><td>T. Boyd</td><td>notary</td></tr>
+            </tbody>
+          </table></div>
+          <p>The list became rows. Two rows turned into three, the employee name repeats, and that is fine &mdash; repeating a value down a column is normal.</p>
+        </div>
+      </div>
+
+      <p>Nothing was lost and nothing was invented. The same three facts now sit in three boxes instead of two. <strong>That is the whole rule.</strong> The payoff is immediate: &quot;how many people hold a forklift certification?&quot; is now something you count, where before it meant reading every box by eye and hoping nobody typed it differently.</p>
+
+      <p><strong>In plain English:</strong> one box, one independently queryable value. A list such as &quot;forklift, first aid&quot; needs separate rows; ordinary punctuation inside a single atomic value does not.</p>
       <p><strong>Rule:</strong> every column must hold a single, atomic value &mdash; no lists inside a cell. <strong>Fix:</strong> give each payment its own row, in its own table, linked back by a key:</p><div class="table-scroll"><table class="data-table">
       <caption>PAYMENT (1NF-compliant)</caption>
       <thead><tr><th>STUDENT_ID</th><th>PAYMENT_DATE</th></tr></thead>
