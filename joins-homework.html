@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="A guided SQL joins homework assignment with explanations, worked INNER JOIN and LEFT JOIN examples, and a ready-to-run in-browser SQLite database.">
+<title>Guided Homework: SQL INNER JOIN and LEFT JOIN</title>
+<style>
+:root{
+  --navy:#1b2559;
+  --navy-2:#2d3f91;
+  --orange:#d9782d;
+  --orange-dark:#a95116;
+  --orange-soft:#fff0e3;
+  --blue:#3157b7;
+  --blue-soft:#edf2ff;
+  --teal:#087568;
+  --teal-soft:#e2f5f0;
+  --green:#176b42;
+  --green-soft:#e8f6ee;
+  --yellow:#7a5600;
+  --yellow-soft:#fff7d6;
+  --red:#a33a35;
+  --red-soft:#fff0ee;
+  --ink:#1f2937;
+  --muted:#5f6b7a;
+  --line:#d7dce4;
+  --paper:#fff;
+  --page:#f4f6fa;
+  --code:#101b33;
+  --radius:13px;
+  --shadow:0 8px 24px rgba(27,37,89,.08);
+  --sans:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+  --mono:"SFMono-Regular",Consolas,"Liberation Mono",monospace;
+}
+*,*::before,*::after{box-sizing:border-box}
+html{scroll-behavior:smooth;scroll-padding-top:74px}
+body{margin:0;background:var(--page);color:var(--ink);font:16px/1.6 var(--sans);-webkit-font-smoothing:antialiased}
+button,input,textarea{font:inherit}button{cursor:pointer}code,pre{font-family:var(--mono)}
+:focus-visible{outline:3px solid #f0a64f;outline-offset:3px}
+.wrap{width:min(1140px,calc(100% - 36px));margin:auto}.skip{position:absolute;left:12px;top:-60px;z-index:40;background:#111827;color:#fff;padding:8px 13px}.skip:focus{top:0}
+
+header{color:#fff;background:linear-gradient(125deg,var(--navy),var(--navy-2));border-bottom:6px solid var(--orange)}
+.hero{padding:40px 0 34px}.kicker{display:block;margin-bottom:8px;color:#dce3ff;font-size:.74rem;font-weight:850;letter-spacing:.1em;text-transform:uppercase}
+h1,h2,h3,h4{margin:0;color:var(--navy);line-height:1.22}header h1{max-width:900px;color:#fff;font-size:clamp(2rem,5vw,3.45rem);letter-spacing:-.035em}header p{max-width:820px;margin:13px 0 0;color:#e4e8ff;font-size:1.08rem}
+.meta-chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:20px}.meta-chips span{padding:5px 10px;border:1px solid rgba(255,255,255,.3);border-radius:999px;background:rgba(255,255,255,.09);font-size:.76rem;font-weight:750}
+
+.toolbar{position:sticky;top:0;z-index:25;background:rgba(255,255,255,.96);border-bottom:1px solid var(--line);box-shadow:0 4px 14px rgba(31,41,55,.06);backdrop-filter:blur(8px)}
+.toolbar-inner{min-height:58px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}.save-status{margin-right:auto;color:var(--muted);font-size:.78rem}.save-status strong{color:var(--green)}
+.btn{min-height:38px;border:1px solid transparent;border-radius:8px;padding:7px 12px;background:var(--navy);color:#fff;font-weight:760}.btn:hover{background:var(--navy-2)}.btn:disabled{cursor:not-allowed;opacity:.56}
+.btn.secondary{border-color:#aab3c2;background:#fff;color:var(--ink)}.btn.secondary:hover{background:#f1f3f7}.btn.danger{border-color:#dfaaa6;background:#fff;color:var(--red)}.btn.danger:hover{background:var(--red-soft)}
+
+main{padding:34px 0 60px}.student-grid{display:grid;grid-template-columns:2fr 1fr 1fr;gap:12px;margin-bottom:22px}
+label{display:block;color:var(--navy);font-size:.78rem;font-weight:800;letter-spacing:.02em}input[type="text"],input[type="date"],textarea{width:100%;border:1px solid #aeb7c5;border-radius:8px;background:#fff;color:var(--ink)}input[type="text"],input[type="date"]{height:42px;margin-top:4px;padding:8px 10px}
+textarea{display:block;min-height:138px;padding:13px 14px;resize:vertical;font:14px/1.55 var(--mono)}textarea::placeholder{color:#8993a1}
+
+.card{margin-bottom:20px;padding:22px;background:var(--paper);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow)}.card h2{font-size:clamp(1.45rem,3vw,2rem);letter-spacing:-.02em}.card h3{font-size:1.12rem}.section-label{display:block;margin-bottom:5px;color:var(--orange);font-size:.7rem;font-weight:900;letter-spacing:.11em;text-transform:uppercase}.lede{max-width:85ch;margin:8px 0 0;color:var(--muted)}
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:16px}.note{padding:14px 15px;border-left:5px solid var(--blue);border-radius:0 8px 8px 0;background:var(--blue-soft);font-size:.9rem}.note strong{display:block;color:var(--navy)}.note.warning{border-left-color:#c39418;background:var(--yellow-soft)}.note.warning strong{color:var(--yellow)}.note.success{border-left-color:var(--green);background:var(--green-soft)}.note.success strong{color:var(--green)}.note.tight-top{margin-top:10px}.note.lesson-note{margin-top:13px}
+.clean{margin:9px 0 0;padding-left:20px}.clean li+li{margin-top:5px}
+
+.schema-map{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-top:17px}.schema{overflow:hidden;border:1px solid #aeb7c5;border-radius:9px;background:#fff}.schema h3{padding:10px 11px;background:var(--navy);color:#fff;font:850 .82rem/1.2 var(--mono)}.schema ul{margin:0;padding:0;list-style:none}.schema li{display:flex;align-items:center;gap:6px;min-height:34px;padding:6px 9px;border-top:1px solid var(--line);font:12px/1.3 var(--mono)}.schema li span{margin-left:auto;color:var(--muted);font:700 .58rem/1 var(--sans);text-transform:uppercase}.schema li.pk{background:var(--yellow-soft)}.schema li.fk{background:var(--blue-soft)}
+.join-path{display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:wrap;margin-top:15px;padding:13px;border:1px dashed #98a4b6;border-radius:9px;background:#f8f9fb;font:800 12px/1.4 var(--mono)}.join-path i{color:var(--orange);font-style:normal;font-size:1.15rem}.join-path span{padding:5px 8px;border:1px solid var(--line);border-radius:6px;background:#fff}
+
+.table-wrap{overflow-x:auto;margin-top:15px;border:1px solid var(--line);border-radius:9px}table{width:100%;border-collapse:collapse;background:#fff;font-size:.8rem}caption{padding:10px 12px;background:var(--navy);color:#fff;text-align:left;font-weight:800}th,td{padding:8px 9px;border-right:1px solid var(--line);border-bottom:1px solid var(--line);text-align:left;vertical-align:top;white-space:nowrap}th:last-child,td:last-child{border-right:0}tbody tr:last-child td{border-bottom:0}thead th{background:#edf0f6;color:#2c3650;font:800 .69rem/1.25 var(--mono)}td.null{color:var(--red);font-family:var(--mono);font-style:italic}.data-tabs{display:flex;flex-wrap:wrap;gap:6px;margin-top:14px}.data-tabs button{border:1px solid #aeb7c5;border-radius:7px;padding:6px 10px;background:#fff;color:var(--ink);font-weight:750}.data-tabs button[aria-pressed="true"]{border-color:var(--navy);background:var(--navy);color:#fff}.data-panel[hidden]{display:none}
+
+.lesson-step{margin-top:18px;padding:19px;border:1px solid var(--line);border-radius:11px;background:#fff}.lesson-head{display:grid;grid-template-columns:42px 1fr;gap:11px;align-items:start}.lesson-num{display:grid;place-items:center;width:42px;height:42px;border-radius:10px;background:var(--orange);color:#fff;font:850 .9rem/1 var(--mono)}.lesson-head p{margin:4px 0 0;color:var(--muted);font-size:.9rem}
+.example-grid{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(260px,.8fr);gap:13px;margin-top:14px;align-items:start}.codebox{overflow:hidden;border-radius:9px;background:var(--code);color:#dfe7ff}.code-head{display:flex;align-items:center;gap:8px;padding:8px 11px;background:#202e50;color:#cdd7f5;font-size:.7rem;font-weight:750}.copy-btn{margin-left:auto;border:1px solid #627196;border-radius:5px;padding:4px 8px;background:#34456f;color:#fff;font-size:.68rem}.copy-btn:hover{background:#465b8e}.codebox pre{margin:0;padding:14px;overflow:auto;font:13px/1.65 var(--mono);white-space:pre}.sql-key{color:#91b7ff}.sql-name{color:#ffc785}.sql-value{color:#9fe0c7}.explain{padding:14px;border:1px solid var(--line);border-radius:9px;background:#f8f9fb;font-size:.86rem}.explain h4{margin-bottom:7px}.explain ol,.explain ul{margin:0;padding-left:19px}.explain li+li{margin-top:5px}.result-facts{display:grid;gap:7px;margin-top:11px}.fact{padding:8px 10px;border-radius:7px;background:var(--teal-soft);color:#24544d;font-size:.79rem}.fact strong{color:var(--teal)}
+.mini-table{margin-top:12px}.mini-table table{font-size:.75rem}.alias-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:12px}.alias{padding:10px;border:1px solid var(--line);border-radius:8px;background:#fff;font-size:.78rem}.alias code{display:block;color:var(--navy);font-weight:850}.bridge{display:grid;grid-template-columns:1fr 45px 1fr;gap:9px;align-items:center;margin-top:14px}.bridge>span{text-align:center;color:var(--orange);font-size:1.25rem;font-weight:900}
+.template{margin-top:15px;padding:14px 15px;border:1px dashed #8694aa;border-radius:9px;background:#f5f7fb}.template strong{display:block;margin-bottom:5px;color:var(--navy)}.template pre{margin:0;overflow:auto;color:#26324b;font:12.5px/1.6 var(--mono)}
+
+.engine{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:14px;padding:12px 14px;border:1px solid #b8c3d6;border-radius:9px;background:#f7f9fd}.engine-dot{width:10px;height:10px;border-radius:50%;background:#c39418;box-shadow:0 0 0 4px #fff1b7}.engine.ready .engine-dot{background:var(--green);box-shadow:0 0 0 4px #ccebd9}.engine.error .engine-dot{background:var(--red);box-shadow:0 0 0 4px #f5cfcb}.engine strong{color:var(--navy)}.engine span:last-child{color:var(--muted);font-size:.82rem}
+
+.task{margin-top:17px;padding:18px;border:1px solid var(--line);border-radius:11px;background:#fff}.task-head{display:grid;grid-template-columns:42px 1fr auto;gap:11px;align-items:start}.task-num{display:grid;place-items:center;width:42px;height:42px;border-radius:10px;background:var(--navy);color:#fff;font:850 .9rem/1 var(--mono)}.task-title h3{margin-bottom:4px}.task-title p{margin:0;color:var(--muted);font-size:.88rem}.points{padding:4px 8px;border-radius:999px;background:var(--orange-soft);color:var(--orange-dark);font-size:.7rem;font-weight:850;white-space:nowrap}
+.requirements{display:flex;flex-wrap:wrap;gap:6px;margin:12px 0 0 53px}.requirements span{padding:4px 7px;border-radius:5px;background:#eef1f6;color:#4d5869;font:750 .69rem/1.25 var(--mono)}.task details{margin:11px 0 0 53px;padding:9px 11px;border:1px solid var(--line);border-radius:7px;background:#f8f9fb;font-size:.82rem}.task summary{cursor:pointer;color:var(--navy);font-weight:800}.task details p{margin:7px 0 0}.editor-wrap{margin:12px 0 0 53px}.task-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:8px}.task-actions .run{background:var(--teal)}.task-actions .run:hover{background:#09665c}.shortcut{color:var(--muted);font-size:.72rem}
+.output{display:none;margin-top:11px;border:1px solid var(--line);border-radius:8px;overflow:hidden}.output.has-content{display:block}.output-head{padding:8px 10px;background:#edf0f6;color:#3c485b;font-size:.74rem;font-weight:800}.output-scroll{overflow:auto;max-height:330px}.output table{font-size:.75rem}.message{padding:12px 13px;font-size:.84rem}.message.ok{background:var(--green-soft);color:var(--green)}.message.error{background:var(--red-soft);color:var(--red)}.message.loading{background:var(--yellow-soft);color:var(--yellow)}
+
+.rubric td{white-space:normal}.rubric td:first-child{color:var(--navy);font-weight:750}.checklist{display:grid;gap:8px;margin-top:14px}.check{display:flex;align-items:flex-start;gap:9px;padding:10px 12px;border:1px solid var(--line);border-radius:8px;background:#fff}.check input{width:18px;height:18px;margin-top:2px;accent-color:var(--navy)}.check span{font-size:.87rem}footer{padding:24px 0;border-top:1px solid var(--line);color:var(--muted);font-size:.78rem}
+
+@media(max-width:900px){.schema-map{grid-template-columns:repeat(2,1fr)}.example-grid{grid-template-columns:1fr}.alias-grid{grid-template-columns:1fr}.bridge{grid-template-columns:1fr}.bridge>span{transform:rotate(90deg)}}
+@media(max-width:700px){.wrap{width:min(100% - 22px,1140px)}.toolbar{position:static}.toolbar-inner{padding:9px 0}.save-status{width:100%}.student-grid,.two-col,.schema-map{grid-template-columns:1fr}.card{padding:17px}.task{padding:14px}.task-head{grid-template-columns:38px 1fr}.task-num{width:38px;height:38px}.points{grid-column:2;justify-self:start}.requirements,.task details,.editor-wrap{margin-left:0}.lesson-step{padding:14px}.codebox pre{font-size:11.5px}}
+@media print{
+  @page{margin:.55in}body{background:#fff;font-size:10.5pt}.toolbar,.skip,.copy-btn,.run,.clear-query,.engine{display:none!important}.wrap{width:100%}.hero{padding:20px 0}header{background:#fff;color:#000;border-bottom:3px solid #000}header h1,header p,.kicker{color:#000}.meta-chips span{border-color:#777;color:#000;background:#fff}main{padding:20px 0}.card,.lesson-step,.task{box-shadow:none;break-inside:avoid}.schema-map{grid-template-columns:repeat(4,1fr)}.example-grid{grid-template-columns:1.2fr .8fr}.codebox{background:#fff;color:#000;border:1px solid #777}.code-head{background:#eee;color:#000}.codebox pre{color:#000;white-space:pre-wrap}.sql-key,.sql-name,.sql-value{color:#000}.data-tabs{display:none}.data-panel[hidden]{display:block}.task textarea{overflow:visible;resize:none;border-color:#777}.output-scroll{max-height:none;overflow:visible}footer{display:none}
+}
+</style>
+</head>
+<body>
+<a class="skip" href="#main">Skip to assignment</a>
+
+<header>
+  <div class="wrap hero">
+    <span class="kicker">Homework assignment 2 · Guided SQL practice</span>
+    <h1>Learn and practice INNER JOIN and LEFT JOIN</h1>
+    <p>Read the worked examples first, then use the ready-made college database to write ten straightforward join statements. Every query runs directly on this page.</p>
+    <div class="meta-chips"><span>100 points</span><span>Guided examples included</span><span>10 SQL questions</span><span>SQLite database preloaded</span></div>
+  </div>
+</header>
+
+<div class="toolbar" role="toolbar" aria-label="Assignment tools">
+  <div class="wrap toolbar-inner">
+    <span class="save-status" id="saveStatus">Queries save in this browser.</span>
+    <button class="btn secondary" id="setupBtn" type="button">Download starter database (.sql)</button>
+    <button class="btn secondary" id="exportBtn" type="button">Export my queries (.sql)</button>
+    <button class="btn secondary" id="printBtn" type="button">Print / Save PDF</button>
+    <button class="btn danger" id="clearBtn" type="button">Clear my work</button>
+  </div>
+</div>
+
+<main id="main">
+  <div class="wrap">
+    <div class="student-grid" role="group" aria-label="Student information">
+      <label>Student name<input type="text" id="studentName" data-save="meta" autocomplete="name"></label>
+      <label>Course / section<input type="text" id="courseSection" data-save="meta"></label>
+      <label>Date<input type="date" id="workDate" data-save="meta"></label>
+    </div>
+
+    <section class="card">
+      <span class="section-label">Start here</span>
+      <h2>How to use this assignment</h2>
+      <p class="lede">The first half is a short lesson. Type or copy its examples if you want to experiment. The second half is graded practice: write one query in each box and press <strong>Run query</strong> to see its real result.</p>
+      <div class="two-col">
+        <div class="note"><strong>You do not need to know joins yet</strong>The examples explain what each keyword does, how to select an <code>ON</code> condition, and how to decide between <code>INNER JOIN</code> and <code>LEFT JOIN</code>.</div>
+        <div class="note warning"><strong>Keep the work straightforward</strong>Use only <code>INNER JOIN</code> (or <code>JOIN</code>), <code>LEFT JOIN</code>, <code>ON</code>, <code>WHERE</code>, <code>ORDER BY</code>, <code>GROUP BY</code>, and <code>COUNT</code>. No subqueries, self-joins, right joins, or full joins are needed.</div>
+      </div>
+      <div class="engine" id="engineStatus" role="status" aria-live="polite"><span class="engine-dot" aria-hidden="true"></span><div><strong>Loading the SQLite practice database…</strong><br><span>The examples and assignment data are built into this file.</span></div></div>
+    </section>
+
+    <section class="card" id="database">
+      <span class="section-label">Ready-made database</span>
+      <h2>Keiser College course registration</h2>
+      <p class="lede">Four tables are already created and populated. Primary keys are gold; foreign keys are blue. The bridge table <code>ENROLLMENT</code> connects students to courses.</p>
+      <div class="schema-map" role="group" aria-label="Database schema">
+        <article class="schema"><h3>STUDENT</h3><ul><li class="pk">student_id <span>PK</span></li><li>first_name</li><li>last_name</li><li>major</li></ul></article>
+        <article class="schema"><h3>FACULTY</h3><ul><li class="pk">faculty_id <span>PK</span></li><li>faculty_name</li><li>office</li></ul></article>
+        <article class="schema"><h3>COURSE</h3><ul><li class="pk">course_id <span>PK</span></li><li>course_name</li><li class="fk">faculty_id <span>FK</span></li><li>credits</li></ul></article>
+        <article class="schema"><h3>ENROLLMENT</h3><ul><li class="pk">student_id <span>PK · FK</span></li><li class="pk">course_id <span>PK · FK</span></li><li class="pk">term <span>PK</span></li><li>final_grade</li></ul></article>
+      </div>
+      <div class="join-path"><span>STUDENT.student_id</span><i>↔</i><span>ENROLLMENT.student_id</span><i>·</i><span>ENROLLMENT.course_id</span><i>↔</i><span>COURSE.course_id</span><i>·</i><span>COURSE.faculty_id</span><i>↔</i><span>FACULTY.faculty_id</span></div>
+
+      <div class="data-tabs" role="tablist" aria-label="View sample data">
+        <button type="button" aria-pressed="true" data-table-tab="student">STUDENT · 7 rows</button>
+        <button type="button" aria-pressed="false" data-table-tab="faculty">FACULTY · 4 rows</button>
+        <button type="button" aria-pressed="false" data-table-tab="course">COURSE · 6 rows</button>
+        <button type="button" aria-pressed="false" data-table-tab="enrollment">ENROLLMENT · 10 rows</button>
+      </div>
+      <div class="data-panel" data-table-panel="student"><div class="table-wrap"><table><caption>STUDENT</caption><thead><tr><th>student_id</th><th>first_name</th><th>last_name</th><th>major</th></tr></thead><tbody><tr><td>S101</td><td>Alina</td><td>Brooks</td><td>Information Technology</td></tr><tr><td>S102</td><td>Mateo</td><td>Ruiz</td><td>Information Technology</td></tr><tr><td>S103</td><td>Nia</td><td>Thompson</td><td>Cybersecurity</td></tr><tr><td>S104</td><td>Ethan</td><td>Park</td><td>Web Design</td></tr><tr><td>S105</td><td>Sofia</td><td>Bennett</td><td>Information Technology</td></tr><tr><td>S106</td><td>Jordan</td><td>Kim</td><td>Cybersecurity</td></tr><tr><td>S107</td><td>Maya</td><td>Chen</td><td>Web Design</td></tr></tbody></table></div></div>
+      <div class="data-panel" data-table-panel="faculty" hidden><div class="table-wrap"><table><caption>FACULTY</caption><thead><tr><th>faculty_id</th><th>faculty_name</th><th>office</th></tr></thead><tbody><tr><td>F10</td><td>Dr. Elena Moreno</td><td>B214</td></tr><tr><td>F20</td><td>Prof. Marcus Lee</td><td>C108</td></tr><tr><td>F30</td><td>Dr. Priya Shah</td><td>B220</td></tr><tr><td>F40</td><td>Prof. Daniel Reed</td><td>C115</td></tr></tbody></table></div></div>
+      <div class="data-panel" data-table-panel="course" hidden><div class="table-wrap"><table><caption>COURSE</caption><thead><tr><th>course_id</th><th>course_name</th><th>faculty_id</th><th>credits</th></tr></thead><tbody><tr><td>CIS101</td><td>Database Foundations</td><td>F10</td><td>3</td></tr><tr><td>CIS220</td><td>SQL Applications</td><td>F10</td><td>3</td></tr><tr><td>CIS240</td><td>Data Modeling</td><td>F10</td><td>3</td></tr><tr><td>NET110</td><td>Network Essentials</td><td>F20</td><td>3</td></tr><tr><td>WEB205</td><td>Web Development</td><td>F30</td><td>3</td></tr><tr><td>SEC250</td><td>Cybersecurity Basics</td><td>F30</td><td>3</td></tr></tbody></table></div></div>
+      <div class="data-panel" data-table-panel="enrollment" hidden><div class="table-wrap"><table><caption>ENROLLMENT</caption><thead><tr><th>student_id</th><th>course_id</th><th>term</th><th>final_grade</th></tr></thead><tbody><tr><td>S101</td><td>CIS101</td><td>Fall 2026</td><td>92</td></tr><tr><td>S101</td><td>CIS220</td><td>Fall 2026</td><td>88</td></tr><tr><td>S102</td><td>CIS101</td><td>Fall 2026</td><td>84</td></tr><tr><td>S102</td><td>NET110</td><td>Fall 2026</td><td>91</td></tr><tr><td>S103</td><td>SEC250</td><td>Fall 2026</td><td>95</td></tr><tr><td>S103</td><td>CIS101</td><td>Fall 2026</td><td>87</td></tr><tr><td>S104</td><td>WEB205</td><td>Fall 2026</td><td>93</td></tr><tr><td>S105</td><td>CIS220</td><td>Fall 2026</td><td>90</td></tr><tr><td>S106</td><td>SEC250</td><td>Fall 2026</td><td>89</td></tr><tr><td>S106</td><td>NET110</td><td>Fall 2026</td><td>86</td></tr></tbody></table></div></div>
+      <div class="two-col">
+        <div class="note success"><strong>Two intentional gaps</strong>Student S107 (Maya Chen) has no enrollment. Course CIS240 has no students. You will use <code>LEFT JOIN</code> to keep and find these unmatched rows.</div>
+        <div class="note"><strong>Aliases keep queries short</strong>Examples use <code>s</code> for STUDENT, <code>e</code> for ENROLLMENT, <code>c</code> for COURSE, and <code>f</code> for FACULTY. An alias replaces the full table name inside that query.</div>
+      </div>
+    </section>
+
+    <section class="card" id="guided-lesson">
+      <span class="section-label">Guided lesson</span>
+      <h2>How joins work</h2>
+      <p class="lede">A join places columns from related rows side by side. Every join needs two decisions: which rows should be preserved, and which columns prove that two rows match.</p>
+
+      <article class="lesson-step">
+        <div class="lesson-head"><span class="lesson-num">1</span><div><h3>Start with an INNER JOIN</h3><p>An inner join keeps only pairs for which the <code>ON</code> condition is true. Rows without a partner disappear.</p></div></div>
+        <div class="example-grid">
+          <div class="codebox"><div class="code-head"><span>Example 1 · Match students to enrollment rows</span><button class="copy-btn" type="button">Copy SQL</button></div><pre><span class="sql-key">SELECT</span> s.student_id,
+       s.first_name,
+       s.last_name,
+       e.course_id
+<span class="sql-key">FROM</span> <span class="sql-name">STUDENT</span> <span class="sql-key">AS</span> s
+<span class="sql-key">INNER JOIN</span> <span class="sql-name">ENROLLMENT</span> <span class="sql-key">AS</span> e
+    <span class="sql-key">ON</span> s.student_id = e.student_id
+<span class="sql-key">ORDER BY</span> s.student_id, e.course_id;</pre></div>
+          <div class="explain"><h4>Read it line by line</h4><ol><li><code>SELECT</code> chooses the columns to display.</li><li><code>FROM STUDENT AS s</code> chooses the starting table and nickname <code>s</code>.</li><li><code>INNER JOIN ENROLLMENT AS e</code> names the second table.</li><li><code>ON</code> compares the related key columns.</li><li><code>ORDER BY</code> sorts the finished result; it does not control matching.</li></ol><div class="result-facts"><div class="fact"><strong>10 rows:</strong> one per enrollment</div><div class="fact"><strong>S101 appears twice</strong> because Alina has two enrollments.</div><div class="fact"><strong>S107 is absent</strong> because Maya has no matching enrollment.</div></div></div>
+        </div>
+        <div class="template"><strong>INNER JOIN template</strong><pre>SELECT columns_to_display
+FROM first_table AS a
+INNER JOIN second_table AS b
+    ON a.shared_key = b.shared_key;</pre></div>
+      </article>
+
+      <article class="lesson-step">
+        <div class="lesson-head"><span class="lesson-num">2</span><div><h3>Connect three tables one hop at a time</h3><p>STUDENT does not contain a course name. Walk through ENROLLMENT to reach COURSE, adding one join for each link.</p></div></div>
+        <div class="example-grid">
+          <div class="codebox"><div class="code-head"><span>Example 2 · Student names, course names, and grades</span><button class="copy-btn" type="button">Copy SQL</button></div><pre><span class="sql-key">SELECT</span> s.first_name,
+       s.last_name,
+       c.course_name,
+       e.final_grade
+<span class="sql-key">FROM</span> <span class="sql-name">STUDENT</span> <span class="sql-key">AS</span> s
+<span class="sql-key">INNER JOIN</span> <span class="sql-name">ENROLLMENT</span> <span class="sql-key">AS</span> e
+    <span class="sql-key">ON</span> s.student_id = e.student_id
+<span class="sql-key">INNER JOIN</span> <span class="sql-name">COURSE</span> <span class="sql-key">AS</span> c
+    <span class="sql-key">ON</span> e.course_id = c.course_id
+<span class="sql-key">ORDER BY</span> c.course_name, s.last_name;</pre></div>
+          <div class="explain"><h4>Follow the path</h4><ul><li>First link: <code>STUDENT → ENROLLMENT</code> on <code>student_id</code>.</li><li>Second link: <code>ENROLLMENT → COURSE</code> on <code>course_id</code>.</li><li>Three tables require two join links. In a simple chain, <em>N</em> tables need <em>N − 1</em> joins.</li><li>Qualify every selected column with its alias so the source stays clear.</li></ul><div class="result-facts"><div class="fact"><strong>Still 10 rows:</strong> course names were added to the ten enrollment rows.</div></div></div>
+        </div>
+      </article>
+
+      <article class="lesson-step">
+        <div class="lesson-head"><span class="lesson-num">3</span><div><h3>Add a filter after the joins</h3><p><code>ON</code> says how tables relate. <code>WHERE</code> says which of those matched rows the question wants.</p></div></div>
+        <div class="example-grid">
+          <div class="codebox"><div class="code-head"><span>Example 3 · Only Database Foundations enrollments</span><button class="copy-btn" type="button">Copy SQL</button></div><pre><span class="sql-key">SELECT</span> s.first_name,
+       s.last_name,
+       e.final_grade
+<span class="sql-key">FROM</span> <span class="sql-name">STUDENT</span> <span class="sql-key">AS</span> s
+<span class="sql-key">INNER JOIN</span> <span class="sql-name">ENROLLMENT</span> <span class="sql-key">AS</span> e
+    <span class="sql-key">ON</span> s.student_id = e.student_id
+<span class="sql-key">WHERE</span> e.course_id = <span class="sql-value">'CIS101'</span>
+<span class="sql-key">ORDER BY</span> s.last_name;</pre></div>
+          <div class="explain"><h4>Do not mix up ON and WHERE</h4><ul><li><code>ON s.student_id = e.student_id</code> is the relationship. Removing it creates unrelated pairings.</li><li><code>WHERE e.course_id = 'CIS101'</code> is a business filter. Removing it keeps all valid enrollments.</li><li>Text values use single quotes.</li></ul><div class="result-facts"><div class="fact"><strong>3 rows:</strong> Alina, Mateo, and Nia.</div></div></div>
+        </div>
+      </article>
+
+      <article class="lesson-step">
+        <div class="lesson-head"><span class="lesson-num">4</span><div><h3>Use LEFT JOIN when every left-side row must survive</h3><p>A left join keeps every row from the table written before <code>LEFT JOIN</code>. When no match exists, columns from the right table contain <code>NULL</code>.</p></div></div>
+        <div class="example-grid">
+          <div class="codebox"><div class="code-head"><span>Example 4 · Keep all students, even those with no course</span><button class="copy-btn" type="button">Copy SQL</button></div><pre><span class="sql-key">SELECT</span> s.student_id,
+       s.first_name,
+       s.last_name,
+       e.course_id
+<span class="sql-key">FROM</span> <span class="sql-name">STUDENT</span> <span class="sql-key">AS</span> s
+<span class="sql-key">LEFT JOIN</span> <span class="sql-name">ENROLLMENT</span> <span class="sql-key">AS</span> e
+    <span class="sql-key">ON</span> s.student_id = e.student_id
+<span class="sql-key">ORDER BY</span> s.student_id, e.course_id;</pre></div>
+          <div class="explain"><h4>Why “left” matters</h4><ul><li><code>STUDENT</code> is on the left, so all seven students are protected.</li><li>Students with several enrollments still produce several rows.</li><li>Maya has no match, so SQLite creates one result row with <code>NULL</code> for <code>e.course_id</code>.</li><li>Reverse the tables and you protect enrollments instead—not students.</li></ul><div class="result-facts"><div class="fact"><strong>11 rows:</strong> ten matches plus one unmatched student.</div></div></div>
+        </div>
+        <div class="mini-table table-wrap"><table><caption>The last part of the LEFT JOIN result</caption><thead><tr><th>student_id</th><th>first_name</th><th>last_name</th><th>course_id</th></tr></thead><tbody><tr><td>S106</td><td>Jordan</td><td>Kim</td><td>NET110</td></tr><tr><td>S106</td><td>Jordan</td><td>Kim</td><td>SEC250</td></tr><tr><td>S107</td><td>Maya</td><td>Chen</td><td class="null">NULL</td></tr></tbody></table></div>
+        <div class="template"><strong>LEFT JOIN template</strong><pre>SELECT columns_to_display
+FROM table_whose_rows_must_all_survive AS a
+LEFT JOIN table_that_may_not_have_a_match AS b
+    ON a.shared_key = b.shared_key;</pre></div>
+      </article>
+
+      <article class="lesson-step">
+        <div class="lesson-head"><span class="lesson-num">5</span><div><h3>Find only the rows with no match</h3><p>First preserve unmatched rows with <code>LEFT JOIN</code>. Then keep only the manufactured <code>NULL</code> rows with <code>WHERE ... IS NULL</code>.</p></div></div>
+        <div class="example-grid">
+          <div class="codebox"><div class="code-head"><span>Example 5 · Find students with no enrollment</span><button class="copy-btn" type="button">Copy SQL</button></div><pre><span class="sql-key">SELECT</span> s.student_id,
+       s.first_name,
+       s.last_name
+<span class="sql-key">FROM</span> <span class="sql-name">STUDENT</span> <span class="sql-key">AS</span> s
+<span class="sql-key">LEFT JOIN</span> <span class="sql-name">ENROLLMENT</span> <span class="sql-key">AS</span> e
+    <span class="sql-key">ON</span> s.student_id = e.student_id
+<span class="sql-key">WHERE</span> e.student_id <span class="sql-key">IS NULL</span>;</pre></div>
+          <div class="explain"><h4>The two-step pattern</h4><ol><li><code>LEFT JOIN</code> keeps Maya and gives her empty enrollment columns.</li><li><code>WHERE e.student_id IS NULL</code> removes every student who did match.</li></ol><div class="note warning tight-top"><strong>Never write <code>= NULL</code></strong>NULL means “missing/unknown,” so SQL tests it with <code>IS NULL</code> or <code>IS NOT NULL</code>.</div><div class="result-facts"><div class="fact"><strong>1 row:</strong> S107, Maya Chen.</div></div></div>
+        </div>
+      </article>
+
+      <article class="lesson-step">
+        <div class="lesson-head"><span class="lesson-num">6</span><div><h3>Count matches while keeping zero</h3><p>Combine <code>LEFT JOIN</code>, <code>COUNT</code>, and <code>GROUP BY</code> when categories with no matching rows must still appear.</p></div></div>
+        <div class="example-grid">
+          <div class="codebox"><div class="code-head"><span>Example 6 · Count courses taught by every faculty member</span><button class="copy-btn" type="button">Copy SQL</button></div><pre><span class="sql-key">SELECT</span> f.faculty_id,
+       f.faculty_name,
+       <span class="sql-key">COUNT</span>(c.course_id) <span class="sql-key">AS</span> course_count
+<span class="sql-key">FROM</span> <span class="sql-name">FACULTY</span> <span class="sql-key">AS</span> f
+<span class="sql-key">LEFT JOIN</span> <span class="sql-name">COURSE</span> <span class="sql-key">AS</span> c
+    <span class="sql-key">ON</span> f.faculty_id = c.faculty_id
+<span class="sql-key">GROUP BY</span> f.faculty_id, f.faculty_name
+<span class="sql-key">ORDER BY</span> f.faculty_id;</pre></div>
+          <div class="explain"><h4>Why this counts zero correctly</h4><ul><li>FACULTY is left, so all four faculty members survive.</li><li><code>COUNT(c.course_id)</code> counts only non-NULL matched course IDs.</li><li>F40's unmatched row has a NULL course ID, so Daniel Reed's count is 0.</li><li><code>COUNT(*)</code> would count that placeholder row and incorrectly show 1.</li></ul><div class="result-facts"><div class="fact"><strong>4 rows:</strong> one per faculty member, including F40 with 0.</div></div></div>
+        </div>
+      </article>
+
+      <article class="lesson-step">
+        <div class="lesson-head"><span class="lesson-num">7</span><div><h3>Recognize the older inner-join spelling</h3><p>If you previously saw tables separated by commas, the matching idea is the same. The explicit <code>JOIN ... ON</code> spelling makes the relationship easier to see.</p></div></div>
+        <div class="bridge">
+          <div class="codebox"><div class="code-head"><span>Older comma-and-WHERE style</span></div><pre><span class="sql-key">SELECT</span> s.student_id, e.course_id
+<span class="sql-key">FROM</span> <span class="sql-name">STUDENT</span> s, <span class="sql-name">ENROLLMENT</span> e
+<span class="sql-key">WHERE</span> s.student_id = e.student_id;</pre></div>
+          <span>＝</span>
+          <div class="codebox"><div class="code-head"><span>Explicit INNER JOIN style</span></div><pre><span class="sql-key">SELECT</span> s.student_id, e.course_id
+<span class="sql-key">FROM</span> <span class="sql-name">STUDENT</span> s
+<span class="sql-key">INNER JOIN</span> <span class="sql-name">ENROLLMENT</span> e
+  <span class="sql-key">ON</span> s.student_id = e.student_id;</pre></div>
+        </div>
+        <div class="note lesson-note"><strong>For this homework, use the explicit style</strong>It keeps join conditions in <code>ON</code> and leaves <code>WHERE</code> for filters. Also, the word <code>INNER</code> is optional: <code>JOIN</code> by itself means <code>INNER JOIN</code>.</div>
+      </article>
+    </section>
+
+    <section class="card" id="practice">
+      <span class="section-label">Graded practice</span>
+      <h2>Write and run ten join statements</h2>
+      <p class="lede">Each query is worth 10 points. Match the requested columns and sort order. The expected row count helps you detect a missing join or filter without revealing the finished SQL.</p>
+
+      <article class="task" data-task="1">
+        <div class="task-head"><span class="task-num">1</span><div class="task-title"><h3>Courses and their instructors</h3><p>Use an <code>INNER JOIN</code> to show each course ID, course name, and faculty name. Sort by course ID.</p></div><span class="points">10 points</span></div>
+        <div class="requirements"><span>COURSE + FACULTY</span><span>6 rows</span><span>ORDER BY course_id</span></div>
+        <details><summary>Hint</summary><p>Start with <code>COURSE AS c</code>. Join <code>FACULTY AS f</code> where the two <code>faculty_id</code> values match.</p></details>
+        <div class="editor-wrap"><textarea id="query1" data-save="query" spellcheck="false" aria-label="SQL answer for question 1" placeholder="-- Write question 1 here
+SELECT ..."></textarea><div class="task-actions"><button class="btn run" type="button">Run query</button><button class="btn secondary clear-query" type="button">Clear</button><span class="shortcut">Tip: Ctrl/⌘ + Enter runs this box.</span></div><div class="output" aria-live="polite"></div></div>
+      </article>
+
+      <article class="task" data-task="2">
+        <div class="task-head"><span class="task-num">2</span><div class="task-title"><h3>Students and their course IDs</h3><p>Use an <code>INNER JOIN</code> to show student ID, first name, last name, and course ID for every enrollment. Sort by student ID, then course ID.</p></div><span class="points">10 points</span></div>
+        <div class="requirements"><span>STUDENT + ENROLLMENT</span><span>10 rows</span><span>2-column sort</span></div>
+        <details><summary>Hint</summary><p>Use the same table path as worked example 1. A student with two courses should appear twice.</p></details>
+        <div class="editor-wrap"><textarea id="query2" data-save="query" spellcheck="false" aria-label="SQL answer for question 2" placeholder="-- Write question 2 here
+SELECT ..."></textarea><div class="task-actions"><button class="btn run" type="button">Run query</button><button class="btn secondary clear-query" type="button">Clear</button><span class="shortcut">Tip: Ctrl/⌘ + Enter runs this box.</span></div><div class="output" aria-live="polite"></div></div>
+      </article>
+
+      <article class="task" data-task="3">
+        <div class="task-head"><span class="task-num">3</span><div class="task-title"><h3>Readable enrollment report</h3><p>Join three tables to show each student's first name, last name, course name, and final grade. Sort by course name, then last name.</p></div><span class="points">10 points</span></div>
+        <div class="requirements"><span>STUDENT + ENROLLMENT + COURSE</span><span>10 rows</span><span>2 joins</span></div>
+        <details><summary>Hint</summary><p>Walk <code>STUDENT → ENROLLMENT → COURSE</code>. The first link uses <code>student_id</code>; the second uses <code>course_id</code>.</p></details>
+        <div class="editor-wrap"><textarea id="query3" data-save="query" spellcheck="false" aria-label="SQL answer for question 3" placeholder="-- Write question 3 here
+SELECT ..."></textarea><div class="task-actions"><button class="btn run" type="button">Run query</button><button class="btn secondary clear-query" type="button">Clear</button><span class="shortcut">Tip: Ctrl/⌘ + Enter runs this box.</span></div><div class="output" aria-live="polite"></div></div>
+      </article>
+
+      <article class="task" data-task="4">
+        <div class="task-head"><span class="task-num">4</span><div class="task-title"><h3>One course only</h3><p>Use an inner join and a <code>WHERE</code> clause to show first name, last name, and final grade for students in <code>CIS101</code>. Sort by last name.</p></div><span class="points">10 points</span></div>
+        <div class="requirements"><span>STUDENT + ENROLLMENT</span><span>3 rows</span><span>WHERE course_id = 'CIS101'</span></div>
+        <details><summary>Hint</summary><p>The <code>ON</code> condition still matches student IDs. Put the course restriction in a separate <code>WHERE</code> clause after the join.</p></details>
+        <div class="editor-wrap"><textarea id="query4" data-save="query" spellcheck="false" aria-label="SQL answer for question 4" placeholder="-- Write question 4 here
+SELECT ..."></textarea><div class="task-actions"><button class="btn run" type="button">Run query</button><button class="btn secondary clear-query" type="button">Clear</button><span class="shortcut">Tip: Ctrl/⌘ + Enter runs this box.</span></div><div class="output" aria-live="polite"></div></div>
+      </article>
+
+      <article class="task" data-task="5">
+        <div class="task-head"><span class="task-num">5</span><div class="task-title"><h3>Grades of 90 or higher</h3><p>Join STUDENT, ENROLLMENT, and COURSE. Show first name, last name, course name, and final grade only when the grade is at least 90. Sort highest grade first.</p></div><span class="points">10 points</span></div>
+        <div class="requirements"><span>3 tables</span><span>5 rows</span><span>final_grade &gt;= 90</span><span>DESC</span></div>
+        <details><summary>Hint</summary><p>Begin with the three-table pattern from question 3. Add <code>WHERE e.final_grade &gt;= 90</code>, then sort by <code>e.final_grade DESC</code>.</p></details>
+        <div class="editor-wrap"><textarea id="query5" data-save="query" spellcheck="false" aria-label="SQL answer for question 5" placeholder="-- Write question 5 here
+SELECT ..."></textarea><div class="task-actions"><button class="btn run" type="button">Run query</button><button class="btn secondary clear-query" type="button">Clear</button><span class="shortcut">Tip: Ctrl/⌘ + Enter runs this box.</span></div><div class="output" aria-live="polite"></div></div>
+      </article>
+
+      <article class="task" data-task="6">
+        <div class="task-head"><span class="task-num">6</span><div class="task-title"><h3>All students, including no enrollment</h3><p>Use a <code>LEFT JOIN</code> to show every student's ID, first name, last name, and any course ID. Sort by student ID, then course ID.</p></div><span class="points">10 points</span></div>
+        <div class="requirements"><span>STUDENT on the left</span><span>11 rows</span><span>S107 must appear</span></div>
+        <details><summary>Hint</summary><p>The table whose every row must survive belongs before <code>LEFT JOIN</code>. Here that table is STUDENT.</p></details>
+        <div class="editor-wrap"><textarea id="query6" data-save="query" spellcheck="false" aria-label="SQL answer for question 6" placeholder="-- Write question 6 here
+SELECT ..."></textarea><div class="task-actions"><button class="btn run" type="button">Run query</button><button class="btn secondary clear-query" type="button">Clear</button><span class="shortcut">Tip: Ctrl/⌘ + Enter runs this box.</span></div><div class="output" aria-live="polite"></div></div>
+      </article>
+
+      <article class="task" data-task="7">
+        <div class="task-head"><span class="task-num">7</span><div class="task-title"><h3>All courses, including an empty course</h3><p>Use a <code>LEFT JOIN</code> to show every course ID, course name, and any enrolled student ID. Sort by course ID, then student ID.</p></div><span class="points">10 points</span></div>
+        <div class="requirements"><span>COURSE on the left</span><span>11 rows</span><span>CIS240 must appear</span></div>
+        <details><summary>Hint</summary><p>This time courses must survive, so put COURSE before <code>LEFT JOIN ENROLLMENT</code>. Match the two course IDs.</p></details>
+        <div class="editor-wrap"><textarea id="query7" data-save="query" spellcheck="false" aria-label="SQL answer for question 7" placeholder="-- Write question 7 here
+SELECT ..."></textarea><div class="task-actions"><button class="btn run" type="button">Run query</button><button class="btn secondary clear-query" type="button">Clear</button><span class="shortcut">Tip: Ctrl/⌘ + Enter runs this box.</span></div><div class="output" aria-live="polite"></div></div>
+      </article>
+
+      <article class="task" data-task="8">
+        <div class="task-head"><span class="task-num">8</span><div class="task-title"><h3>Find the course with no enrollment</h3><p>Use <code>LEFT JOIN</code> and <code>IS NULL</code> to show the course ID and course name for courses that have no enrolled students.</p></div><span class="points">10 points</span></div>
+        <div class="requirements"><span>LEFT JOIN</span><span>IS NULL</span><span>1 row</span></div>
+        <details><summary>Hint</summary><p>Keep every COURSE row first. Then test a column from ENROLLMENT with <code>IS NULL</code>. Do not use <code>= NULL</code>.</p></details>
+        <div class="editor-wrap"><textarea id="query8" data-save="query" spellcheck="false" aria-label="SQL answer for question 8" placeholder="-- Write question 8 here
+SELECT ..."></textarea><div class="task-actions"><button class="btn run" type="button">Run query</button><button class="btn secondary clear-query" type="button">Clear</button><span class="shortcut">Tip: Ctrl/⌘ + Enter runs this box.</span></div><div class="output" aria-live="polite"></div></div>
+      </article>
+
+      <article class="task" data-task="9">
+        <div class="task-head"><span class="task-num">9</span><div class="task-title"><h3>Count students in every course</h3><p>Show course ID, course name, and a count named <code>student_count</code>. Include courses with zero students. Sort by course ID.</p></div><span class="points">10 points</span></div>
+        <div class="requirements"><span>LEFT JOIN</span><span>COUNT(e.student_id)</span><span>GROUP BY</span><span>6 rows</span></div>
+        <details><summary>Hint</summary><p>Put COURSE on the left. Count a non-NULL column from ENROLLMENT—not <code>COUNT(*)</code>—and group by both selected COURSE columns.</p></details>
+        <div class="editor-wrap"><textarea id="query9" data-save="query" spellcheck="false" aria-label="SQL answer for question 9" placeholder="-- Write question 9 here
+SELECT ..."></textarea><div class="task-actions"><button class="btn run" type="button">Run query</button><button class="btn secondary clear-query" type="button">Clear</button><span class="shortcut">Tip: Ctrl/⌘ + Enter runs this box.</span></div><div class="output" aria-live="polite"></div></div>
+      </article>
+
+      <article class="task" data-task="10">
+        <div class="task-head"><span class="task-num">10</span><div class="task-title"><h3>Complete four-table report</h3><p>Use inner joins to show student first name, student last name, course name, faculty name, and final grade for every enrollment. Sort by student last name, then course name.</p></div><span class="points">10 points</span></div>
+        <div class="requirements"><span>4 tables</span><span>3 joins</span><span>10 rows</span></div>
+        <details><summary>Hint</summary><p>Follow the complete path: <code>STUDENT → ENROLLMENT → COURSE → FACULTY</code>. Each arrow becomes one <code>JOIN ... ON</code> clause.</p></details>
+        <div class="editor-wrap"><textarea id="query10" data-save="query" spellcheck="false" aria-label="SQL answer for question 10" placeholder="-- Write question 10 here
+SELECT ..."></textarea><div class="task-actions"><button class="btn run" type="button">Run query</button><button class="btn secondary clear-query" type="button">Clear</button><span class="shortcut">Tip: Ctrl/⌘ + Enter runs this box.</span></div><div class="output" aria-live="polite"></div></div>
+      </article>
+    </section>
+
+    <section class="card">
+      <span class="section-label">Grading</span>
+      <h2>Query rubric and final check</h2>
+      <p class="lede">Each question is worth 10 points and is evaluated using the same four-part rubric.</p>
+      <div class="table-wrap rubric"><table><thead><tr><th>Evidence in each query</th><th>Points</th></tr></thead><tbody><tr><td>Correct tables and requested join type</td><td>3</td></tr><tr><td>Correct <code>ON</code> condition for every table link</td><td>3</td></tr><tr><td>Correct selected columns, aliases, filter, or grouping</td><td>2</td></tr><tr><td>Correct result and requested sort order</td><td>2</td></tr></tbody></table></div>
+      <div class="checklist" role="group" aria-label="Submission checklist">
+        <label class="check"><input type="checkbox" id="check1" data-save="check"><span>Every query ran without a SQLite error.</span></label>
+        <label class="check"><input type="checkbox" id="check2" data-save="check"><span>My row counts match the expected counts shown on the question cards.</span></label>
+        <label class="check"><input type="checkbox" id="check3" data-save="check"><span>I used <code>ON</code> for relationships and <code>WHERE</code> for requested filters.</span></label>
+        <label class="check"><input type="checkbox" id="check4" data-save="check"><span>I exported my ten queries as a <code>.sql</code> file or printed this page to PDF.</span></label>
+      </div>
+    </section>
+  </div>
+</main>
+
+<footer><div class="wrap">Database Concepts &amp; SQL · Guided Joins Homework · Keiser College Registration Database</div></footer>
+
+<script>
+(function(){
+  'use strict';
+  var STORAGE_KEY = 'db-joins-homework-v1';
+  var SQL_JS_BASE = 'https://cdn.jsdelivr.net/npm/sql.js@1.10.3/dist/';
+  var sqlPromise = null;
+  var saveTimer;
+  var saveStatus = document.getElementById('saveStatus');
+  var engineStatus = document.getElementById('engineStatus');
+  var SEED_SQL = [
+    'PRAGMA foreign_keys = ON;',
+    'CREATE TABLE FACULTY (faculty_id TEXT PRIMARY KEY, faculty_name TEXT NOT NULL, office TEXT NOT NULL);',
+    'CREATE TABLE STUDENT (student_id TEXT PRIMARY KEY, first_name TEXT NOT NULL, last_name TEXT NOT NULL, major TEXT NOT NULL);',
+    'CREATE TABLE COURSE (course_id TEXT PRIMARY KEY, course_name TEXT NOT NULL, faculty_id TEXT NOT NULL REFERENCES FACULTY(faculty_id), credits INTEGER NOT NULL);',
+    'CREATE TABLE ENROLLMENT (student_id TEXT NOT NULL REFERENCES STUDENT(student_id), course_id TEXT NOT NULL REFERENCES COURSE(course_id), term TEXT NOT NULL, final_grade INTEGER NOT NULL, PRIMARY KEY (student_id, course_id, term));',
+    "INSERT INTO FACULTY VALUES ('F10','Dr. Elena Moreno','B214'),('F20','Prof. Marcus Lee','C108'),('F30','Dr. Priya Shah','B220'),('F40','Prof. Daniel Reed','C115');",
+    "INSERT INTO STUDENT VALUES ('S101','Alina','Brooks','Information Technology'),('S102','Mateo','Ruiz','Information Technology'),('S103','Nia','Thompson','Cybersecurity'),('S104','Ethan','Park','Web Design'),('S105','Sofia','Bennett','Information Technology'),('S106','Jordan','Kim','Cybersecurity'),('S107','Maya','Chen','Web Design');",
+    "INSERT INTO COURSE VALUES ('CIS101','Database Foundations','F10',3),('CIS220','SQL Applications','F10',3),('CIS240','Data Modeling','F10',3),('NET110','Network Essentials','F20',3),('WEB205','Web Development','F30',3),('SEC250','Cybersecurity Basics','F30',3);",
+    "INSERT INTO ENROLLMENT VALUES ('S101','CIS101','Fall 2026',92),('S101','CIS220','Fall 2026',88),('S102','CIS101','Fall 2026',84),('S102','NET110','Fall 2026',91),('S103','SEC250','Fall 2026',95),('S103','CIS101','Fall 2026',87),('S104','WEB205','Fall 2026',93),('S105','CIS220','Fall 2026',90),('S106','SEC250','Fall 2026',89),('S106','NET110','Fall 2026',86);"
+  ].join('\n');
+
+  function fields(){ return Array.prototype.slice.call(document.querySelectorAll('[data-save]')); }
+  function autoSize(el){ if (!el || el.tagName !== 'TEXTAREA') return; el.style.height = 'auto'; el.style.height = Math.max(138, el.scrollHeight + 2) + 'px'; }
+  function restore(){
+    var data = {};
+    try { data = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}'); } catch(e){}
+    fields().forEach(function(el){ if (!Object.prototype.hasOwnProperty.call(data, el.id)) return; if (el.type === 'checkbox') el.checked = !!data[el.id]; else el.value = data[el.id]; autoSize(el); });
+  }
+  function save(){
+    var data = {};
+    fields().forEach(function(el){ data[el.id] = el.type === 'checkbox' ? el.checked : el.value; });
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); saveStatus.innerHTML = '<strong>Saved locally</strong> · ' + new Date().toLocaleTimeString([], {hour:'numeric', minute:'2-digit'}); }
+    catch(e){ saveStatus.textContent = 'Could not save in this browser. Export before closing.'; }
+  }
+  function queueSave(){ clearTimeout(saveTimer); saveStatus.textContent = 'Saving…'; saveTimer = setTimeout(save, 250); }
+  function download(name, text, type){
+    var blob = new Blob([text], {type:type || 'text/plain;charset=utf-8'}); var url = URL.createObjectURL(blob); var a = document.createElement('a');
+    a.href = url; a.download = name; document.body.appendChild(a); a.click(); a.remove(); setTimeout(function(){ URL.revokeObjectURL(url); }, 1000);
+  }
+  function safeName(value){ return (value || 'student').trim().replace(/[^a-z0-9]+/gi, '-').replace(/^-|-$/g, '').toLowerCase() || 'student'; }
+  function escapeHtml(value){ return String(value == null ? '' : value).replace(/[&<>"']/g, function(ch){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]; }); }
+  function stripComments(sql){ return sql.replace(/--[^\n]*/g, '').replace(/\/\*[\s\S]*?\*\//g, '').trim(); }
+  function setEngine(kind, title, detail){ engineStatus.className = 'engine ' + kind; engineStatus.innerHTML = '<span class="engine-dot" aria-hidden="true"></span><div><strong>' + escapeHtml(title) + '</strong><br><span>' + escapeHtml(detail) + '</span></div>'; }
+
+  function loadSql(){
+    if (sqlPromise) return sqlPromise;
+    sqlPromise = new Promise(function(resolve, reject){
+      function init(){
+        if (typeof window.initSqlJs !== 'function'){ reject(new Error('The sql.js loader did not initialize.')); return; }
+        window.initSqlJs({locateFile:function(file){ return SQL_JS_BASE + file; }}).then(resolve).catch(reject);
+      }
+      if (typeof window.initSqlJs === 'function'){ init(); return; }
+      var script = document.createElement('script'); script.src = SQL_JS_BASE + 'sql-wasm.js'; script.async = true;
+      script.onload = init; script.onerror = function(){ reject(new Error('The SQLite engine could not be downloaded.')); }; document.head.appendChild(script);
+    }).then(function(SQL){
+      var test = new SQL.Database(); test.run(SEED_SQL); test.close();
+      setEngine('ready','SQLite database ready','Four tables and 27 source rows are loaded. Run any assignment query below.');
+      return SQL;
+    }).catch(function(err){
+      sqlPromise = null;
+      setEngine('error','The in-page SQLite engine did not load','Internet access to jsDelivr is required. Download the starter .sql file and run it in another SQLite tool instead.');
+      throw err;
+    });
+    return sqlPromise;
+  }
+
+  function resultTable(columns, values){
+    var html = '<div class="output-head">Query result · ' + values.length + (values.length === 1 ? ' row' : ' rows') + '</div><div class="output-scroll"><table><thead><tr>';
+    columns.forEach(function(c){ html += '<th>' + escapeHtml(c) + '</th>'; }); html += '</tr></thead><tbody>';
+    if (!values.length) html += '<tr><td colspan="' + columns.length + '"><em>0 rows matched</em></td></tr>';
+    values.forEach(function(row){ html += '<tr>'; row.forEach(function(v){ html += v === null ? '<td class="null">NULL</td>' : '<td>' + escapeHtml(v) + '</td>'; }); html += '</tr>'; });
+    return html + '</tbody></table></div>';
+  }
+  function renderMessage(output, kind, text){ output.classList.add('has-content'); output.innerHTML = '<div class="message ' + kind + '">' + escapeHtml(text) + '</div>'; }
+  function runTask(task){
+    var textarea = task.querySelector('textarea'); var output = task.querySelector('.output'); var sql = stripComments(textarea.value);
+    if (!sql){ renderMessage(output,'error','Write a SELECT statement in the box first. Comment lines beginning with -- are not executable SQL.'); return; }
+    if (!/^(select|with)\b/i.test(sql)){ renderMessage(output,'error','This homework runner accepts SELECT queries only. The practice database is rebuilt automatically for every run.'); return; }
+    renderMessage(output,'loading','Loading SQLite and running your query…');
+    loadSql().then(function(SQL){
+      var db = new SQL.Database();
+      try {
+        db.run(SEED_SQL); var results = db.exec(sql);
+        if (!results.length){ renderMessage(output,'ok','The query ran successfully but returned no result table. Check that it is a SELECT statement and that its filters match data.'); }
+        else { output.classList.add('has-content'); output.innerHTML = results.map(function(r){ return resultTable(r.columns, r.values); }).join(''); }
+      } catch(err){ renderMessage(output,'error','SQLite error: ' + (err.message || String(err))); }
+      finally { try { db.close(); } catch(e){} }
+    }).catch(function(){ renderMessage(output,'error','The in-page engine is unavailable. Download the starter database from the top toolbar and run this query in another SQLite tool.'); });
+  }
+
+  fields().forEach(function(el){ el.addEventListener(el.type === 'checkbox' ? 'change' : 'input', function(){ autoSize(el); queueSave(); }); });
+  Array.prototype.forEach.call(document.querySelectorAll('.task'), function(task){
+    var textarea = task.querySelector('textarea');
+    task.querySelector('.run').addEventListener('click', function(){ runTask(task); });
+    task.querySelector('.clear-query').addEventListener('click', function(){ textarea.value = ''; autoSize(textarea); task.querySelector('.output').className = 'output'; task.querySelector('.output').innerHTML = ''; textarea.focus(); queueSave(); });
+    textarea.addEventListener('keydown', function(e){ if ((e.ctrlKey || e.metaKey) && e.key === 'Enter'){ e.preventDefault(); runTask(task); } });
+  });
+  Array.prototype.forEach.call(document.querySelectorAll('.copy-btn'), function(btn){
+    btn.addEventListener('click', function(){
+      var pre = btn.closest('.codebox').querySelector('pre'); var text = pre.textContent;
+      if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(text).then(function(){ btn.textContent = 'Copied'; setTimeout(function(){ btn.textContent = 'Copy SQL'; }, 1200); });
+      else { var area = document.createElement('textarea'); area.value = text; document.body.appendChild(area); area.select(); document.execCommand('copy'); area.remove(); btn.textContent = 'Copied'; setTimeout(function(){ btn.textContent = 'Copy SQL'; }, 1200); }
+    });
+  });
+  Array.prototype.forEach.call(document.querySelectorAll('[data-table-tab]'), function(btn){ btn.addEventListener('click', function(){ var key = btn.getAttribute('data-table-tab'); Array.prototype.forEach.call(document.querySelectorAll('[data-table-tab]'), function(b){ b.setAttribute('aria-pressed', b === btn ? 'true' : 'false'); }); Array.prototype.forEach.call(document.querySelectorAll('[data-table-panel]'), function(p){ p.hidden = p.getAttribute('data-table-panel') !== key; }); }); });
+
+  document.getElementById('setupBtn').addEventListener('click', function(){ download('keiser-college-joins-starter.sql', SEED_SQL + '\n', 'text/sql;charset=utf-8'); });
+  document.getElementById('exportBtn').addEventListener('click', function(){
+    save(); var lines = ['-- GUIDED JOINS HOMEWORK','-- Student: ' + document.getElementById('studentName').value,'-- Course / section: ' + document.getElementById('courseSection').value,'-- Date: ' + document.getElementById('workDate').value,''];
+    for (var i=1;i<=10;i++){ lines.push('-- ============================================================','-- QUESTION ' + i,'-- ============================================================',document.getElementById('query' + i).value.trim(),''); }
+    download(safeName(document.getElementById('studentName').value) + '-joins-homework.sql', lines.join('\n'), 'text/sql;charset=utf-8');
+  });
+  document.getElementById('printBtn').addEventListener('click', function(){ fields().forEach(autoSize); window.print(); });
+  document.getElementById('clearBtn').addEventListener('click', function(){
+    if (!window.confirm('Clear all ten queries, student information, and checklist items saved on this page?')) return;
+    localStorage.removeItem(STORAGE_KEY); fields().forEach(function(el){ if (el.type === 'checkbox') el.checked = false; else el.value = ''; autoSize(el); });
+    Array.prototype.forEach.call(document.querySelectorAll('.output'), function(o){ o.className = 'output'; o.innerHTML = ''; }); saveStatus.textContent = 'Work cleared.';
+  });
+  window.addEventListener('beforeprint', function(){ fields().forEach(autoSize); });
+  restore(); loadSql().catch(function(){});
+})();
+</script>
+</body>
+</html>

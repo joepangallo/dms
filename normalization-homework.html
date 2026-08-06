@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="A standalone database normalization homework assignment that begins with an unnormalized repair-order table and asks students to produce a 3NF design.">
+<title>Homework: Normalize a Repair Database to 3NF</title>
+<style>
+:root{
+  --navy:#1b2559;
+  --navy-2:#2d3f91;
+  --orange:#d9782d;
+  --orange-soft:#fff0e3;
+  --blue-soft:#eef2ff;
+  --green:#176b42;
+  --green-soft:#e8f6ee;
+  --yellow:#7a5600;
+  --yellow-soft:#fff7d6;
+  --red:#a33a35;
+  --red-soft:#fff0ee;
+  --ink:#1f2937;
+  --muted:#5f6b7a;
+  --line:#d7dce4;
+  --paper:#ffffff;
+  --page:#f4f6fa;
+  --radius:13px;
+  --shadow:0 8px 24px rgba(27,37,89,.08);
+  --sans:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+  --mono:"SFMono-Regular",Consolas,"Liberation Mono",monospace;
+}
+*,*::before,*::after{box-sizing:border-box}
+html{scroll-behavior:smooth;scroll-padding-top:18px}
+body{margin:0;background:var(--page);color:var(--ink);font:16px/1.6 var(--sans);-webkit-font-smoothing:antialiased}
+button,input,textarea{font:inherit}
+button{cursor:pointer}
+:focus-visible{outline:3px solid #f0a64f;outline-offset:3px}
+code{font-family:var(--mono);font-size:.93em}
+.wrap{width:min(1120px,calc(100% - 36px));margin:auto}
+.skip{position:absolute;left:12px;top:-60px;z-index:30;background:#111827;color:#fff;padding:8px 13px}.skip:focus{top:0}
+
+header{color:#fff;background:linear-gradient(125deg,var(--navy),var(--navy-2));border-bottom:6px solid var(--orange)}
+.hero{padding:40px 0 34px}
+.kicker{display:block;margin-bottom:8px;color:#dce3ff;font-size:.74rem;font-weight:850;letter-spacing:.1em;text-transform:uppercase}
+h1,h2,h3,h4{margin:0;color:var(--navy);line-height:1.22}
+header h1{max-width:850px;color:#fff;font-size:clamp(2rem,5vw,3.45rem);letter-spacing:-.035em}
+header p{max-width:780px;margin:13px 0 0;color:#e4e8ff;font-size:1.08rem}
+.meta-chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:20px}.meta-chips span{padding:5px 10px;border:1px solid rgba(255,255,255,.3);border-radius:999px;background:rgba(255,255,255,.09);font-size:.76rem;font-weight:750}
+
+.toolbar{position:sticky;top:0;z-index:20;background:rgba(255,255,255,.96);border-bottom:1px solid var(--line);box-shadow:0 4px 14px rgba(31,41,55,.06);backdrop-filter:blur(8px)}
+.toolbar-inner{min-height:58px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.save-status{margin-right:auto;color:var(--muted);font-size:.78rem}.save-status strong{color:var(--green)}
+.btn{min-height:38px;border:1px solid transparent;border-radius:8px;padding:7px 12px;background:var(--navy);color:#fff;font-weight:760}.btn:hover{background:var(--navy-2)}
+.btn.secondary{border-color:#aab3c2;background:#fff;color:var(--ink)}.btn.secondary:hover{background:#f1f3f7}
+.btn.danger{border-color:#dfaaa6;background:#fff;color:var(--red)}.btn.danger:hover{background:var(--red-soft)}
+
+main{padding:34px 0 60px}
+.student-grid{display:grid;grid-template-columns:2fr 1fr 1fr;gap:12px;margin-bottom:22px}
+label{display:block;color:var(--navy);font-size:.78rem;font-weight:800;letter-spacing:.02em}
+input[type="text"],input[type="date"],textarea{width:100%;border:1px solid #aeb7c5;border-radius:8px;background:#fff;color:var(--ink)}
+input[type="text"],input[type="date"]{height:42px;margin-top:4px;padding:8px 10px}
+textarea{display:block;min-height:142px;margin-top:10px;padding:13px 14px;resize:vertical;font:14px/1.55 var(--mono)}
+textarea::placeholder{color:#8993a1}
+
+.card{margin-bottom:20px;padding:22px;background:var(--paper);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow)}
+.card h2{font-size:clamp(1.45rem,3vw,2rem);letter-spacing:-.02em}.card h3{font-size:1.1rem}
+.section-label{display:block;margin-bottom:5px;color:var(--orange);font-size:.7rem;font-weight:900;letter-spacing:.11em;text-transform:uppercase}
+.lede{max-width:82ch;margin:8px 0 0;color:var(--muted)}
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:16px}
+.note{padding:14px 15px;border-left:5px solid var(--navy-2);border-radius:0 8px 8px 0;background:var(--blue-soft);font-size:.9rem}.note strong{display:block;color:var(--navy)}
+.note.warning{border-left-color:#c39418;background:var(--yellow-soft)}.note.warning strong{color:var(--yellow)}
+.note.success{border-left-color:var(--green);background:var(--green-soft)}.note.success strong{color:var(--green)}.note.space-top{margin-top:14px}
+.clean{margin:9px 0 0;padding-left:20px}.clean li+li{margin-top:5px}
+
+.table-wrap{overflow-x:auto;margin-top:17px;border:1px solid var(--line);border-radius:10px}
+table{width:100%;border-collapse:collapse;background:#fff;font-size:.78rem}
+caption{padding:11px 13px;background:var(--navy);color:#fff;text-align:left;font-weight:800}
+th,td{padding:8px 9px;border-right:1px solid var(--line);border-bottom:1px solid var(--line);text-align:left;vertical-align:top;white-space:nowrap}
+th:last-child,td:last-child{border-right:0}tbody tr:last-child td{border-bottom:0}
+thead th{background:#edf0f6;color:#2c3650;font:800 .67rem/1.25 var(--mono)}
+.parts-cell{min-width:440px;white-space:normal}.part-row{display:grid;grid-template-columns:45px minmax(130px,1fr) 45px minmax(105px,1fr) 36px 55px;gap:5px;align-items:center;padding:5px 6px;border:1px solid #efc1a6;border-radius:6px;background:var(--orange-soft);font-family:var(--mono);font-size:.66rem}.part-row+.part-row{margin-top:5px}.part-row span:nth-child(5){text-align:center}.part-row span:last-child{text-align:right}
+.key{display:inline-block;margin-left:4px;padding:2px 5px;border-radius:4px;background:#ffebad;color:#694900;font:800 .58rem/1 var(--sans)}
+.table-key{padding:10px 12px;border-top:1px solid var(--line);background:#f7f8fa;color:var(--muted);font-size:.78rem}.table-key code{color:var(--navy);font-weight:750}
+
+.rules{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;margin-top:16px}.rule{padding:12px 13px;border:1px solid var(--line);border-radius:8px;background:#fff;font-size:.84rem}.rule strong{display:block;color:var(--navy)}
+.dependency-box{margin-top:14px;padding:13px 15px;border:1px dashed #98a4b6;border-radius:8px;background:#f8f9fb;font:13px/1.7 var(--mono)}
+
+.task{position:relative;margin-top:16px;padding:18px;border:1px solid var(--line);border-radius:10px;background:#fff}
+.task-head{display:grid;grid-template-columns:42px 1fr auto;gap:11px;align-items:start}
+.task-num{display:grid;place-items:center;width:42px;height:42px;border-radius:10px;background:var(--navy);color:#fff;font:850 .9rem/1 var(--mono)}
+.task-title h3{margin-bottom:4px}.task-title p{margin:0;color:var(--muted);font-size:.88rem}
+.points{padding:4px 8px;border-radius:999px;background:var(--orange-soft);color:#9b4c18;font-size:.7rem;font-weight:850;white-space:nowrap}
+.prompt-list{margin:13px 0 0 53px;padding-left:18px;font-size:.9rem}.prompt-list li+li{margin-top:5px}
+.format-hint{margin:12px 0 0 53px;padding:9px 11px;border-radius:7px;background:#f1f3f7;color:var(--muted);font-size:.78rem}.format-hint strong{color:var(--ink)}
+.task textarea{margin-left:53px;width:calc(100% - 53px)}
+
+.rubric{margin-top:16px}.rubric th:nth-child(2),.rubric td:nth-child(2){text-align:center}.rubric td{white-space:normal}.rubric td:first-child{font-weight:750;color:var(--navy)}
+.checklist{display:grid;gap:8px;margin-top:14px}.check{display:flex;align-items:flex-start;gap:9px;padding:10px 12px;border:1px solid var(--line);border-radius:8px;background:#fff}.check input{width:18px;height:18px;margin-top:2px;accent-color:var(--navy)}.check span{font-size:.87rem}
+footer{padding:24px 0;border-top:1px solid var(--line);color:var(--muted);font-size:.78rem}
+
+@media(max-width:760px){
+  .wrap{width:min(100% - 22px,1120px)}.toolbar{position:static}.toolbar-inner{padding:9px 0}.save-status{width:100%}
+  .student-grid,.two-col,.rules{grid-template-columns:1fr}.card{padding:17px}.task{padding:14px}.task-head{grid-template-columns:38px 1fr}.task-num{width:38px;height:38px}.points{grid-column:2;justify-self:start}.prompt-list,.format-hint{margin-left:0}.task textarea{margin-left:0;width:100%}.parts-cell{min-width:430px}
+}
+@media print{
+  @page{margin:.55in}
+  body{background:#fff;font-size:11pt}.toolbar,.skip,.btn{display:none!important}.wrap{width:100%}.hero{padding:20px 0}header{background:#fff;color:#000;border-bottom:3px solid #000}header h1,header p,.kicker{color:#000}.meta-chips span{border-color:#777;color:#000;background:#fff}
+  main{padding:20px 0}.card,.task{box-shadow:none;break-inside:avoid}.raw-card{break-inside:auto}.table-wrap{overflow:visible}.raw-table{font-size:6.5pt}.parts-cell{min-width:0}.part-row{grid-template-columns:32px 90px 30px 70px 25px 38px;font-size:5.5pt}
+  textarea{overflow:visible;resize:none;border-color:#777;background:#fff}.task textarea{min-height:150px}.student-grid{break-inside:avoid}footer{display:none}
+}
+</style>
+</head>
+<body>
+<a class="skip" href="#main">Skip to assignment</a>
+
+<header>
+  <div class="wrap hero">
+    <span class="kicker">Homework assignment 1 · Database design</span>
+    <h1>Normalize a repair database from UNF to 3NF</h1>
+    <p>You have inherited one crowded repair-order table. Diagnose its problems, move it through first, second, and third normal form, and finish with a clean relational design.</p>
+    <div class="meta-chips"><span>100 points</span><span>Suggested time: 75–90 minutes</span><span>Individual work</span><span>UNF → 1NF → 2NF → 3NF</span></div>
+  </div>
+</header>
+
+<div class="toolbar" role="toolbar" aria-label="Assignment tools">
+  <div class="wrap toolbar-inner">
+    <span class="save-status" id="saveStatus">Answers save in this browser.</span>
+    <button class="btn secondary" id="csvBtn" type="button">Download raw data (.csv)</button>
+    <button class="btn secondary" id="exportBtn" type="button">Export answers (.txt)</button>
+    <button class="btn secondary" id="printBtn" type="button">Print / Save PDF</button>
+    <button class="btn danger" id="clearBtn" type="button">Clear my answers</button>
+  </div>
+</div>
+
+<main id="main">
+  <div class="wrap">
+    <div class="student-grid" role="group" aria-label="Student information">
+      <label>Student name<input type="text" id="studentName" data-save="meta" autocomplete="name"></label>
+      <label>Course / section<input type="text" id="courseSection" data-save="meta"></label>
+      <label>Date<input type="date" id="workDate" data-save="meta"></label>
+    </div>
+
+    <section class="card">
+      <span class="section-label">Directions</span>
+      <h2>What to submit</h2>
+      <p class="lede">Complete every numbered response in this page. Use relation notation such as <code>TABLE_NAME(primary_key, attribute, foreign_key)</code>, label every primary key and foreign key, and explain your choices briefly. Export your answers or print the completed page to PDF when finished.</p>
+      <div class="two-col">
+        <div class="note"><strong>Use the identifiers already provided</strong>Do not invent a surrogate key merely to avoid analyzing the composite key. Work with the ticket, customer, technician, device, part, and supplier identifiers in the source data.</div>
+        <div class="note warning"><strong>Show each stage</strong>A correct final design by itself does not receive full credit. Your work must show what changed at 1NF, 2NF, and 3NF.</div>
+      </div>
+    </section>
+
+    <section class="card raw-card" id="raw-data">
+      <span class="section-label">Starting point</span>
+      <h2>The unnormalized database</h2>
+      <p class="lede">Northstar Device Repair records one row per repair ticket. The <code>PARTS_USED</code> cell contains a repeating group: each shaded line inside that cell is a separate part record packed into the same field.</p>
+      <div class="table-wrap">
+        <table class="raw-table">
+          <caption>REPAIR_ORDER_RAW — one row per repair ticket</caption>
+          <thead>
+            <tr><th>TICKET_ID <span class="key">identifier</span></th><th>OPENED_DATE</th><th>CUSTOMER_ID</th><th>CUSTOMER_NAME</th><th>CUSTOMER_EMAIL</th><th>TECH_ID</th><th>TECH_NAME</th><th>TECH_EXT</th><th>DEVICE_SERIAL</th><th>DEVICE_TYPE</th><th>LABOR_HOURS</th><th>PARTS_USED <span class="key">repeating group</span></th></tr>
+          </thead>
+          <tbody>
+            <tr><td>R5001</td><td>2026-07-08</td><td>C101</td><td>Maya Patel</td><td>maya.patel@example.com</td><td>T07</td><td>Andre Lewis</td><td>214</td><td>SN-A14</td><td>Laptop</td><td>1.50</td><td class="parts-cell"><div class="part-row"><span>P110</span><span>USB-C Port</span><span>S20</span><span>TechSource</span><span>1</span><span>$18.00</span></div><div class="part-row"><span>P225</span><span>65W Charger</span><span>S20</span><span>TechSource</span><span>1</span><span>$32.00</span></div></td></tr>
+            <tr><td>R5002</td><td>2026-07-09</td><td>C102</td><td>Liam Brooks</td><td>liam.brooks@example.com</td><td>T12</td><td>Kiara Stone</td><td>219</td><td>SN-B52</td><td>Tablet</td><td>2.00</td><td class="parts-cell"><div class="part-row"><span>P520</span><span>Screen Assembly</span><span>S48</span><span>DisplayWorks</span><span>1</span><span>$105.00</span></div></td></tr>
+            <tr><td>R5003</td><td>2026-07-10</td><td>C101</td><td>Maya Patel</td><td>maya.patel@example.com</td><td>T12</td><td>Kiara Stone</td><td>219</td><td>SN-C08</td><td>Desktop</td><td>1.00</td><td class="parts-cell"><div class="part-row"><span>P310</span><span>Cooling Fan</span><span>S35</span><span>Component Hub</span><span>2</span><span>$24.50</span></div></td></tr>
+            <tr><td>R5004</td><td>2026-07-12</td><td>C103</td><td>Zoe Chen</td><td>zoe.chen@example.com</td><td>T07</td><td>Andre Lewis</td><td>214</td><td>SN-D91</td><td>Laptop</td><td>2.50</td><td class="parts-cell"><div class="part-row"><span>P415</span><span>1TB SSD</span><span>S35</span><span>Component Hub</span><span>1</span><span>$69.00</span></div><div class="part-row"><span>P310</span><span>Cooling Fan</span><span>S35</span><span>Component Hub</span><span>1</span><span>$24.50</span></div></td></tr>
+            <tr><td>R5005</td><td>2026-07-14</td><td>C104</td><td>Noah Williams</td><td>noah.w@example.com</td><td>T18</td><td>Damon Price</td><td>223</td><td>SN-E77</td><td>Laptop</td><td>1.25</td><td class="parts-cell"><div class="part-row"><span>P630</span><span>Keyboard</span><span>S20</span><span>TechSource</span><span>1</span><span>$41.00</span></div></td></tr>
+            <tr><td>R5006</td><td>2026-07-18</td><td>C101</td><td>Maya Patel</td><td>maya.patel@example.com</td><td>T07</td><td>Andre Lewis</td><td>214</td><td>SN-A14</td><td>Laptop</td><td>0.75</td><td class="parts-cell"><div class="part-row"><span>P225</span><span>65W Charger</span><span>S20</span><span>TechSource</span><span>1</span><span>$32.00</span></div></td></tr>
+          </tbody>
+        </table>
+        <div class="table-key"><strong>Each part line is ordered:</strong> <code>PART_ID · PART_NAME · SUPPLIER_ID · SUPPLIER_NAME · QUANTITY · PART_PRICE</code></div>
+      </div>
+    </section>
+
+    <section class="card" id="business-rules">
+      <span class="section-label">Evidence</span>
+      <h2>Business rules</h2>
+      <p class="lede">Treat these statements as facts about every valid row, not just coincidences in the six sample tickets.</p>
+      <div class="rules">
+        <div class="rule"><strong>Ticket</strong>Each ticket has one opened date, one customer, one technician, one device, and one labor-hours value.</div>
+        <div class="rule"><strong>Customer</strong>A customer ID identifies exactly one customer name and email. A customer may have many tickets.</div>
+        <div class="rule"><strong>Technician</strong>A technician ID identifies exactly one technician name and extension. A technician may handle many tickets.</div>
+        <div class="rule"><strong>Device</strong>A serial number identifies one device type. The same device may return on a later ticket.</div>
+        <div class="rule"><strong>Part and supplier</strong>A part ID identifies one part name, one current catalog price, and one supplier ID. A supplier ID identifies one supplier name.</div>
+        <div class="rule"><strong>Ticket–part combination</strong>A ticket may use many parts. A part appears at most once on one ticket, and its quantity describes that ticket–part pair.</div>
+      </div>
+      <div class="note success space-top"><strong>Important price assumption</strong><code>PART_PRICE</code> is the current catalog price and is determined by <code>PART_ID</code>. It is not a historical price quoted separately on each repair ticket.</div>
+    </section>
+
+    <section class="card" id="responses">
+      <span class="section-label">Your work</span>
+      <h2>Normalize the data</h2>
+      <p class="lede">Complete the steps in order. Relation and dependency notation may be typed as plain text.</p>
+
+      <article class="task">
+        <div class="task-head"><span class="task-num">1</span><div class="task-title"><h3>Diagnose the unnormalized table</h3><p>Explain what is wrong before changing it.</p></div><span class="points">10 points</span></div>
+        <ol class="prompt-list"><li>State what one source row represents.</li><li>Name the repeating group and explain why it violates 1NF.</li><li>Give one specific update anomaly, one insertion anomaly, and one deletion anomaly using this repair data.</li></ol>
+        <textarea id="answer1" data-save="answer" aria-label="Answer to task 1" placeholder="Row meaning: ...&#10;Repeating group: ...&#10;Update anomaly: ...&#10;Insertion anomaly: ...&#10;Deletion anomaly: ..."></textarea>
+      </article>
+
+      <article class="task">
+        <div class="task-head"><span class="task-num">2</span><div class="task-title"><h3>Convert the data to first normal form</h3><p>Remove the repeating group so every cell holds one value.</p></div><span class="points">20 points</span></div>
+        <ol class="prompt-list"><li>Write the complete 1NF relation, including the six attributes that were hidden inside <code>PARTS_USED</code>.</li><li>State what one 1NF row represents.</li><li>Identify the primary key. Explain why neither half of that key is sufficient by itself.</li><li>State how many rows the six source tickets produce after the repeating group is expanded.</li></ol>
+        <div class="format-hint"><strong>Suggested format:</strong> <code>REPAIR_1NF(attribute, attribute, ...)</code> · <code>PK = (...)</code> · <code>one row = ...</code></div>
+        <textarea id="answer2" data-save="answer" aria-label="Answer to task 2" placeholder="REPAIR_1NF(...)
+PK = (...)
+One row represents ...
+Expanded row count = ..."></textarea>
+      </article>
+
+      <article class="task">
+        <div class="task-head"><span class="task-num">3</span><div class="task-title"><h3>List the functional dependencies</h3><p>Use the business rules to identify what determines what.</p></div><span class="points">15 points</span></div>
+        <ol class="prompt-list"><li>List every important functional dependency in the 1NF relation.</li><li>Label each one as a full-key dependency, partial dependency, or transitive dependency.</li><li>Be sure to include the dependency that determines <code>QUANTITY</code>.</li></ol>
+        <div class="format-hint"><strong>Use arrow notation:</strong> <code>determinant → dependent attribute(s) [type]</code></div>
+        <textarea id="answer3" data-save="answer" aria-label="Answer to task 3" placeholder="(...) → ... [full-key]
+... → ... [partial]
+... → ... [transitive]"></textarea>
+      </article>
+
+      <article class="task">
+        <div class="task-head"><span class="task-num">4</span><div class="task-title"><h3>Convert the design to second normal form</h3><p>Remove attributes that depend on only part of the composite key.</p></div><span class="points">20 points</span></div>
+        <ol class="prompt-list"><li>Write the relations produced by your 2NF decomposition.</li><li>Label every primary key and foreign key.</li><li>Under each relation, state which dependency caused you to place those attributes together.</li><li>Do not remove transitive dependencies yet; that is the next step.</li></ol>
+        <div class="format-hint"><strong>Reminder:</strong> 2NF asks whether an attribute needs the <em>whole</em> composite key. It does not yet remove a non-key attribute that depends on another non-key attribute.</div>
+        <textarea id="answer4" data-save="answer" aria-label="Answer to task 4" placeholder="TABLE_A(...)
+PK: ... | FK: ...
+Reason: ...
+
+TABLE_B(...)"></textarea>
+      </article>
+
+      <article class="task">
+        <div class="task-head"><span class="task-num">5</span><div class="task-title"><h3>Convert the design to third normal form</h3><p>Move every remaining fact to the table whose key determines it.</p></div><span class="points">20 points</span></div>
+        <ol class="prompt-list"><li>Write the final set of 3NF relations.</li><li>Label every primary key and foreign key.</li><li>For each table, complete the sentence: “One row represents …”</li><li>Check that every non-key attribute depends on the key, the whole key, and nothing but the key.</li></ol>
+        <textarea id="answer5" data-save="answer" aria-label="Answer to task 5" placeholder="FINAL_TABLE(...)
+PK: ... | FK: ...
+One row represents ...
+
+Continue for every final relation."></textarea>
+      </article>
+
+      <article class="task">
+        <div class="task-head"><span class="task-num">6</span><div class="task-title"><h3>Map the relationships</h3><p>Describe how the final tables connect.</p></div><span class="points">10 points</span></div>
+        <ol class="prompt-list"><li>List each relationship between two final tables.</li><li>Give its cardinality as 1:1, 1:M, or M:N.</li><li>If an M:N relationship is resolved by an associative table, name that table.</li></ol>
+        <div class="format-hint"><strong>Suggested format:</strong> <code>PARENT 1 —— M CHILD (joined on key)</code></div>
+        <textarea id="answer6" data-save="answer" aria-label="Answer to task 6" placeholder="TABLE_A 1 —— M TABLE_B, joined on ..."></textarea>
+      </article>
+
+      <article class="task">
+        <div class="task-head"><span class="task-num">7</span><div class="task-title"><h3>Verify the final design</h3><p>Use the anomalies from task 1 as your test cases.</p></div><span class="points">5 points</span></div>
+        <ol class="prompt-list"><li>Explain where you would update TechSource if its name changed.</li><li>Explain how you could add a new part before it appears on a ticket.</li><li>Explain why deleting ticket R5002 would not erase the only record of its customer, device, part, or supplier.</li></ol>
+        <textarea id="answer7" data-save="answer" aria-label="Answer to task 7" placeholder="Update test: ...
+Insertion test: ...
+Deletion test: ..."></textarea>
+      </article>
+    </section>
+
+    <section class="card">
+      <span class="section-label">Grading</span>
+      <h2>Rubric and final check</h2>
+      <div class="table-wrap rubric">
+        <table>
+          <thead><tr><th>Category</th><th>Points</th><th>Full-credit evidence</th></tr></thead>
+          <tbody>
+            <tr><td>UNF diagnosis</td><td>10</td><td>Correct row meaning, repeating group, and three data-specific anomalies.</td></tr>
+            <tr><td>First normal form</td><td>20</td><td>Atomic attributes, correct row meaning and count, and a justified composite primary key.</td></tr>
+            <tr><td>Functional dependencies</td><td>15</td><td>Complete determinants and accurate full, partial, and transitive classifications.</td></tr>
+            <tr><td>Second normal form</td><td>20</td><td>All partial dependencies removed with keys and foreign keys labeled; transitive dependencies may remain.</td></tr>
+            <tr><td>Third normal form</td><td>20</td><td>All transitive dependencies removed; each relation has one clear subject and valid keys.</td></tr>
+            <tr><td>Relationships</td><td>10</td><td>Accurate connections, cardinalities, join keys, and associative-table explanation.</td></tr>
+            <tr><td>Verification</td><td>5</td><td>Final design is tested against the original update, insertion, and deletion risks.</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="checklist" role="group" aria-label="Submission checklist">
+        <label class="check"><input type="checkbox" data-save="check" id="check1"><span>I showed a separate 1NF, 2NF, and 3NF stage.</span></label>
+        <label class="check"><input type="checkbox" data-save="check" id="check2"><span>Every final table has a labeled primary key, and every relationship has a labeled foreign key.</span></label>
+        <label class="check"><input type="checkbox" data-save="check" id="check3"><span>I used the business rules rather than guessing from repeated values in the sample.</span></label>
+        <label class="check"><input type="checkbox" data-save="check" id="check4"><span>I exported my work or printed the completed assignment to PDF.</span></label>
+      </div>
+    </section>
+  </div>
+</main>
+
+<footer><div class="wrap">Database Concepts &amp; SQL · Normalization Homework · Northstar Device Repair</div></footer>
+
+<script>
+(function(){
+  'use strict';
+  var STORAGE_KEY = 'db-normalization-homework-v1';
+  var status = document.getElementById('saveStatus');
+  var saveTimer;
+
+  function fields(){ return Array.prototype.slice.call(document.querySelectorAll('[data-save]')); }
+  function readSaved(){
+    try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}'); }
+    catch (e) { return {}; }
+  }
+  function autoSize(el){
+    if (!el || el.tagName !== 'TEXTAREA') return;
+    el.style.height = 'auto';
+    el.style.height = Math.max(142, el.scrollHeight + 2) + 'px';
+  }
+  function restore(){
+    var data = readSaved();
+    fields().forEach(function(el){
+      if (!Object.prototype.hasOwnProperty.call(data, el.id)) return;
+      if (el.type === 'checkbox') el.checked = !!data[el.id];
+      else el.value = data[el.id];
+      autoSize(el);
+    });
+  }
+  function save(){
+    var data = {};
+    fields().forEach(function(el){ data[el.id] = el.type === 'checkbox' ? el.checked : el.value; });
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+      status.innerHTML = '<strong>Saved locally</strong> · ' + new Date().toLocaleTimeString([], {hour:'numeric', minute:'2-digit'});
+    } catch (e) { status.textContent = 'Could not save in this browser. Export your answers before closing.'; }
+  }
+  function queueSave(){
+    clearTimeout(saveTimer);
+    status.textContent = 'Saving…';
+    saveTimer = setTimeout(save, 250);
+  }
+  function download(name, text, type){
+    var blob = new Blob([text], {type:type || 'text/plain;charset=utf-8'});
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url; a.download = name; document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(function(){ URL.revokeObjectURL(url); }, 1000);
+  }
+  function safeName(value){ return (value || 'student').trim().replace(/[^a-z0-9]+/gi, '-').replace(/^-|-$/g, '').toLowerCase() || 'student'; }
+  function exportAnswers(){
+    save();
+    var lines = [
+      'NORMALIZATION HOMEWORK — NORTHSTAR DEVICE REPAIR',
+      'Student: ' + document.getElementById('studentName').value,
+      'Course / section: ' + document.getElementById('courseSection').value,
+      'Date: ' + document.getElementById('workDate').value,
+      '',
+      '1. DIAGNOSE THE UNNORMALIZED TABLE\n' + document.getElementById('answer1').value,
+      '',
+      '2. FIRST NORMAL FORM\n' + document.getElementById('answer2').value,
+      '',
+      '3. FUNCTIONAL DEPENDENCIES\n' + document.getElementById('answer3').value,
+      '',
+      '4. SECOND NORMAL FORM\n' + document.getElementById('answer4').value,
+      '',
+      '5. THIRD NORMAL FORM\n' + document.getElementById('answer5').value,
+      '',
+      '6. RELATIONSHIPS\n' + document.getElementById('answer6').value,
+      '',
+      '7. VERIFICATION\n' + document.getElementById('answer7').value,
+      ''
+    ];
+    download(safeName(document.getElementById('studentName').value) + '-normalization-homework.txt', lines.join('\n'));
+  }
+  function exportCsv(){
+    var csv = [
+      'TICKET_ID,OPENED_DATE,CUSTOMER_ID,CUSTOMER_NAME,CUSTOMER_EMAIL,TECH_ID,TECH_NAME,TECH_EXT,DEVICE_SERIAL,DEVICE_TYPE,LABOR_HOURS,PARTS_USED',
+      'R5001,2026-07-08,C101,Maya Patel,maya.patel@example.com,T07,Andre Lewis,214,SN-A14,Laptop,1.50,"P110|USB-C Port|S20|TechSource|1|18.00; P225|65W Charger|S20|TechSource|1|32.00"',
+      'R5002,2026-07-09,C102,Liam Brooks,liam.brooks@example.com,T12,Kiara Stone,219,SN-B52,Tablet,2.00,"P520|Screen Assembly|S48|DisplayWorks|1|105.00"',
+      'R5003,2026-07-10,C101,Maya Patel,maya.patel@example.com,T12,Kiara Stone,219,SN-C08,Desktop,1.00,"P310|Cooling Fan|S35|Component Hub|2|24.50"',
+      'R5004,2026-07-12,C103,Zoe Chen,zoe.chen@example.com,T07,Andre Lewis,214,SN-D91,Laptop,2.50,"P415|1TB SSD|S35|Component Hub|1|69.00; P310|Cooling Fan|S35|Component Hub|1|24.50"',
+      'R5005,2026-07-14,C104,Noah Williams,noah.w@example.com,T18,Damon Price,223,SN-E77,Laptop,1.25,"P630|Keyboard|S20|TechSource|1|41.00"',
+      'R5006,2026-07-18,C101,Maya Patel,maya.patel@example.com,T07,Andre Lewis,214,SN-A14,Laptop,0.75,"P225|65W Charger|S20|TechSource|1|32.00"'
+    ].join('\n');
+    download('northstar-repair-order-raw.csv', csv, 'text/csv;charset=utf-8');
+  }
+
+  fields().forEach(function(el){
+    el.addEventListener(el.type === 'checkbox' ? 'change' : 'input', function(){ autoSize(el); queueSave(); });
+  });
+  document.getElementById('exportBtn').addEventListener('click', exportAnswers);
+  document.getElementById('csvBtn').addEventListener('click', exportCsv);
+  document.getElementById('printBtn').addEventListener('click', function(){ fields().forEach(autoSize); window.print(); });
+  document.getElementById('clearBtn').addEventListener('click', function(){
+    if (!window.confirm('Clear every saved response and student-information field on this assignment?')) return;
+    localStorage.removeItem(STORAGE_KEY);
+    fields().forEach(function(el){ if (el.type === 'checkbox') el.checked = false; else el.value = ''; autoSize(el); });
+    status.textContent = 'Answers cleared.';
+  });
+  window.addEventListener('beforeprint', function(){ fields().forEach(autoSize); });
+  restore();
+})();
+</script>
+</body>
+</html>
