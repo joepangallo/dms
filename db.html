@@ -709,6 +709,88 @@ table.data-table.wrap-cells td:last-child{white-space:normal; min-width:9ch;}
 .schema-chip .chip-rows{color:#8fa6dd; font-weight:400; margin-left:5px;}
 
 /* ============================================================
+   MODULE 3 WALKTHROUGH
+   Module 3 is narrated live on a projector, and two things the room
+   needs to see were invisible: which starting dataset is loaded (it
+   sat collapsed inside a <select>) and which statement of a build
+   script is running (the whole script fired at once). Each now gets
+   its own labelled panel, stacked in the order a student reads them:
+   starting data -> what is in the database now -> the SQL -> the
+   steps -> the results.
+   ============================================================ */
+#module3 .sandbox--walk .sandbox-toolbar{display:flex; align-items:center; gap:10px; flex-wrap:wrap;}
+#module3 .sandbox--walk .sandbox-toolbar > *{grid-column:auto; grid-row:auto;}
+#module3 .sandbox--walk .sandbox-toolbar .sandbox-label{margin-right:auto;}
+/* Hidden only where a rack actually replaced it, never merely because the
+   sandbox has a step rail -- otherwise a sandbox could lose its picker with
+   nothing standing in for it. */
+#module3 .sandbox--rack .sandbox-toolbar .sandbox-load{display:none;}
+
+/* Shared header for both new panels: a numbered step, a title, and one
+   plain sentence saying what the panel is for. */
+.sandbox-panel{background:#0c1424; border-top:1px solid #1c2947; padding:12px 14px 14px;}
+.sandbox-panel .panel-head{display:flex; align-items:baseline; gap:9px; flex-wrap:wrap; margin-bottom:10px;}
+.sandbox-panel .panel-title{color:#cfdcff; font-size:.74rem; font-weight:800; text-transform:uppercase; letter-spacing:.07em;}
+.sandbox-panel .panel-badge{background:#1c2b4d; color:#9fb6ff; border:1px solid #2f4270; border-radius:999px;
+  padding:2px 9px; font-size:.68rem; font-weight:800; letter-spacing:.03em;}
+.sandbox-panel .panel-badge:empty{display:none;}
+.sandbox-panel .panel-sub{color:#7d8db3; font-size:.75rem; font-weight:600; flex:1 1 14rem; min-width:0;}
+
+/* ---- panel: starting data ---- */
+.ds-grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(11rem,1fr)); gap:7px;}
+.ds-card{display:flex; flex-direction:column; gap:2px; text-align:left; background:#141f38; color:#dbe4ff;
+  border:1px solid #2a3a5e; border-radius:9px; padding:7px 10px; cursor:pointer; font:inherit; min-width:0;}
+.ds-card:hover{background:#1c2b4a; border-color:var(--accent-500);}
+.ds-card:focus-visible{outline:2px solid var(--accent-500); outline-offset:1px;}
+.ds-card .ds-name{font-size:.79rem; font-weight:800; line-height:1.3;}
+.ds-card .ds-desc{font-size:.68rem; font-weight:600; color:#8fa0c6; line-height:1.35;}
+.ds-card.is-active{background:#1a3350; border-color:var(--accent-500); box-shadow:inset 0 0 0 1px var(--accent-500);}
+.ds-card.is-active .ds-name::before{content:"\2713\00a0"; color:var(--accent-500);}
+.ds-card.is-active .ds-desc{color:#b8c8ee;}
+
+/* ---- panel: walk the script ---- */
+.steps-bar{display:flex; gap:7px; flex-wrap:wrap; margin-bottom:10px;}
+.walk-btn{background:#25355c; color:#e7ecff; border:1px solid #33456f; border-radius:8px; padding:7px 13px;
+  font:inherit; font-size:.81rem; font-weight:700; cursor:pointer; white-space:nowrap;}
+.walk-btn:hover:not(:disabled){filter:brightness(1.15);}
+.walk-btn:focus-visible{outline:2px solid var(--accent-500); outline-offset:1px;}
+.walk-btn:disabled{opacity:.4; cursor:default;}
+.walk-btn.walk-step{background:var(--success-700); border-color:#128a45;}
+.steps-list{list-style:none; margin:0; padding:0; max-height:16rem; overflow-y:auto; border:1px solid #23324f;
+  border-radius:10px; background:#0a111f; position:relative;}   /* positioned: rows scroll by offsetTop */
+.step-row{display:grid; grid-template-columns:1.5rem 1.4rem minmax(0,1fr) auto; gap:8px; align-items:start;
+  padding:8px 11px; border-bottom:1px solid #17223a; color:#8b9bc0;}
+.step-row:last-child{border-bottom:none;}
+.step-row .step-mark{font-size:.85rem; line-height:1.5; text-align:center;}
+.step-row .step-num{font-family:var(--font-mono); font-size:.76rem; font-weight:800; line-height:1.6; text-align:right; color:#6f80a6;}
+.step-row .step-text{min-width:0;}
+.step-row .step-note{display:block; color:#7d8db3; font-size:.72rem; font-weight:700; margin-bottom:2px;}
+.step-row .step-sql{display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;
+  font-family:var(--font-mono); font-size:.79rem; line-height:1.5; white-space:pre-wrap; word-break:break-word;}
+.step-row .step-state{font-size:.71rem; font-weight:700; color:#6f80a6; white-space:nowrap; line-height:1.7;}
+.step-row.is-done{color:#b9c7e6;}
+.step-row.is-done .step-mark{color:#7ef2b0;}
+.step-row.is-done .step-state{color:#7ef2b0;}
+.step-row.is-current{background:#16233f; color:#f1f4ff; box-shadow:inset 3px 0 0 var(--accent-500);}
+.step-row.is-current .step-sql{-webkit-line-clamp:unset; display:block;}
+.step-row.is-current .step-mark{color:var(--accent-500);}
+.step-row.is-current .step-state{color:var(--accent-500);}
+.step-row.is-error{background:#2a1620; color:#ffd7d7; box-shadow:inset 3px 0 0 #d9455a;}
+.step-row.is-error .step-mark,.step-row.is-error .step-state{color:#ff9b9b;}
+.steps-status{margin:9px 0 0; color:#9fb6ff; font-size:.78rem; font-weight:600; line-height:1.5;}
+.steps-status.is-warn{color:#ffcf8f;}
+.steps-status.is-error{color:#ff9b9b;}
+/* The newest transcript block gets a ring so a room full of students can
+   find it instantly in a log that is already ten blocks long. */
+.sandbox-output .stmt-block.is-latest{border-color:var(--accent-500); box-shadow:0 0 0 2px rgba(245,158,11,.28);}
+@media (max-width:720px){
+  .ds-grid{grid-template-columns:1fr 1fr;}
+  .walk-btn{flex:1 1 8rem;}
+  .step-row{grid-template-columns:1.3rem 1.2rem minmax(0,1fr); }
+  .step-row .step-state{grid-column:3; white-space:normal;}
+}
+
+/* ============================================================
    FOOTER
    ============================================================ */
 .site-footer{background:var(--primary-900); color:var(--primary-100); padding:var(--space-6) 0 var(--space-7); margin-top:var(--space-6);}
@@ -22293,6 +22375,105 @@ SELECT COUNT(*) FROM CUSTOMER;</pre>
     return wrap;
   }
 
+  /* Comments are not statements. A box holding only comments used to report
+     success, which made it look like the table had been built. Lives out here
+     because the step-by-step walkthrough needs the same test. */
+  function stripSqlComments(s){
+    return String(s)
+      .replace(/\/\*[\s\S]*?(?:\*\/|$)/g, ' ')   /* an unclosed /* is still all comment */
+      .replace(/--[^\n]*/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+  }
+
+  /* A chunk that is nothing but semicolons and whitespace is punctuation, not
+     a statement. "SELECT 1;;SELECT 2;" is two steps, not three. */
+  function isRunnableSql(s){ return /[^\s;]/.test(stripSqlComments(s)); }
+
+  /* Cut a script into its individual statements WITHOUT running any of them,
+     so the walkthrough can list every step before the first one executes.
+     sql.js can only enumerate statements by preparing them one at a time, and
+     the class needs to see the whole plan up front. Quoted text and comments
+     are tracked so a semicolon inside 'O''Brien; Inc.' or inside a -- note
+     does not split a statement in half. Comment lines stay attached to the
+     statement that follows them, because in these lessons that comment is the
+     narration for the step. */
+  function splitSqlStatements(text){
+    var src = String(text || ''), out = [], buf = '', i = 0, n = src.length;
+    while (i < n){
+      var ch = src.charAt(i), nx = src.charAt(i + 1);
+      if (ch === '-' && nx === '-'){                       // -- line comment
+        var eol = src.indexOf('\n', i);
+        eol = (eol === -1) ? n : eol + 1;
+        buf += src.slice(i, eol); i = eol; continue;
+      }
+      if (ch === '/' && nx === '*'){                       // /* block comment */
+        var end = src.indexOf('*/', i + 2);
+        end = (end === -1) ? n : end + 2;
+        buf += src.slice(i, end); i = end; continue;
+      }
+      if (ch === "'" || ch === '"'){                       // 'literal' / "identifier"
+        var m = i + 1;
+        while (m < n){
+          if (src.charAt(m) === ch){
+            if (src.charAt(m + 1) === ch){ m += 2; continue; }   // '' is an escaped quote
+            m++; break;
+          }
+          m++;
+        }
+        buf += src.slice(i, m); i = m; continue;
+      }
+      if (ch === ';'){
+        buf += ';'; i++;
+        /* A trigger body is a statement full of semicolons that do not end it.
+           Keep accumulating until the body's own END; arrives. Module 3 has no
+           triggers, but Modules 7 and 8 do, so the splitter is right if this
+           walkthrough is ever switched on for them. */
+        if (/\bCREATE\s+(?:OR\s+REPLACE\s+)?(?:TEMP(?:ORARY)?\s+)?TRIGGER\b/i.test(buf) &&
+            !/\bEND\s*;\s*$/i.test(buf)) continue;
+        if (isRunnableSql(buf)) out.push(buf);
+        buf = '';
+        continue;
+      }
+      buf += ch; i++;
+    }
+    if (isRunnableSql(buf)) out.push(buf);                 // a final statement without its semicolon
+    return out;
+  }
+
+  /* Separate a statement's leading comment (its narration) from its SQL. */
+  function splitLeadNote(chunk){
+    var lead = (/^(?:\s*(?:--[^\n]*(?:\n|$)|\/\*[\s\S]*?\*\/))*/.exec(chunk) || [''])[0];
+    return {
+      note: lead.replace(/\/\*|\*\//g, '').replace(/^[ \t]*--[ \t]?/gm, '').replace(/\s+/g, ' ').trim(),
+      code: chunk.slice(lead.length).trim()
+    };
+  }
+
+  /* One statement's result, boxed: the SQL as written, then what that
+     statement alone produced. Shared by the all-at-once renderer below and by
+     the step-by-step walkthrough, so a stepped run and a full run look
+     identical -- the only difference is when each box appears. */
+  function stmtBlockEl(step, headText){
+    var block = mkEl('div', 'stmt-block');
+    var head = mkEl('div', 'stmt-head');
+    head.appendChild(mkEl('span', 'stmt-num', headText));
+    block.appendChild(head);
+    block.appendChild(mkEl('pre', 'stmt-sql', String(step.sql || '').trim()));
+    var body = mkEl('div', 'stmt-body');
+    if (step.columns){
+      body.appendChild(mkEl('div', 'stmt-outcome', '✓ ' + step.values.length +
+        ' row' + (step.values.length === 1 ? '' : 's') + ' returned'));
+      if (step.values.length) body.appendChild(resultTable(step));
+      else body.appendChild(mkEl('div', 'stmt-note',
+        'The query is valid and nothing matched. An empty result is an answer, not an error.'));
+    } else {
+      body.appendChild(mkEl('div', 'stmt-outcome', '✓ ' + (step.note || 'ran')));
+    }
+    block.appendChild(body);
+    return block;
+  }
+
   /* Collapse a statement to one readable line for the label above its result. */
   /* Render a run as one self-contained block per statement: the statement as it
      was written, then what that statement alone produced. A lesson script is
@@ -22321,27 +22502,7 @@ SELECT COUNT(*) FROM CUSTOMER;</pre>
     }
 
     steps.forEach(function(step, i){
-      var block = mkEl('div', 'stmt-block');
-
-      var head = mkEl('div', 'stmt-head');
-      head.appendChild(mkEl('span', 'stmt-num', 'Statement ' + (i + 1) + ' of ' + total));
-      block.appendChild(head);
-
-      /* The statement exactly as written, newlines and indentation intact. */
-      block.appendChild(mkEl('pre', 'stmt-sql', String(step.sql || '').trim()));
-
-      var body = mkEl('div', 'stmt-body');
-      if (step.columns){
-        body.appendChild(mkEl('div', 'stmt-outcome', '✓ ' + step.values.length +
-          ' row' + (step.values.length === 1 ? '' : 's') + ' returned'));
-        if (step.values.length) body.appendChild(resultTable(step));
-        else body.appendChild(mkEl('div', 'stmt-note',
-          'The query is valid and nothing matched. An empty result is an answer, not an error.'));
-      } else {
-        body.appendChild(mkEl('div', 'stmt-outcome', '✓ ' + (step.note || 'ran')));
-      }
-      block.appendChild(body);
-      container.appendChild(block);
+      container.appendChild(stmtBlockEl(step, 'Statement ' + (i + 1) + ' of ' + total));
     });
 
     if (execError){
@@ -22415,6 +22576,31 @@ SELECT COUNT(*) FROM CUSTOMER;</pre>
     ['kimtay_3nf',        'Lab: KimTay after 3NF']
   ];
 
+  /* One plain sentence per dataset, for the visible rack in Module 3. A name
+     alone ("KimTay: REP + CUSTOMER") does not tell a beginner whether the
+     tables are empty or full, which is exactly what decides whether their
+     next statement works. */
+  var SEED_NOTES = {
+    'empty':             'Nothing exists yet. You build all of it.',
+    'rep_table_empty':   'The structure is there; INSERT fills it.',
+    'rep_customer_data': 'Enough rows to practise SELECT and joins.',
+    'kimtay_partial':    'Two tables built, three still to create.',
+    'kimtay_full':       'The finished sales database, rows and all.',
+    'staywell_full':     'The finished rental database, rows and all.',
+    'both_full':         'Eleven tables: both case studies at once.',
+    'staywell_flat':     'One wide table, nothing split out yet.',
+    'kimtay_flat':       'One wide table, nothing split out yet.',
+    'kimtay_2nf':        'Partway there: the 2NF tables are added.',
+    'staywell_sheet':    'Repeating groups still crammed in one column.',
+    'staywell_1nf':      'Those repeating groups split into rows.',
+    'kimtay_3nf':        'Fully split: no transitive dependencies left.'
+  };
+
+  /* Module 3 builds tables; it never opens the Module 2 normalization-lab
+     datasets. Showing all thirteen would bury the seven that matter. */
+  var WALK_SEEDS = ['empty', 'rep_table_empty', 'rep_customer_data', 'kimtay_partial',
+                    'kimtay_full', 'staywell_full', 'both_full'];
+
   var sandboxClosers = [];
 
   function initSandbox(el){
@@ -22432,6 +22618,9 @@ SELECT COUNT(*) FROM CUSTOMER;</pre>
     var chips = qs('.schema-chips', el);
     var db = null, SQLref = null, bootPromise = null;
     var shouldFitEditor = !!el.closest('#module2, #module3');
+    /* Module 3 is the module taught live at the front of a room, so its
+       sandboxes get the visible dataset rack and the step-by-step runner. */
+    var isWalk = !!el.closest('#module3');
 
     /* The early modules use the editor as a worked example, so showing only
        four lines of a 40-line build script hides the lesson. Fit those editors
@@ -22459,6 +22648,358 @@ SELECT COUNT(*) FROM CUSTOMER;</pre>
     if (dlBtn) dlBtn.setAttribute('aria-label','Download this sandbox database as a SQLite file');
     if (openBtn) openBtn.setAttribute('aria-label','Open a SQLite database file in this sandbox');
 
+    /* Where the sandbox tells a stuck student to go for sample data. In
+       Module 3 that is a visible panel, everywhere else it is the dropdown. */
+    var seedSourceText = isWalk ? 'the Starting data panel above' : 'the menu above';
+
+    /* ============================================================
+       MODULE 3 WALKTHROUGH
+       Two panels, built here rather than in the page markup so all
+       fourteen Module 3 sandboxes get them without repeating forty
+       lines of HTML apiece:
+
+         1. Starting data - the dataset <select> reopened as a rack of
+            visible cards, so the room can see every possible starting
+            state and which one is loaded right now.
+         2. Walk the script - a multi-statement script listed as
+            numbered steps that advance one at a time, so the class
+            watches each statement, its result, and the change it made
+            to the table strip, before the next one runs.
+       ============================================================ */
+    var dsCards = [];
+    var walk = { stmts: [], idx: 0, snaps: [], outcomes: [], src: '', stale: false, errored: false, note: null };
+    var stepsPanel = null, stepsList = null, stepsStatus = null, stepsBadge = null;
+    var stepBtn = null, restBtn = null, backBtn = null, restartBtn = null;
+
+    function panelHead(title, sub){
+      var head = el2('div', 'panel-head');
+      head.appendChild(el2('span', 'panel-title', title));
+      var badge = el2('span', 'panel-badge', '');
+      head.appendChild(badge);
+      head.appendChild(el2('span', 'panel-sub', sub));
+      return { head: head, badge: badge };
+    }
+
+    function datasetLabel(key){
+      var label = key;
+      SEED_LABELS.forEach(function(pair){ if (pair[0] === key) label = pair[1]; });
+      return label;
+    }
+
+    function buildDatasetRack(){
+      if (!isWalk || !loadSel) return;
+      var keys = WALK_SEEDS.filter(function(k){
+        return window.SANDBOX_SEEDS && (k in window.SANDBOX_SEEDS);
+      });
+      /* A lesson that seeds something outside the Module 3 set still needs
+         its own starting point on screen. */
+      if (keys.indexOf(seedKey) === -1 && window.SANDBOX_SEEDS && (seedKey in window.SANDBOX_SEEDS)){
+        keys.unshift(seedKey);
+      }
+      if (keys.length < 2) return;
+      el.classList.add('sandbox--walk');
+      el.classList.add('sandbox--rack');   /* only now is it safe to hide the <select> */
+
+      var panel = el2('div', 'sandbox-panel sandbox-datasets');
+      var h = panelHead('Starting data',
+        'what is already in the database before you run anything — click one to load it');
+      h.badge.textContent = keys.length + ' to choose from';
+      panel.appendChild(h.head);
+
+      var grid = el2('div', 'ds-grid');
+      keys.forEach(function(k){
+        var b = document.createElement('button');
+        b.type = 'button';
+        b.className = 'ds-card';
+        b.setAttribute('data-seed-key', k);
+        b.appendChild(el2('span', 'ds-name', datasetLabel(k)));
+        b.appendChild(el2('span', 'ds-desc', SEED_NOTES[k] || ''));
+        b.addEventListener('click', function(){ chooseDataset(k); });
+        grid.appendChild(b);
+        dsCards.push(b);
+      });
+      panel.appendChild(grid);
+
+      var toolbar = qs('.sandbox-toolbar', el);
+      if (toolbar) toolbar.insertAdjacentElement('afterend', panel);
+      else el.insertBefore(panel, el.firstChild);
+      markActiveDataset();
+    }
+
+    function markActiveDataset(){
+      var cur = loadSel ? loadSel.value : seedKey;
+      dsCards.forEach(function(b){
+        var on = b.getAttribute('data-seed-key') === cur;
+        b.classList.toggle('is-active', on);
+        b.setAttribute('aria-pressed', on ? 'true' : 'false');
+      });
+    }
+
+    function chooseDataset(key){
+      if (!loadSel) return;
+      var replaceExisting = !!db;
+      loadSel.value = key;
+      markActiveDataset();
+      ensureBoot().then(function(){
+        if (replaceExisting && SQLref) seedInto(key);
+        planSteps();
+        walk.note = { text: 'Loaded ' + datasetLabel(key) + '.' +
+          (walk.stmts.length > 1 ? ' The script above is back at step 1.' : ''), kind: '' };
+        renderStepRail();
+      });
+    }
+
+    function walkButton(cls, text, fn){
+      var b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'walk-btn ' + cls;
+      b.textContent = text;
+      b.addEventListener('click', fn);
+      return b;
+    }
+
+    function buildStepsPanel(){
+      if (!isWalk || !editor) return;
+      el.classList.add('sandbox--walk');
+      stepsPanel = el2('div', 'sandbox-panel sandbox-steps');
+      stepsPanel.hidden = true;
+      var h = panelHead('Walk the script',
+        'run it one statement at a time and watch the table strip above change after each one');
+      stepsBadge = h.badge;
+      stepsPanel.appendChild(h.head);
+
+      var bar = el2('div', 'steps-bar');
+      stepBtn    = walkButton('walk-step',    '▶ Run step 1',   function(){ ensureBoot().then(doStep); });
+      restBtn    = walkButton('walk-rest',    '▶▶ Run the rest', function(){ ensureBoot().then(doRunRest); });
+      backBtn    = walkButton('walk-back',    '◀ Back',         function(){ ensureBoot().then(doBack); });
+      restartBtn = walkButton('walk-restart', '↺ Restart',      function(){ doRestart(); });
+      [stepBtn, restBtn, backBtn, restartBtn].forEach(function(b){ bar.appendChild(b); });
+      stepsPanel.appendChild(bar);
+
+      stepsList = document.createElement('ol');
+      stepsList.className = 'steps-list';
+      stepsPanel.appendChild(stepsList);
+
+      stepsStatus = el2('p', 'steps-status');
+      stepsStatus.setAttribute('role', 'status');
+      stepsPanel.appendChild(stepsStatus);
+
+      editor.insertAdjacentElement('afterend', stepsPanel);
+    }
+
+    function setStatus(text, kind){
+      if (!stepsStatus) return;
+      stepsStatus.textContent = text || '';
+      stepsStatus.className = 'steps-status' + (kind ? ' is-' + kind : '');
+    }
+
+    /* Re-read the editor and lay the script out as numbered steps. Nothing
+       runs here: the plan is drawn before the first statement executes, which
+       is the point -- the class sees where the script is going. */
+    function planSteps(){
+      if (!isWalk || !editor || !stepsPanel) return;
+      walk.src = editor.value || '';
+      walk.stmts = splitSqlStatements(walk.src);
+      walk.idx = 0;
+      walk.snaps = [];
+      walk.outcomes = [];
+      walk.stale = false;
+      walk.errored = false;
+      walk.note = null;
+      clearTranscript();
+      renderStepRail();
+    }
+
+    function renderStepRail(){
+      if (!stepsPanel) return;
+      var total = walk.stmts.length;
+      /* A single statement needs no walkthrough: the editor above already is
+         the whole story, and Run says everything Step would. */
+      stepsPanel.hidden = total < 2;
+      if (stepsBadge) stepsBadge.textContent = total + (total === 1 ? ' statement' : ' statements');
+      if (total < 2){ if (stepsList) stepsList.innerHTML = ''; return; }
+
+      stepsList.innerHTML = '';
+      var currentRow = null;
+      walk.stmts.forEach(function(chunk, i){
+        var parts = splitLeadNote(chunk);
+        var li = el2('li', 'step-row');
+        var done = i < walk.idx;
+        var current = (i === walk.idx);
+        var mark = done ? '✓' : (current ? '▶' : '·');
+        if (done) li.classList.add('is-done');
+        if (current && walk.errored){ li.classList.add('is-error'); mark = '✗'; }
+        else if (current) li.classList.add('is-current');
+        li.appendChild(el2('span', 'step-mark', mark));
+        li.appendChild(el2('span', 'step-num', String(i + 1)));
+        var text = el2('span', 'step-text');
+        if (parts.note) text.appendChild(el2('span', 'step-note', parts.note));
+        text.appendChild(el2('code', 'step-sql', parts.code || chunk.trim()));
+        li.appendChild(text);
+        li.appendChild(el2('span', 'step-state',
+          walk.outcomes[i] || (current && !walk.errored ? 'next' : '')));
+        stepsList.appendChild(li);
+        if (current) currentRow = li;
+      });
+
+      var atEnd = walk.idx >= total;
+      var blanks = /___/.test(walk.src);
+      var frozen = atEnd || walk.stale || blanks;
+      stepBtn.textContent = atEnd
+        ? '✓ All ' + total + ' steps run'
+        : (walk.errored ? '▶ Try step ' + (walk.idx + 1) + ' again' : '▶ Run step ' + (walk.idx + 1));
+      stepBtn.disabled = frozen;
+      restBtn.disabled = frozen;
+      backBtn.disabled = walk.idx === 0 || walk.stale || !walk.snaps[walk.idx - 1];
+      restartBtn.disabled = false;
+
+      /* Keep the step being narrated on screen without scrolling the page
+         out from under whoever is reading the result below it. */
+      if (currentRow && stepsList.scrollHeight > stepsList.clientHeight){
+        stepsList.scrollTop = Math.max(0,
+          currentRow.offsetTop - (stepsList.clientHeight / 2) + (currentRow.offsetHeight / 2));
+      }
+
+      if (blanks){
+        setStatus('This exercise still has blanks (___) in it. Fill each one in, then press Restart to walk the finished script.', 'warn');
+      } else if (walk.stale){
+        setStatus('The SQL above changed after the walkthrough started. Press Restart to walk the new script from step 1.', 'warn');
+      } else {
+        setStatus(walk.note ? walk.note.text : '', walk.note ? walk.note.kind : '');
+      }
+    }
+
+    /* ---- the transcript: one appended block per executed step ---- */
+    function appendTranscript(node, idx){
+      qsa('.stmt-block.is-latest', output).forEach(function(b){ b.classList.remove('is-latest'); });
+      node.setAttribute('data-walk-step', String(idx));
+      node.classList.add('is-latest');
+      output.appendChild(node);
+      if (nearViewport(output)){
+        try { node.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); } catch(e){}
+      }
+    }
+
+    function removeTranscriptFrom(idx){
+      qsa('[data-walk-step]', output).forEach(function(b){
+        if (parseInt(b.getAttribute('data-walk-step'), 10) >= idx && b.parentNode) b.parentNode.removeChild(b);
+      });
+      var left = qsa('[data-walk-step]', output);
+      if (left.length) left[left.length - 1].classList.add('is-latest');
+    }
+
+    function clearTranscript(){ removeTranscriptFrom(0); }
+
+    function nearViewport(node){
+      var r = node.getBoundingClientRect();
+      var h = window.innerHeight || document.documentElement.clientHeight || 0;
+      return r.top < h + 300 && r.bottom > -300;
+    }
+
+    /* ---- the four controls ---- */
+    function doStep(){
+      if (!db || !stepsPanel || stepsPanel.hidden) return;
+      if (walk.stale || /___/.test(walk.src)){ renderStepRail(); return; }
+      if (walk.idx >= walk.stmts.length) return;
+
+      var i = walk.idx;
+      var chunk = walk.stmts[i];
+      var headText = 'Step ' + (i + 1) + ' of ' + walk.stmts.length;
+
+      /* A snapshot before every step is what makes Back honest: it puts the
+         database back byte for byte, instead of pretending a DELETE never
+         happened. A lesson database is 12-88 KB, and a lesson script is a
+         handful of statements, so the cost is trivial -- but a student can
+         paste a thousand-line dump in here, so only the most recent
+         SNAPSHOT_CAP are kept. Back simply stops being offered past that
+         depth rather than eating memory. */
+      try { walk.snaps[i] = db.export(); } catch(e){ walk.snaps[i] = null; }
+      var SNAPSHOT_CAP = 50;
+      for (var s = i - SNAPSHOT_CAP; s >= 0 && walk.snaps[s]; s--) walk.snaps[s] = null;
+
+      var res = runStatements(chunk);
+      res.steps.forEach(function(s){ appendTranscript(stmtBlockEl(s, headText), i); });
+
+      if (res.error){
+        var eb = mkEl('div', 'stmt-block is-error');
+        eb.appendChild(mkEl('div', 'stmt-head', headText + ' — stopped'));
+        eb.appendChild(mkEl('pre', 'stmt-sql', splitLeadNote(chunk).code || chunk.trim()));
+        var em = mkEl('div', 'err-msg', '✗ ' + res.error);
+        em.style.margin = '0';
+        em.style.padding = '11px 14px';
+        eb.appendChild(em);
+        appendTranscript(eb, i);
+        walk.errored = true;
+        walk.outcomes[i] = 'error';
+        walk.note = { text: 'Step ' + (i + 1) + ' did not run: ' + res.error +
+          ' The walkthrough is holding here — fix the SQL above and press Restart, or press Back to undo the step before it.', kind: 'error' };
+        refreshSchema();
+        renderStepRail();
+        return;
+      }
+
+      var summary = 'ran';
+      if (res.steps.length){
+        var last = res.steps[res.steps.length - 1];
+        summary = last.columns
+          ? last.values.length + (last.values.length === 1 ? ' row' : ' rows')
+          : (last.note || 'ran');
+      }
+      walk.errored = false;
+      walk.outcomes[i] = summary;
+      walk.idx = i + 1;
+      refreshSchema();
+      walk.note = (walk.idx >= walk.stmts.length)
+        ? { text: 'That was the last statement. Everything the script builds is in the database now — click a table name above to look inside, or press Restart to walk it again.', kind: '' }
+        : { text: 'Step ' + (i + 1) + ' done: ' + summary + '. Step ' + (walk.idx + 1) + ' is next.', kind: '' };
+      renderStepRail();
+    }
+
+    function doRunRest(){
+      var guard = 0;
+      while (walk.idx < walk.stmts.length && guard++ < 500){
+        var before = walk.idx;
+        doStep();
+        if (walk.idx === before) break;   /* a step failed; stop where it stopped */
+      }
+    }
+
+    function doBack(){
+      if (walk.idx <= 0) return;
+      var i = walk.idx - 1;
+      var snap = walk.snaps[i];
+      if (snap && SQLref){
+        try {
+          var restored = new SQLref.Database(new Uint8Array(snap));
+          closeDatabase();
+          db = restored;
+        } catch(err){
+          walk.note = { text: 'Could not step back: ' + (err.message || err) + ' Press Restart instead.', kind: 'error' };
+          renderStepRail();
+          return;
+        }
+      }
+      walk.idx = i;
+      walk.errored = false;
+      walk.outcomes = walk.outcomes.slice(0, i);
+      removeTranscriptFrom(i);          /* drops the failed step's block too */
+      refreshSchema();
+      walk.note = { text: 'Stepped back. The database is exactly as it was before step ' + (i + 1) + ' ran.', kind: '' };
+      renderStepRail();
+    }
+
+    function doRestart(){
+      ensureBoot().then(function(){
+        if (SQLref) seedInto(loadSel ? loadSel.value : seedKey);
+        planSteps();
+        walk.note = walk.stmts.length > 1
+          ? { text: 'Back to the start on ' + datasetLabel(loadSel ? loadSel.value : seedKey) +
+                    '. ' + walk.stmts.length + ' statements are lined up — press Run step 1.', kind: '' }
+          : null;
+        renderStepRail();
+      });
+    }
+
     function closeDatabase(){
       if (db && typeof db.close === 'function'){
         try { db.close(); } catch(e){}
@@ -22480,7 +23021,7 @@ SELECT COUNT(*) FROM CUSTOMER;</pre>
 
       if (!tables.length){
         chips.appendChild(el2('span','schema-empty',
-          'No tables yet \u2014 this database is empty. Run a CREATE TABLE statement, or pick sample data from the menu above.'));
+          'No tables yet \u2014 this database is empty. Run a CREATE TABLE statement, or pick sample data from ' + seedSourceText + '.'));
         return;
       }
       tables.forEach(function(name){
@@ -22558,6 +23099,16 @@ SELECT COUNT(*) FROM CUSTOMER;</pre>
        swap it until the sandbox is reset. */
     var hintEl = qs('.sandbox-hint', el);
     var lessonHint = hintEl ? hintEl.innerHTML : '';
+    /* Module 3's hints were written when the datasets lived in a dropdown.
+       Point them at the panel that replaced it, before the hint is captured
+       for restoring later. */
+    if (isWalk && hintEl){
+      lessonHint = lessonHint
+        .replace(/Use the menu to load/g, 'Use the Starting data panel to load')
+        .replace(/the menu above the editor/g, 'the Starting data panel')
+        .replace(/the menu above/g, 'the Starting data panel');
+      hintEl.innerHTML = lessonHint;
+    }
     var GENERIC_HINT = 'Sample data is loaded. Click a table in the strip above to see its rows, ' +
       'or write your own SQL and press Run. Reset puts this sandbox back to its lesson exercise.';
     function syncHint(key){
@@ -22627,18 +23178,11 @@ SELECT COUNT(*) FROM CUSTOMER;</pre>
       return { steps: steps, error: null };
     }
 
-    /* Comments are not statements. Running a box that holds only comments
-       used to report success, which made it look like the table was built. */
-    function stripSqlComments(s){
-      return String(s)
-        .replace(/\/\*[\s\S]*?\*\//g, ' ')
-        .replace(/--[^\n]*/g, ' ')
-        .replace(/\s+/g, ' ')
-        .trim();
-    }
-
+    /* Returns true only when SQL actually reached the engine. The walkthrough
+       rail reads that: a run that was refused for blanks or comments must not
+       leave the rail claiming every statement is behind us. */
     function run(){
-      if (!db){ output.innerHTML = '<div class="err-msg">Engine still loading, try again in a second.</div>'; return; }
+      if (!db){ output.innerHTML = '<div class="err-msg">Engine still loading, try again in a second.</div>'; return false; }
       var sql = editor.value;
 
       if (/___/.test(sql)){
@@ -22646,7 +23190,7 @@ SELECT COUNT(*) FROM CUSTOMER;</pre>
           '<code>___</code> with the missing table name, column, alias or operator, then press Run.' +
           (solution ? ' Show solution has the finished statement if you get stuck.' : '') + '</div>';
         refreshSchema();
-        return;
+        return false;
       }
 
       if (!stripSqlComments(sql)){
@@ -22655,7 +23199,7 @@ SELECT COUNT(*) FROM CUSTOMER;</pre>
           'created no table.\nType your statement underneath them, then press Run.' +
           (solution ? ' If you are stuck, use Show solution.' : '') + '</div>';
         refreshSchema();
-        return;
+        return false;
       }
 
       var before = tableList();
@@ -22706,32 +23250,61 @@ SELECT COUNT(*) FROM CUSTOMER;</pre>
               (solution ? ' Show solution has the finished version.' : '');
           renderRun(output, run ? run.steps : [], m);
           refreshSchema();
-          return;
+          return true;
         }
         var miss = /no such table:\s*([A-Za-z0-9_."]+)/i.exec(m);
         if (miss){
           var have = tableList();
           m += have.length
             ? '\n\nTables in this database right now: ' + have.join(', ') +
-              '. Check the spelling, or load sample data from the menu above.'
+              '. Check the spelling, or load sample data from ' + seedSourceText + '.'
             : '\n\nThis database is empty \u2014 nothing has been created in it yet. Run a CREATE TABLE ' +
-              'statement first, or pick sample data from the menu above the editor.';
+              'statement first, or pick sample data from ' + seedSourceText + '.';
         }
         renderRun(output, run ? run.steps : [], m);
       }
       refreshSchema();
+      return true;
     }
 
-    if (runBtn) runBtn.addEventListener('click', function(){ ensureBoot().then(run); });
+    /* Run still means "run the whole thing at once". It just also tells the
+       walkthrough that every step is now behind us, so the rail cannot claim
+       step 1 is next while the database already holds the finished tables. */
+    function runAll(){
+      var executed = run();
+      if (!isWalk || !stepsPanel) return;
+      /* A refused run (blanks, comments only) changed nothing, so the rail
+         must stay exactly where it was. */
+      if (!executed){ renderStepRail(); return; }
+      if (walk.stale || (editor && editor.value !== walk.src)) planSteps();
+      walk.idx = walk.stmts.length;
+      walk.snaps = [];
+      walk.outcomes = [];
+      walk.errored = false;
+      walk.note = walk.stmts.length > 1
+        ? { text: 'All ' + walk.stmts.length + ' statements ran at once. Press Restart to walk them one at a time instead.', kind: '' }
+        : null;
+      renderStepRail();
+    }
+
+    if (runBtn) runBtn.addEventListener('click', function(){ ensureBoot().then(runAll); });
     if (resetBtn) resetBtn.addEventListener('click', function(){
       var rebuildExisting = !!db;
       if (editor){ editor.value = starter; fitEditor(); }
       if (loadSel) loadSel.value = seedKey;
-      ensureBoot().then(function(){ if (rebuildExisting && SQLref) seedInto(seedKey); });
+      markActiveDataset();
+      ensureBoot().then(function(){
+        if (rebuildExisting && SQLref) seedInto(seedKey);
+        planSteps();
+      });
     });
     if (loadSel) loadSel.addEventListener('change', function(){
       var replaceExisting = !!db;
-      ensureBoot().then(function(){ if (replaceExisting && SQLref) seedInto(loadSel.value); });
+      markActiveDataset();
+      ensureBoot().then(function(){
+        if (replaceExisting && SQLref) seedInto(loadSel.value);
+        planSteps();
+      });
     });
 
     /* ---- a database built in the browser can leave as a real .sqlite file ---- */
@@ -22773,6 +23346,10 @@ SELECT COUNT(*) FROM CUSTOMER;</pre>
               db = replacement;
               output.innerHTML = '<div class="ok-msg">\u2713 Opened ' + escapeHtml(file.name) + '. Its tables are listed below.</div>';
               refreshSchema();
+              /* This is a different database than the one the walkthrough was
+                 stepping through, so the rail must stop claiming those steps
+                 ran against it. */
+              planSteps();
             } catch(err){
               output.innerHTML = '<div class="err-msg">That file is not a SQLite database: ' + escapeHtml(err.message) + '</div>';
             }
@@ -22790,13 +23367,31 @@ SELECT COUNT(*) FROM CUSTOMER;</pre>
       if (showing){ editor.value = starter; solutionBtn.textContent = 'Show solution'; solutionBtn.setAttribute('data-showing','0'); }
       else { editor.value = solution; solutionBtn.textContent = 'Hide solution'; solutionBtn.setAttribute('data-showing','1'); }
       fitEditor();
+      planSteps();
     });
     if (editor) editor.addEventListener('keydown', function(e){
-      if ((e.ctrlKey || e.metaKey) && e.key === 'Enter'){ e.preventDefault(); ensureBoot().then(run); }
+      if ((e.ctrlKey || e.metaKey) && e.key === 'Enter'){
+        e.preventDefault();
+        /* Ctrl+Shift+Enter advances one statement, so an instructor can drive
+           the whole walkthrough from the keyboard without leaving the editor. */
+        if (e.shiftKey && isWalk && stepsPanel && !stepsPanel.hidden) ensureBoot().then(doStep);
+        else ensureBoot().then(runAll);
+      }
+    });
+    /* Editing while a walkthrough is running renumbers everything underneath
+       it, so say so instead of silently stepping through statements that are
+       no longer the ones on screen. Editing before it starts just re-plans. */
+    if (editor && isWalk) editor.addEventListener('input', function(){
+      if (!stepsPanel) return;
+      if (walk.idx === 0 && !walk.errored) planSteps();
+      else if (editor.value !== walk.src){ walk.stale = true; renderStepRail(); }
     });
 
     output.innerHTML = '<div class="ok-msg">SQLite will load when this exercise enters view or when you press Run.</div>';
     refreshSchema();
+    buildDatasetRack();
+    buildStepsPanel();
+    planSteps();
     el._ensureSqlBoot = ensureBoot;
   }
 
