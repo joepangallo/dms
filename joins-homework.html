@@ -71,8 +71,7 @@ textarea{display:block;min-height:138px;padding:13px 14px;resize:vertical;font:1
 .engine{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:14px;padding:12px 14px;border:1px solid #b8c3d6;border-radius:9px;background:#f7f9fd}.engine-dot{width:10px;height:10px;border-radius:50%;background:#c39418;box-shadow:0 0 0 4px #fff1b7}.engine.ready .engine-dot{background:var(--green);box-shadow:0 0 0 4px #ccebd9}.engine.error .engine-dot{background:var(--red);box-shadow:0 0 0 4px #f5cfcb}.engine strong{color:var(--navy)}.engine span:last-child{color:var(--muted);font-size:.82rem}
 
 .task{margin-top:17px;padding:18px;border:1px solid var(--line);border-radius:11px;background:#fff}.task-head{display:grid;grid-template-columns:42px 1fr auto;gap:11px;align-items:start}.task-num{display:grid;place-items:center;width:42px;height:42px;border-radius:10px;background:var(--navy);color:#fff;font:850 .9rem/1 var(--mono)}.task-title h3{margin-bottom:4px}.task-title p{margin:0;color:var(--muted);font-size:.88rem}.points{padding:4px 8px;border-radius:999px;background:var(--orange-soft);color:var(--orange-dark);font-size:.7rem;font-weight:850;white-space:nowrap}
-.requirements{display:flex;flex-wrap:wrap;gap:6px;margin:12px 0 0 53px}.requirements span{padding:4px 7px;border-radius:5px;background:#eef1f6;color:#4d5869;font:750 .69rem/1.25 var(--mono)}.task details{margin:11px 0 0 53px;padding:9px 11px;border:1px solid var(--line);border-radius:7px;background:#f8f9fb;font-size:.82rem}.task summary{cursor:pointer;color:var(--navy);font-weight:800}.task details p{margin:7px 0 0}.editor-wrap{margin:12px 0 0 53px}.task-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:8px}.task-actions .run{background:var(--teal)}.task-actions .run:hover{background:#09665c}.shortcut{color:var(--muted);font-size:.72rem}
-.output{display:none;margin-top:11px;border:1px solid var(--line);border-radius:8px;overflow:hidden}.output.has-content{display:block}.output-head{padding:8px 10px;background:#edf0f6;color:#3c485b;font-size:.74rem;font-weight:800}.output-scroll{overflow:auto;max-height:330px}.output table{font-size:.75rem}.message{padding:12px 13px;font-size:.84rem}.message.ok{background:var(--green-soft);color:var(--green)}.message.error{background:var(--red-soft);color:var(--red)}.message.loading{background:var(--yellow-soft);color:var(--yellow)}
+.requirements{display:flex;flex-wrap:wrap;gap:6px;margin:12px 0 0 53px}.requirements span{padding:4px 7px;border-radius:5px;background:#eef1f6;color:#4d5869;font:750 .69rem/1.25 var(--mono)}.task textarea{margin-top:12px;margin-left:53px;width:calc(100% - 53px)}
 
 .rubric td{white-space:normal}.rubric td:first-child{color:var(--navy);font-weight:750}.checklist{display:grid;gap:8px;margin-top:14px}.check{display:flex;align-items:flex-start;gap:9px;padding:10px 12px;border:1px solid var(--line);border-radius:8px;background:#fff}.check input{width:18px;height:18px;margin-top:2px;accent-color:var(--navy)}.check span{font-size:.87rem}footer{padding:24px 0;border-top:1px solid var(--line);color:var(--muted);font-size:.78rem}
 
@@ -114,12 +113,11 @@ textarea{display:block;min-height:138px;padding:13px 14px;resize:vertical;font:1
     <section class="card">
       <span class="section-label">Start here</span>
       <h2>How to use this assignment</h2>
-      <p class="lede">The first half is a short lesson. Type or copy its examples if you want to experiment. The second half is graded practice: write one query in each box and press <strong>Run query</strong> to see its real result.</p>
+      <p class="lede">The first half is a short lesson with worked examples. The second half is graded practice: write one query in each box below.</p>
       <div class="two-col">
         <div class="note"><strong>You do not need to know joins yet</strong>The examples explain what each keyword does, how to select an <code>ON</code> condition, and how to decide between <code>INNER JOIN</code> and <code>LEFT JOIN</code>.</div>
         <div class="note warning"><strong>Keep the work straightforward</strong>Use only <code>INNER JOIN</code> (or <code>JOIN</code>), <code>LEFT JOIN</code>, <code>ON</code>, <code>WHERE</code>, <code>ORDER BY</code>, <code>GROUP BY</code>, and <code>COUNT</code>. No subqueries, self-joins, right joins, or full joins are needed.</div>
       </div>
-      <div class="engine" id="engineStatus" role="status" aria-live="polite"><span class="engine-dot" aria-hidden="true"></span><div><strong>Loading the SQLite practice database…</strong><br><span>The examples and assignment data are built into this file.</span></div></div>
     </section>
 
     <section class="card" id="database">
@@ -336,8 +334,8 @@ INNER JOIN FACULTY AS f
     ON c.faculty_id = f.faculty_id
 ORDER BY c.course_id;</pre>
         </div>
-        <div class="editor-wrap"><textarea id="query1" data-save="query" spellcheck="false" aria-label="SQL answer for question 1" placeholder="-- Write question 1 here
-SELECT ..."></textarea><div class="task-actions"><button class="btn run" type="button">Run query</button><button class="btn secondary clear-query" type="button">Clear</button><span class="shortcut">Tip: Ctrl/⌘ + Enter runs this box.</span></div><div class="output" aria-live="polite"></div></div>
+        <textarea id="query1" data-save="query" spellcheck="false" aria-label="SQL answer for question 1" placeholder="-- Write question 1 here
+SELECT ..."></textarea>
       </article>
 
       <article class="task" data-task="2">
@@ -352,8 +350,8 @@ INNER JOIN ENROLLMENT AS e
     ON s.student_id = e.student_id
 ORDER BY s.student_id, e.course_id;</pre>
         </div>
-        <div class="editor-wrap"><textarea id="query2" data-save="query" spellcheck="false" aria-label="SQL answer for question 2" placeholder="-- Write question 2 here
-SELECT ..."></textarea><div class="task-actions"><button class="btn run" type="button">Run query</button><button class="btn secondary clear-query" type="button">Clear</button><span class="shortcut">Tip: Ctrl/⌘ + Enter runs this box.</span></div><div class="output" aria-live="polite"></div></div>
+        <textarea id="query2" data-save="query" spellcheck="false" aria-label="SQL answer for question 2" placeholder="-- Write question 2 here
+SELECT ..."></textarea>
       </article>
 
       <article class="task" data-task="3">
@@ -370,8 +368,8 @@ INNER JOIN COURSE AS c
     ON e.course_id = c.course_id
 ORDER BY c.course_name, s.last_name;</pre>
         </div>
-        <div class="editor-wrap"><textarea id="query3" data-save="query" spellcheck="false" aria-label="SQL answer for question 3" placeholder="-- Write question 3 here
-SELECT ..."></textarea><div class="task-actions"><button class="btn run" type="button">Run query</button><button class="btn secondary clear-query" type="button">Clear</button><span class="shortcut">Tip: Ctrl/⌘ + Enter runs this box.</span></div><div class="output" aria-live="polite"></div></div>
+        <textarea id="query3" data-save="query" spellcheck="false" aria-label="SQL answer for question 3" placeholder="-- Write question 3 here
+SELECT ..."></textarea>
       </article>
 
       <article class="task" data-task="4">
@@ -387,8 +385,8 @@ INNER JOIN ENROLLMENT AS e
 WHERE e.course_id = 'CIS101'
 ORDER BY s.last_name;</pre>
         </div>
-        <div class="editor-wrap"><textarea id="query4" data-save="query" spellcheck="false" aria-label="SQL answer for question 4" placeholder="-- Write question 4 here
-SELECT ..."></textarea><div class="task-actions"><button class="btn run" type="button">Run query</button><button class="btn secondary clear-query" type="button">Clear</button><span class="shortcut">Tip: Ctrl/⌘ + Enter runs this box.</span></div><div class="output" aria-live="polite"></div></div>
+        <textarea id="query4" data-save="query" spellcheck="false" aria-label="SQL answer for question 4" placeholder="-- Write question 4 here
+SELECT ..."></textarea>
       </article>
 
       <article class="task" data-task="5">
@@ -406,8 +404,8 @@ INNER JOIN COURSE AS c
 WHERE e.final_grade &gt;= 90
 ORDER BY e.final_grade DESC;</pre>
         </div>
-        <div class="editor-wrap"><textarea id="query5" data-save="query" spellcheck="false" aria-label="SQL answer for question 5" placeholder="-- Write question 5 here
-SELECT ..."></textarea><div class="task-actions"><button class="btn run" type="button">Run query</button><button class="btn secondary clear-query" type="button">Clear</button><span class="shortcut">Tip: Ctrl/⌘ + Enter runs this box.</span></div><div class="output" aria-live="polite"></div></div>
+        <textarea id="query5" data-save="query" spellcheck="false" aria-label="SQL answer for question 5" placeholder="-- Write question 5 here
+SELECT ..."></textarea>
       </article>
 
       <article class="task" data-task="6">
@@ -422,8 +420,8 @@ LEFT JOIN ENROLLMENT AS e
     ON s.student_id = e.student_id
 ORDER BY s.student_id, e.course_id;</pre>
         </div>
-        <div class="editor-wrap"><textarea id="query6" data-save="query" spellcheck="false" aria-label="SQL answer for question 6" placeholder="-- Write question 6 here
-SELECT ..."></textarea><div class="task-actions"><button class="btn run" type="button">Run query</button><button class="btn secondary clear-query" type="button">Clear</button><span class="shortcut">Tip: Ctrl/⌘ + Enter runs this box.</span></div><div class="output" aria-live="polite"></div></div>
+        <textarea id="query6" data-save="query" spellcheck="false" aria-label="SQL answer for question 6" placeholder="-- Write question 6 here
+SELECT ..."></textarea>
       </article>
 
       <article class="task" data-task="7">
@@ -438,8 +436,8 @@ LEFT JOIN ENROLLMENT AS e
     ON c.course_id = e.course_id
 ORDER BY c.course_id, e.student_id;</pre>
         </div>
-        <div class="editor-wrap"><textarea id="query7" data-save="query" spellcheck="false" aria-label="SQL answer for question 7" placeholder="-- Write question 7 here
-SELECT ..."></textarea><div class="task-actions"><button class="btn run" type="button">Run query</button><button class="btn secondary clear-query" type="button">Clear</button><span class="shortcut">Tip: Ctrl/⌘ + Enter runs this box.</span></div><div class="output" aria-live="polite"></div></div>
+        <textarea id="query7" data-save="query" spellcheck="false" aria-label="SQL answer for question 7" placeholder="-- Write question 7 here
+SELECT ..."></textarea>
       </article>
 
       <article class="task" data-task="8">
@@ -454,8 +452,8 @@ LEFT JOIN ENROLLMENT AS e
     ON c.course_id = e.course_id
 WHERE e.course_id IS NULL;</pre>
         </div>
-        <div class="editor-wrap"><textarea id="query8" data-save="query" spellcheck="false" aria-label="SQL answer for question 8" placeholder="-- Write question 8 here
-SELECT ..."></textarea><div class="task-actions"><button class="btn run" type="button">Run query</button><button class="btn secondary clear-query" type="button">Clear</button><span class="shortcut">Tip: Ctrl/⌘ + Enter runs this box.</span></div><div class="output" aria-live="polite"></div></div>
+        <textarea id="query8" data-save="query" spellcheck="false" aria-label="SQL answer for question 8" placeholder="-- Write question 8 here
+SELECT ..."></textarea>
       </article>
 
       <article class="task" data-task="9">
@@ -471,8 +469,8 @@ LEFT JOIN ENROLLMENT AS e
 GROUP BY c.course_id, c.course_name
 ORDER BY c.course_id;</pre>
         </div>
-        <div class="editor-wrap"><textarea id="query9" data-save="query" spellcheck="false" aria-label="SQL answer for question 9" placeholder="-- Write question 9 here
-SELECT ..."></textarea><div class="task-actions"><button class="btn run" type="button">Run query</button><button class="btn secondary clear-query" type="button">Clear</button><span class="shortcut">Tip: Ctrl/⌘ + Enter runs this box.</span></div><div class="output" aria-live="polite"></div></div>
+        <textarea id="query9" data-save="query" spellcheck="false" aria-label="SQL answer for question 9" placeholder="-- Write question 9 here
+SELECT ..."></textarea>
       </article>
 
       <article class="task" data-task="10">
@@ -491,8 +489,8 @@ INNER JOIN FACULTY AS f
     ON c.faculty_id = f.faculty_id
 ORDER BY s.last_name, c.course_name;</pre>
         </div>
-        <div class="editor-wrap"><textarea id="query10" data-save="query" spellcheck="false" aria-label="SQL answer for question 10" placeholder="-- Write question 10 here
-SELECT ..."></textarea><div class="task-actions"><button class="btn run" type="button">Run query</button><button class="btn secondary clear-query" type="button">Clear</button><span class="shortcut">Tip: Ctrl/⌘ + Enter runs this box.</span></div><div class="output" aria-live="polite"></div></div>
+        <textarea id="query10" data-save="query" spellcheck="false" aria-label="SQL answer for question 10" placeholder="-- Write question 10 here
+SELECT ..."></textarea>
       </article>
     </section>
 
@@ -506,11 +504,8 @@ SELECT ..."></textarea><div class="task-actions"><button class="btn run" type="b
 (function(){
   'use strict';
   var STORAGE_KEY = 'db-joins-homework-v1';
-  var SQL_JS_BASE = 'https://cdn.jsdelivr.net/npm/sql.js@1.10.3/dist/';
-  var sqlPromise = null;
   var saveTimer;
   var saveStatus = document.getElementById('saveStatus');
-  var engineStatus = document.getElementById('engineStatus');
   var SEED_SQL = [
     'PRAGMA foreign_keys = ON;',
     'CREATE TABLE FACULTY (faculty_id TEXT PRIMARY KEY, faculty_name TEXT NOT NULL, office TEXT NOT NULL);',
@@ -542,63 +537,9 @@ SELECT ..."></textarea><div class="task-actions"><button class="btn run" type="b
     a.href = url; a.download = name; document.body.appendChild(a); a.click(); a.remove(); setTimeout(function(){ URL.revokeObjectURL(url); }, 1000);
   }
   function safeName(value){ return (value || 'student').trim().replace(/[^a-z0-9]+/gi, '-').replace(/^-|-$/g, '').toLowerCase() || 'student'; }
-  function escapeHtml(value){ return String(value == null ? '' : value).replace(/[&<>"']/g, function(ch){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]; }); }
-  function stripComments(sql){ return sql.replace(/--[^\n]*/g, '').replace(/\/\*[\s\S]*?\*\//g, '').trim(); }
-  function setEngine(kind, title, detail){ engineStatus.className = 'engine ' + kind; engineStatus.innerHTML = '<span class="engine-dot" aria-hidden="true"></span><div><strong>' + escapeHtml(title) + '</strong><br><span>' + escapeHtml(detail) + '</span></div>'; }
-
-  function loadSql(){
-    if (sqlPromise) return sqlPromise;
-    sqlPromise = new Promise(function(resolve, reject){
-      function init(){
-        if (typeof window.initSqlJs !== 'function'){ reject(new Error('The sql.js loader did not initialize.')); return; }
-        window.initSqlJs({locateFile:function(file){ return SQL_JS_BASE + file; }}).then(resolve).catch(reject);
-      }
-      if (typeof window.initSqlJs === 'function'){ init(); return; }
-      var script = document.createElement('script'); script.src = SQL_JS_BASE + 'sql-wasm.js'; script.async = true;
-      script.onload = init; script.onerror = function(){ reject(new Error('The SQLite engine could not be downloaded.')); }; document.head.appendChild(script);
-    }).then(function(SQL){
-      var test = new SQL.Database(); test.run(SEED_SQL); test.close();
-      setEngine('ready','SQLite database ready','Four tables and 27 source rows are loaded. Run any assignment query below.');
-      return SQL;
-    }).catch(function(err){
-      sqlPromise = null;
-      setEngine('error','The in-page SQLite engine did not load','Internet access to jsDelivr is required. Download the starter .sql file and run it in another SQLite tool instead.');
-      throw err;
-    });
-    return sqlPromise;
-  }
-
-  function resultTable(columns, values){
-    var html = '<div class="output-head">Query result · ' + values.length + (values.length === 1 ? ' row' : ' rows') + '</div><div class="output-scroll"><table><thead><tr>';
-    columns.forEach(function(c){ html += '<th>' + escapeHtml(c) + '</th>'; }); html += '</tr></thead><tbody>';
-    if (!values.length) html += '<tr><td colspan="' + columns.length + '"><em>0 rows matched</em></td></tr>';
-    values.forEach(function(row){ html += '<tr>'; row.forEach(function(v){ html += v === null ? '<td class="null">NULL</td>' : '<td>' + escapeHtml(v) + '</td>'; }); html += '</tr>'; });
-    return html + '</tbody></table></div>';
-  }
-  function renderMessage(output, kind, text){ output.classList.add('has-content'); output.innerHTML = '<div class="message ' + kind + '">' + escapeHtml(text) + '</div>'; }
-  function runTask(task){
-    var textarea = task.querySelector('textarea'); var output = task.querySelector('.output'); var sql = stripComments(textarea.value);
-    if (!sql){ renderMessage(output,'error','Write a SELECT statement in the box first. Comment lines beginning with -- are not executable SQL.'); return; }
-    if (!/^(select|with)\b/i.test(sql)){ renderMessage(output,'error','This homework runner accepts SELECT queries only. The practice database is rebuilt automatically for every run.'); return; }
-    renderMessage(output,'loading','Loading SQLite and running your query…');
-    loadSql().then(function(SQL){
-      var db = new SQL.Database();
-      try {
-        db.run(SEED_SQL); var results = db.exec(sql);
-        if (!results.length){ renderMessage(output,'ok','The query ran successfully but returned no result table. Check that it is a SELECT statement and that its filters match data.'); }
-        else { output.classList.add('has-content'); output.innerHTML = results.map(function(r){ return resultTable(r.columns, r.values); }).join(''); }
-      } catch(err){ renderMessage(output,'error','SQLite error: ' + (err.message || String(err))); }
-      finally { try { db.close(); } catch(e){} }
-    }).catch(function(){ renderMessage(output,'error','The in-page engine is unavailable. Download the starter database from the top toolbar and run this query in another SQLite tool.'); });
-  }
 
   fields().forEach(function(el){ el.addEventListener(el.type === 'checkbox' ? 'change' : 'input', function(){ autoSize(el); queueSave(); }); });
-  Array.prototype.forEach.call(document.querySelectorAll('.task'), function(task){
-    var textarea = task.querySelector('textarea');
-    task.querySelector('.run').addEventListener('click', function(){ runTask(task); });
-    task.querySelector('.clear-query').addEventListener('click', function(){ textarea.value = ''; autoSize(textarea); task.querySelector('.output').className = 'output'; task.querySelector('.output').innerHTML = ''; textarea.focus(); queueSave(); });
-    textarea.addEventListener('keydown', function(e){ if ((e.ctrlKey || e.metaKey) && e.key === 'Enter'){ e.preventDefault(); runTask(task); } });
-  });
+
   Array.prototype.forEach.call(document.querySelectorAll('.copy-btn'), function(btn){
     btn.addEventListener('click', function(){
       var pre = btn.closest('.codebox').querySelector('pre'); var text = pre.textContent;
@@ -606,22 +547,21 @@ SELECT ..."></textarea><div class="task-actions"><button class="btn run" type="b
       else { var area = document.createElement('textarea'); area.value = text; document.body.appendChild(area); area.select(); document.execCommand('copy'); area.remove(); btn.textContent = 'Copied'; setTimeout(function(){ btn.textContent = 'Copy SQL'; }, 1200); }
     });
   });
-  Array.prototype.forEach.call(document.querySelectorAll('[data-table-tab]'), function(btn){ btn.addEventListener('click', function(){ var key = btn.getAttribute('data-table-tab'); Array.prototype.forEach.call(document.querySelectorAll('[data-table-tab]'), function(b){ b.setAttribute('aria-pressed', b === btn ? 'true' : 'false'); }); Array.prototype.forEach.call(document.querySelectorAll('[data-table-panel]'), function(p){ p.hidden = p.getAttribute('data-table-panel') !== key; }); }); });
 
   document.getElementById('setupBtn').addEventListener('click', function(){ download('keiser-college-joins-starter.sql', SEED_SQL + '\n', 'text/sql;charset=utf-8'); });
   document.getElementById('exportBtn').addEventListener('click', function(){
     save(); var lines = ['-- GUIDED JOINS HOMEWORK','-- Student: ' + (document.getElementById('studentName') ? document.getElementById('studentName').value : ''),''];
-    for (var i=1;i<=10;i++){ lines.push('-- ============================================================','-- QUESTION ' + i,'-- ============================================================',document.getElementById('query' + i).value.trim(),''); }
-    download(safeName(document.getElementById('studentName').value) + '-joins-homework.sql', lines.join('\n'), 'text/sql;charset=utf-8');
+    for (var i=1;i<=10;i++){ var el = document.getElementById('query' + i); lines.push('-- ============================================================','-- QUESTION ' + i,'-- ============================================================',(el ? el.value.trim() : ''),''); }
+    download(safeName(document.getElementById('studentName') ? document.getElementById('studentName').value : '') + '-joins-homework.sql', lines.join('\n'), 'text/sql;charset=utf-8');
   });
   document.getElementById('printBtn').addEventListener('click', function(){ fields().forEach(autoSize); window.print(); });
   document.getElementById('clearBtn').addEventListener('click', function(){
     if (!window.confirm('Clear all ten queries, student information, and checklist items saved on this page?')) return;
     localStorage.removeItem(STORAGE_KEY); fields().forEach(function(el){ if (el.type === 'checkbox') el.checked = false; else el.value = ''; autoSize(el); });
-    Array.prototype.forEach.call(document.querySelectorAll('.output'), function(o){ o.className = 'output'; o.innerHTML = ''; }); saveStatus.textContent = 'Work cleared.';
+    saveStatus.textContent = 'Work cleared.';
   });
   window.addEventListener('beforeprint', function(){ fields().forEach(autoSize); });
-  restore(); loadSql().catch(function(){});
+  restore();
 })();
 </script>
 </body>
