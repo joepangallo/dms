@@ -520,7 +520,7 @@ footer{padding:25px 0;color:var(--muted);font-size:.78rem}.footer-inner{display:
   <section>
     <div class="wrap">
       <div class="section-head"><div><span class="section-number">Optional implementation</span><h2>SQL for the tables after 3NF</h2></div><p>The SQL uses primary keys to identify rows and foreign keys to keep the table connections valid.</p></div>
-      <details class="panel sql-panel"><summary>Open the CREATE TABLE statements</summary><div class="code-head"><span>normalized-schema.sql</span><button class="copy" id="copySql" type="button">Copy SQL</button></div><pre><code id="sqlCode">CREATE TABLE CUSTOMER (
+      <div class="panel sql-panel"><div class="code-head"><span>normalized-schema.sql</span><button class="copy" id="copySql" type="button">Copy SQL</button></div><pre><code id="sqlCode">CREATE TABLE CUSTOMER (
   customer_num  CHAR(4) PRIMARY KEY,
   customer_name VARCHAR(80) NOT NULL,
   customer_city VARCHAR(40) NOT NULL
@@ -547,7 +547,7 @@ CREATE TABLE INVOICE_LINE (
   PRIMARY KEY (invoice_num, item_id),
   FOREIGN KEY (invoice_num) REFERENCES INVOICE(invoice_num),
   FOREIGN KEY (item_id) REFERENCES ITEM(item_id)
-);</code></pre></details>
+);</code></pre></div>
     </div>
   </section>
 </main>
