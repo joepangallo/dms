@@ -209,65 +209,177 @@ footer{padding:24px 0;border-top:1px solid var(--line);color:var(--muted);font-s
 
         <article class="lesson-step">
           <div class="lesson-head"><span class="lesson-num">1</span><div><h3>Stage 0 &rarr; 1NF: Eliminate Repeating Groups</h3><p>Flatten multi-valued cells so every single column holds atomic values, then define a composite primary key.</p></div></div>
-          <div class="example-grid">
-            <div class="template"><strong>UNF (Unnormalized Form) Table</strong><pre>ORDER_ID | ORDER_DATE | CUST_ID | CUST_NAME | ITEMS_ORDERED (ITEM_ID, ITEM_NAME, VENDOR_ID, VENDOR_NAME, QTY, PRICE)</pre>
-              <br><strong>Converted to 1NF Relation</strong><pre>ORDER_1NF(ORDER_ID, ORDER_DATE, CUST_ID, CUST_NAME, ITEM_ID, ITEM_NAME, VENDOR_ID, VENDOR_NAME, QTY, PRICE)
-PK = (ORDER_ID, ITEM_ID)</pre>
-            </div>
-            <div class="explain"><h4>Key 1NF Insights</h4><ul><li>In UNF, <code>ITEMS_ORDERED</code> contains multiple items packed in 1 cell.</li><li>In 1NF, each item line becomes its own row.</li><li><code>ORDER_ID</code> alone cannot be PK (repeats per item). <code>ITEM_ID</code> alone cannot be PK (repeats across orders).</li><li>The composite key <code>(ORDER_ID, ITEM_ID)</code> uniquely identifies each line item row.</li></ul></div>
+          
+          <div class="table-wrap" style="margin-top:14px;">
+            <table>
+              <caption>UNF (Unnormalized Table) — Order 101 has 2 items packed into 1 cell</caption>
+              <thead>
+                <tr><th>ORDER_ID</th><th>ORDER_DATE</th><th>CUST_ID</th><th>CUST_NAME</th><th>ITEMS_ORDERED (Repeating Group)</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>101</td><td>2026-08-01</td><td>C101</td><td>Alice Smith</td><td class="parts-cell"><div class="part-row"><span>I50</span><span>RAM 16GB</span><span>V10</span><span>TechCorp</span><span>2</span><span>$45.00</span></div><div class="part-row"><span>I51</span><span>SSD 500GB</span><span>V20</span><span>StorageInc</span><span>1</span><span>$60.00</span></div></td></tr>
+                <tr><td>102</td><td>2026-08-02</td><td>C102</td><td>Bob Jones</td><td class="parts-cell"><div class="part-row"><span>I50</span><span>RAM 16GB</span><span>V10</span><span>TechCorp</span><span>1</span><span>$45.00</span></div></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="table-wrap" style="margin-top:14px;">
+            <table>
+              <caption>1NF Table — Flattened (Every cell has 1 value; Primary Key = ORDER_ID + ITEM_ID)</caption>
+              <thead>
+                <tr><th>ORDER_ID <span class="key">PK</span></th><th>ITEM_ID <span class="key">PK</span></th><th>ORDER_DATE</th><th>CUST_ID</th><th>CUST_NAME</th><th>ITEM_NAME</th><th>VENDOR_ID</th><th>VENDOR_NAME</th><th>QTY</th><th>PRICE</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>101</td><td>I50</td><td>2026-08-01</td><td>C101</td><td>Alice Smith</td><td>RAM 16GB</td><td>V10</td><td>TechCorp</td><td>2</td><td>$45.00</td></tr>
+                <tr><td>101</td><td>I51</td><td>2026-08-01</td><td>C101</td><td>Alice Smith</td><td>SSD 500GB</td><td>V20</td><td>StorageInc</td><td>1</td><td>$60.00</td></tr>
+                <tr><td>102</td><td>I50</td><td>2026-08-02</td><td>C102</td><td>Bob Jones</td><td>RAM 16GB</td><td>V10</td><td>TechCorp</td><td>1</td><td>$45.00</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="explain" style="margin-top:14px;">
+            <h4>Key 1NF Insights</h4>
+            <ul>
+              <li><strong>UNF Problem:</strong> <code>ITEMS_ORDERED</code> contained multiple values inside one cell, violating atomicity.</li>
+              <li><strong>1NF Fix:</strong> Multi-valued cells are expanded into separate rows (Order 101 now occupies 2 rows).</li>
+              <li><strong>Primary Key Decision:</strong> <code>ORDER_ID</code> repeats for each item; <code>ITEM_ID</code> repeats across orders. Neither is unique on its own. The composite key <code>(ORDER_ID, ITEM_ID)</code> uniquely identifies every row.</li>
+            </ul>
           </div>
         </article>
 
         <article class="lesson-step">
           <div class="lesson-head"><span class="lesson-num">2</span><div><h3>Classify Functional Dependencies</h3><p>Identify what determines what based on business rules, classifying each dependency by type.</p></div></div>
           <div class="example-grid">
-            <div class="template"><strong>Functional Dependencies List</strong><pre>(ORDER_ID, ITEM_ID) → QTY                 [Full-Key Dependency]
+            <div class="template"><strong>Functional Dependencies in 1NF Table</strong><pre>(ORDER_ID, ITEM_ID) → QTY                 [Full-Key Dependency]
 ORDER_ID → ORDER_DATE, CUST_ID, CUST_NAME [Partial Dependency]
 ITEM_ID → ITEM_NAME, VENDOR_ID, VENDOR_NAME, PRICE [Partial Dependency]
 CUST_ID → CUST_NAME                       [Transitive Dependency]
 VENDOR_ID → VENDOR_NAME                   [Transitive Dependency]</pre>
             </div>
-            <div class="explain"><h4>Dependency Types Explained</h4><ul><li><strong>Full-Key</strong>: Requires BOTH <code>ORDER_ID</code> and <code>ITEM_ID</code> to determine <code>QTY</code>.</li><li><strong>Partial</strong>: Depends on only PART of the composite key (e.g. <code>ORDER_ID</code> alone or <code>ITEM_ID</code> alone).</li><li><strong>Transitive</strong>: Non-key attribute determines another non-key attribute (e.g. <code>CUST_ID → CUST_NAME</code>).</li></ul></div>
+            <div class="explain"><h4>Dependency Types Explained</h4><ul><li><strong>Full-Key</strong>: Requires BOTH <code>ORDER_ID</code> and <code>ITEM_ID</code> to determine <code>QTY</code> (Order 101 item I50 has quantity 2).</li><li><strong>Partial</strong>: Depends on only PART of composite key (e.g. <code>ORDER_ID</code> alone determines <code>ORDER_DATE</code>).</li><li><strong>Transitive</strong>: Non-key attribute determines another non-key attribute (e.g. <code>CUST_ID → CUST_NAME</code>).</li></ul></div>
           </div>
         </article>
 
         <article class="lesson-step">
           <div class="lesson-head"><span class="lesson-num">3</span><div><h3>1NF &rarr; 2NF: Remove Partial Dependencies</h3><p>Separate attributes that depend on only part of the composite primary key into their own tables.</p></div></div>
-          <div class="example-grid">
-            <div class="template"><strong>2NF Decomposition Relations</strong><pre>ORDER_HEADER(ORDER_ID, ORDER_DATE, CUST_ID, CUST_NAME)
-PK: ORDER_ID | FK: none
-
-ITEM(ITEM_ID, ITEM_NAME, VENDOR_ID, VENDOR_NAME, PRICE)
-PK: ITEM_ID | FK: none
-
-ORDER_LINE(ORDER_ID, ITEM_ID, QTY)
-PK: (ORDER_ID, ITEM_ID) 
-FK: ORDER_ID → ORDER_HEADER(ORDER_ID), ITEM_ID → ITEM(ITEM_ID)</pre>
+          
+          <div class="two-col" style="margin-top:14px;">
+            <div class="table-wrap">
+              <table>
+                <caption>ORDER_HEADER (PK = ORDER_ID)</caption>
+                <thead><tr><th>ORDER_ID <span class="key">PK</span></th><th>ORDER_DATE</th><th>CUST_ID</th><th>CUST_NAME</th></tr></thead>
+                <tbody>
+                  <tr><td>101</td><td>2026-08-01</td><td>C101</td><td>Alice Smith</td></tr>
+                  <tr><td>102</td><td>2026-08-02</td><td>C102</td><td>Bob Jones</td></tr>
+                </tbody>
+              </table>
             </div>
-            <div class="explain"><h4>Why 2NF Works</h4><ul><li>Partial dependencies are gone: <code>ORDER_DATE</code> moved to <code>ORDER_HEADER</code>, <code>ITEM_NAME</code> moved to <code>ITEM</code>.</li><li><code>ORDER_LINE</code> keeps only attributes that depend on the ENTIRE composite key (<code>QTY</code>).</li><li>Transitive dependencies (like <code>CUST_ID → CUST_NAME</code>) still remain for 3NF.</li></ul></div>
+
+            <div class="table-wrap">
+              <table>
+                <caption>ITEM (PK = ITEM_ID)</caption>
+                <thead><tr><th>ITEM_ID <span class="key">PK</span></th><th>ITEM_NAME</th><th>VENDOR_ID</th><th>VENDOR_NAME</th><th>PRICE</th></tr></thead>
+                <tbody>
+                  <tr><td>I50</td><td>RAM 16GB</td><td>V10</td><td>TechCorp</td><td>$45.00</td></tr>
+                  <tr><td>I51</td><td>SSD 500GB</td><td>V20</td><td>StorageInc</td><td>$60.00</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="table-wrap" style="margin-top:14px;">
+            <table>
+              <caption>ORDER_LINE (Bridge Table — PK = ORDER_ID + ITEM_ID)</caption>
+              <thead><tr><th>ORDER_ID <span class="key">PK · FK</span></th><th>ITEM_ID <span class="key">PK · FK</span></th><th>QTY</th></tr></thead>
+              <tbody>
+                <tr><td>101</td><td>I50</td><td>2</td></tr>
+                <tr><td>101</td><td>I51</td><td>1</td></tr>
+                <tr><td>102</td><td>I50</td><td>1</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="explain" style="margin-top:14px;">
+            <h4>Why 2NF Works</h4>
+            <ul>
+              <li><strong>Partial dependencies removed:</strong> <code>ORDER_DATE</code> depends only on <code>ORDER_ID</code>, so it moved to <code>ORDER_HEADER</code>. <code>ITEM_NAME</code> depends only on <code>ITEM_ID</code>, so it moved to <code>ITEM</code>.</li>
+              <li><code>ORDER_LINE</code> keeps only attributes that depend on the <strong>entire</strong> composite key (<code>QTY</code>).</li>
+              <li>Transitive dependencies (like <code>CUST_ID → CUST_NAME</code> in <code>ORDER_HEADER</code>) still remain to be fixed in 3NF.</li>
+            </ul>
           </div>
         </article>
 
         <article class="lesson-step">
           <div class="lesson-head"><span class="lesson-num">4</span><div><h3>2NF &rarr; 3NF: Remove Transitive Dependencies</h3><p>Move non-key attributes that depend on other non-key attributes into separate lookup tables.</p></div></div>
-          <div class="example-grid">
-            <div class="template"><strong>Final 3NF Normalized Schema</strong><pre>CUSTOMER(CUST_ID, CUST_NAME)
-PK: CUST_ID | FK: none
-
-VENDOR(VENDOR_ID, VENDOR_NAME)
-PK: VENDOR_ID | FK: none
-
-ORDER_HEADER(ORDER_ID, ORDER_DATE, CUST_ID)
-PK: ORDER_ID | FK: CUST_ID → CUSTOMER(CUST_ID)
-
-ITEM(ITEM_ID, ITEM_NAME, PRICE, VENDOR_ID)
-PK: ITEM_ID | FK: VENDOR_ID → VENDOR(VENDOR_ID)
-
-ORDER_LINE(ORDER_ID, ITEM_ID, QTY)
-PK: (ORDER_ID, ITEM_ID)
-FK: ORDER_ID → ORDER_HEADER(ORDER_ID), ITEM_ID → ITEM(ITEM_ID)</pre>
+          
+          <div class="two-col" style="margin-top:14px;">
+            <div class="table-wrap">
+              <table>
+                <caption>CUSTOMER (PK = CUST_ID)</caption>
+                <thead><tr><th>CUST_ID <span class="key">PK</span></th><th>CUST_NAME</th></tr></thead>
+                <tbody>
+                  <tr><td>C101</td><td>Alice Smith</td></tr>
+                  <tr><td>C102</td><td>Bob Jones</td></tr>
+                </tbody>
+              </table>
             </div>
-            <div class="explain"><h4>Why 3NF is Ideal</h4><ul><li>Every non-key attribute depends on <em>the key, the whole key, and nothing but the key</em>.</li><li>No update anomalies: Updating vendor name happens in 1 place in <code>VENDOR</code>.</li><li>No insertion/deletion anomalies: New vendors or items can be added independently.</li></ul></div>
+
+            <div class="table-wrap">
+              <table>
+                <caption>VENDOR (PK = VENDOR_ID)</caption>
+                <thead><tr><th>VENDOR_ID <span class="key">PK</span></th><th>VENDOR_NAME</th></tr></thead>
+                <tbody>
+                  <tr><td>V10</td><td>TechCorp</td></tr>
+                  <tr><td>V20</td><td>StorageInc</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="two-col" style="margin-top:14px;">
+            <div class="table-wrap">
+              <table>
+                <caption>ORDER_HEADER (PK = ORDER_ID)</caption>
+                <thead><tr><th>ORDER_ID <span class="key">PK</span></th><th>ORDER_DATE</th><th>CUST_ID <span class="key">FK</span></th></tr></thead>
+                <tbody>
+                  <tr><td>101</td><td>2026-08-01</td><td>C101</td></tr>
+                  <tr><td>102</td><td>2026-08-02</td><td>C102</td></tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div class="table-wrap">
+              <table>
+                <caption>ITEM (PK = ITEM_ID)</caption>
+                <thead><tr><th>ITEM_ID <span class="key">PK</span></th><th>ITEM_NAME</th><th>PRICE</th><th>VENDOR_ID <span class="key">FK</span></th></tr></thead>
+                <tbody>
+                  <tr><td>I50</td><td>RAM 16GB</td><td>$45.00</td><td>V10</td></tr>
+                  <tr><td>I51</td><td>SSD 500GB</td><td>$60.00</td><td>V20</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="table-wrap" style="margin-top:14px;">
+            <table>
+              <caption>ORDER_LINE (Associative Table — PK = ORDER_ID + ITEM_ID)</caption>
+              <thead><tr><th>ORDER_ID <span class="key">PK · FK</span></th><th>ITEM_ID <span class="key">PK · FK</span></th><th>QTY</th></tr></thead>
+              <tbody>
+                <tr><td>101</td><td>I50</td><td>2</td></tr>
+                <tr><td>101</td><td>I51</td><td>1</td></tr>
+                <tr><td>102</td><td>I50</td><td>1</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="explain" style="margin-top:14px;">
+            <h4>Why 3NF is Ideal</h4>
+            <ul>
+              <li><strong>Zero Transitive Redundancy:</strong> Customer names are stored once in <code>CUSTOMER</code>. Vendor names are stored once in <code>VENDOR</code>.</li>
+              <li><strong>No Update Anomaly:</strong> Updating TechCorp's name requires changing only 1 row in <code>VENDOR</code>.</li>
+              <li><strong>No Insertion Anomaly:</strong> Can add a new vendor or item without placing an order.</li>
+              <li><strong>No Deletion Anomaly:</strong> Canceling Order 101 deletes rows from <code>ORDER_HEADER</code> and <code>ORDER_LINE</code> without deleting Alice Smith or item details.</li>
+            </ul>
           </div>
         </article>
       </div>
