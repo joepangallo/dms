@@ -94,9 +94,7 @@ thead th{background:#edf0f6;color:#2c3650;font:800 .67rem/1.25 var(--mono)}
 .task details{margin:12px 0 0 53px;padding:9px 11px;border:1px solid var(--line);border-radius:7px;background:#f8f9fb;font-size:.82rem}
 .task summary{cursor:pointer;color:var(--navy);font-weight:800}
 .task details p{margin:7px 0 0}
-.template{margin-top:8px;padding:10px 12px;border:1px dashed #8694aa;border-radius:7px;background:#f5f7fb}
-.template strong{display:block;color:var(--navy);font-size:.78rem}
-.template pre{margin:5px 0 0;overflow:auto;color:#26324b;font:12px/1.6 var(--mono);white-space:pre-wrap}
+.template{margin:12px 0 0 53px;padding:13px 15px;border:1px solid #cbd5e1;border-left:4px solid var(--orange);border-radius:9px;background:#f8fafc}.template strong{display:block;margin-bottom:4px;color:var(--navy);font-size:.84rem;font-weight:850}.template p{margin:4px 0 8px;color:var(--muted);font-size:.85rem}.template pre{margin:6px 0 0;padding:12px 14px;border-radius:7px;background:#1e293b;color:#38bdf8;font:12.5px/1.65 var(--mono);white-space:pre-wrap;overflow-x:auto}
 
 .lesson-step{margin-top:18px;padding:19px;border:1px solid var(--line);border-radius:11px;background:#fff}
 .lesson-head{display:grid;grid-template-columns:42px 1fr;gap:11px;align-items:start}
@@ -433,14 +431,15 @@ VENDOR_ID → VENDOR_NAME                   [Transitive Dependency]</pre>
       <article class="task">
         <div class="task-head"><span class="task-num">1</span><div class="task-title"><h3>Diagnose the unnormalized table</h3><p>Explain what is wrong before changing it.</p></div><span class="points">10 points</span></div>
         <ol class="prompt-list"><li>State what one source row represents.</li><li>Name the repeating group and explain why it violates 1NF.</li><li>Give one specific update anomaly, one insertion anomaly, and one deletion anomaly using this repair data.</li></ol>
-        <details><summary>Hint &amp; Worked Example Pattern</summary>
+        <div class="template">
+          <strong>Hint &amp; Worked Example Pattern</strong>
           <p>Analyze how multi-valued cells cause duplication and risk data loss upon updates or deletions.</p>
-          <div class="template"><strong>Worked Example Pattern</strong><pre>Row meaning: Each row represents one repair ticket containing a repeating group of parts.
+          <pre>Row meaning: Each row represents one repair ticket containing a repeating group of parts.
 Repeating group: PARTS_USED contains multiple part lines per cell, violating 1NF atomicity.
 Update anomaly: Changing supplier TechSource name requires updating multiple ticket rows and packed cells.
 Insertion anomaly: Cannot insert a new part (e.g. P999) without first creating a repair ticket.
-Deletion anomaly: Deleting ticket R5002 removes the only record of supplier DisplayWorks (S48).</pre></div>
-        </details>
+Deletion anomaly: Deleting ticket R5002 removes the only record of supplier DisplayWorks (S48).</pre>
+        </div>
         <textarea id="answer1" data-save="answer" aria-label="Answer to task 1" placeholder="Row meaning: ...&#10;Repeating group: ...&#10;Update anomaly: ...&#10;Insertion anomaly: ...&#10;Deletion anomaly: ..."></textarea>
       </article>
 
@@ -448,13 +447,14 @@ Deletion anomaly: Deleting ticket R5002 removes the only record of supplier Disp
         <div class="task-head"><span class="task-num">2</span><div class="task-title"><h3>Convert the data to first normal form</h3><p>Remove the repeating group so every cell holds one value.</p></div><span class="points">20 points</span></div>
         <ol class="prompt-list"><li>Write the complete 1NF relation, including the six attributes that were hidden inside <code>PARTS_USED</code>.</li><li>State what one 1NF row represents.</li><li>Identify the primary key. Explain why neither half of that key is sufficient by itself.</li><li>State how many rows the six source tickets produce after the repeating group is expanded.</li></ol>
         <div class="format-hint"><strong>Suggested format:</strong> <code>REPAIR_1NF(attribute, attribute, ...)</code> · <code>PK = (...)</code> · <code>one row = ...</code></div>
-        <details><summary>Hint &amp; Worked Example Pattern</summary>
+        <div class="template">
+          <strong>Hint &amp; Worked Example Pattern</strong>
           <p>Flatten the repeating group into individual rows. Define a composite primary key that uniquely identifies each row.</p>
-          <div class="template"><strong>Worked Example Pattern</strong><pre>REPAIR_1NF(TICKET_ID, OPENED_DATE, CUSTOMER_ID, CUSTOMER_NAME, CUSTOMER_EMAIL, TECH_ID, TECH_NAME, TECH_EXT, DEVICE_SERIAL, DEVICE_TYPE, LABOR_HOURS, PART_ID, PART_NAME, SUPPLIER_ID, SUPPLIER_NAME, QUANTITY, PART_PRICE)
+          <pre>REPAIR_1NF(TICKET_ID, OPENED_DATE, CUSTOMER_ID, CUSTOMER_NAME, CUSTOMER_EMAIL, TECH_ID, TECH_NAME, TECH_EXT, DEVICE_SERIAL, DEVICE_TYPE, LABOR_HOURS, PART_ID, PART_NAME, SUPPLIER_ID, SUPPLIER_NAME, QUANTITY, PART_PRICE)
 PK = (TICKET_ID, PART_ID)
 One row represents one part used on a specific repair ticket.
-Expanded row count = 8 rows total (6 tickets; R5001 and R5004 have 2 parts each).</pre></div>
-        </details>
+Expanded row count = 8 rows total (6 tickets; R5001 and R5004 have 2 parts each).</pre>
+        </div>
         <textarea id="answer2" data-save="answer" aria-label="Answer to task 2" placeholder="REPAIR_1NF(...)
 PK = (...)
 One row represents ...
@@ -465,16 +465,17 @@ Expanded row count = ..."></textarea>
         <div class="task-head"><span class="task-num">3</span><div class="task-title"><h3>List the functional dependencies</h3><p>Use the business rules to identify what determines what.</p></div><span class="points">15 points</span></div>
         <ol class="prompt-list"><li>List every important functional dependency in the 1NF relation.</li><li>Label each one as a full-key dependency, partial dependency, or transitive dependency.</li><li>Be sure to include the dependency that determines <code>QUANTITY</code>.</li></ol>
         <div class="format-hint"><strong>Use arrow notation:</strong> <code>determinant → dependent attribute(s) [type]</code></div>
-        <details><summary>Hint &amp; Worked Example Pattern</summary>
+        <div class="template">
+          <strong>Hint &amp; Worked Example Pattern</strong>
           <p>Classify functional dependencies based on whether the determinant is the full composite key, part of the key, or a non-key attribute.</p>
-          <div class="template"><strong>Worked Example Pattern</strong><pre>(TICKET_ID, PART_ID) → QUANTITY [full-key]
+          <pre>(TICKET_ID, PART_ID) → QUANTITY [full-key]
 TICKET_ID → OPENED_DATE, CUSTOMER_ID, CUSTOMER_NAME, CUSTOMER_EMAIL, TECH_ID, TECH_NAME, TECH_EXT, DEVICE_SERIAL, DEVICE_TYPE, LABOR_HOURS [partial]
 PART_ID → PART_NAME, SUPPLIER_ID, SUPPLIER_NAME, PART_PRICE [partial]
 CUSTOMER_ID → CUSTOMER_NAME, CUSTOMER_EMAIL [transitive]
 TECH_ID → TECH_NAME, TECH_EXT [transitive]
 DEVICE_SERIAL → DEVICE_TYPE [transitive]
-SUPPLIER_ID → SUPPLIER_NAME [transitive]</pre></div>
-        </details>
+SUPPLIER_ID → SUPPLIER_NAME [transitive]</pre>
+        </div>
         <textarea id="answer3" data-save="answer" aria-label="Answer to task 3" placeholder="(...) → ... [full-key]
 ... → ... [partial]
 ... → ... [transitive]"></textarea>
@@ -484,9 +485,10 @@ SUPPLIER_ID → SUPPLIER_NAME [transitive]</pre></div>
         <div class="task-head"><span class="task-num">4</span><div class="task-title"><h3>Convert the design to second normal form</h3><p>Remove attributes that depend on only part of the composite key.</p></div><span class="points">20 points</span></div>
         <ol class="prompt-list"><li>Write the relations produced by your 2NF decomposition.</li><li>Label every primary key and foreign key.</li><li>Under each relation, state which dependency caused you to place those attributes together.</li><li>Do not remove transitive dependencies yet; that is the next step.</li></ol>
         <div class="format-hint"><strong>Reminder:</strong> 2NF asks whether an attribute needs the <em>whole</em> composite key. It does not yet remove a non-key attribute that depends on another non-key attribute.</div>
-        <details><summary>Hint &amp; Worked Example Pattern</summary>
+        <div class="template">
+          <strong>Hint &amp; Worked Example Pattern</strong>
           <p>Break the 1NF table into separate tables to eliminate partial dependencies. Leave transitive dependencies for 3NF.</p>
-          <div class="template"><strong>Worked Example Pattern</strong><pre>REPAIR_TICKET(TICKET_ID, OPENED_DATE, CUSTOMER_ID, CUSTOMER_NAME, CUSTOMER_EMAIL, TECH_ID, TECH_NAME, TECH_EXT, DEVICE_SERIAL, DEVICE_TYPE, LABOR_HOURS)
+          <pre>REPAIR_TICKET(TICKET_ID, OPENED_DATE, CUSTOMER_ID, CUSTOMER_NAME, CUSTOMER_EMAIL, TECH_ID, TECH_NAME, TECH_EXT, DEVICE_SERIAL, DEVICE_TYPE, LABOR_HOURS)
 PK: TICKET_ID | FK: none
 Reason: TICKET_ID determines ticket and customer/tech details (part of composite key).
 
@@ -496,8 +498,8 @@ Reason: PART_ID determines part and supplier details (part of composite key).
 
 TICKET_PART(TICKET_ID, PART_ID, QUANTITY)
 PK: (TICKET_ID, PART_ID) | FK: TICKET_ID → REPAIR_TICKET(TICKET_ID), PART_ID → PART(PART_ID)
-Reason: QUANTITY depends on the full composite key (TICKET_ID, PART_ID).</pre></div>
-        </details>
+Reason: QUANTITY depends on the full composite key (TICKET_ID, PART_ID).</pre>
+        </div>
         <textarea id="answer4" data-save="answer" aria-label="Answer to task 4" placeholder="TABLE_A(...)
 PK: ... | FK: ...
 Reason: ...
@@ -508,9 +510,10 @@ TABLE_B(...)"></textarea>
       <article class="task">
         <div class="task-head"><span class="task-num">5</span><div class="task-title"><h3>Convert the design to third normal form</h3><p>Move every remaining fact to the table whose key determines it.</p></div><span class="points">20 points</span></div>
         <ol class="prompt-list"><li>Write the final set of 3NF relations.</li><li>Label every primary key and foreign key.</li><li>For each table, complete the sentence: “One row represents …”</li><li>Check that every non-key attribute depends on the key, the whole key, and nothing but the key.</li></ol>
-        <details><summary>Hint &amp; Worked Example Pattern</summary>
+        <div class="template">
+          <strong>Hint &amp; Worked Example Pattern</strong>
           <p>Remove transitive dependencies (non-key → non-key) by creating lookup tables for Customer, Tech, Device, and Supplier.</p>
-          <div class="template"><strong>Worked Example Pattern</strong><pre>CUSTOMER(CUSTOMER_ID, CUSTOMER_NAME, CUSTOMER_EMAIL)
+          <pre>CUSTOMER(CUSTOMER_ID, CUSTOMER_NAME, CUSTOMER_EMAIL)
 PK: CUSTOMER_ID | FK: none
 One row represents one customer.
 
@@ -536,8 +539,8 @@ One row represents one repair order.
 
 TICKET_PART(TICKET_ID, PART_ID, QUANTITY)
 PK: (TICKET_ID, PART_ID) | FK: TICKET_ID → REPAIR_TICKET(TICKET_ID), PART_ID → PART(PART_ID)
-One row represents one line item on a repair ticket.</pre></div>
-        </details>
+One row represents one line item on a repair ticket.</pre>
+        </div>
         <textarea id="answer5" data-save="answer" aria-label="Answer to task 5" placeholder="FINAL_TABLE(...)
 PK: ... | FK: ...
 One row represents ...
@@ -549,26 +552,28 @@ Continue for every final relation."></textarea>
         <div class="task-head"><span class="task-num">6</span><div class="task-title"><h3>Map the relationships</h3><p>Describe how the final tables connect.</p></div><span class="points">10 points</span></div>
         <ol class="prompt-list"><li>List each relationship between two final tables.</li><li>Give its cardinality as 1:1, 1:M, or M:N.</li><li>If an M:N relationship is resolved by an associative table, name that table.</li></ol>
         <div class="format-hint"><strong>Suggested format:</strong> <code>PARENT 1 —— M CHILD (joined on key)</code></div>
-        <details><summary>Hint &amp; Worked Example Pattern</summary>
+        <div class="template">
+          <strong>Hint &amp; Worked Example Pattern</strong>
           <p>Identify cardinalities (1:M, M:N) and primary/foreign key connections between your final 3NF tables.</p>
-          <div class="template"><strong>Worked Example Pattern</strong><pre>CUSTOMER 1 —— M REPAIR_TICKET (joined on CUSTOMER_ID)
+          <pre>CUSTOMER 1 —— M REPAIR_TICKET (joined on CUSTOMER_ID)
 TECHNICIAN 1 —— M REPAIR_TICKET (joined on TECH_ID)
 DEVICE 1 —— M REPAIR_TICKET (joined on DEVICE_SERIAL)
 SUPPLIER 1 —— M PART (joined on SUPPLIER_ID)
-REPAIR_TICKET M —— N PART (resolved by associative table TICKET_PART joined on TICKET_ID and PART_ID)</pre></div>
-        </details>
+REPAIR_TICKET M —— N PART (resolved by associative table TICKET_PART joined on TICKET_ID and PART_ID)</pre>
+        </div>
         <textarea id="answer6" data-save="answer" aria-label="Answer to task 6" placeholder="TABLE_A 1 —— M TABLE_B, joined on ..."></textarea>
       </article>
 
       <article class="task">
         <div class="task-head"><span class="task-num">7</span><div class="task-title"><h3>Verify the final design</h3><p>Use the anomalies from task 1 as your test cases.</p></div><span class="points">5 points</span></div>
         <ol class="prompt-list"><li>Explain where you would update TechSource if its name changed.</li><li>Explain how you could add a new part before it appears on a ticket.</li><li>Explain why deleting ticket R5002 would not erase the only record of its customer, device, part, or supplier.</li></ol>
-        <details><summary>Hint &amp; Worked Example Pattern</summary>
+        <div class="template">
+          <strong>Hint &amp; Worked Example Pattern</strong>
           <p>Verify that your 3NF tables resolve the update, insertion, and deletion risks identified in Task 1.</p>
-          <div class="template"><strong>Worked Example Pattern</strong><pre>Update test: TechSource is stored once in SUPPLIER(SUPPLIER_ID = 'S20'). Updating name takes 1 edit.
+          <pre>Update test: TechSource is stored once in SUPPLIER(SUPPLIER_ID = 'S20'). Updating name takes 1 edit.
 Insertion test: Insert new part into PART with SUPPLIER_ID before it is ever used on a ticket.
-Deletion test: Deleting ticket R5002 removes 1 row from REPAIR_TICKET and 1 from TICKET_PART. Supplier DisplayWorks and part Screen Assembly remain safely in SUPPLIER and PART.</pre></div>
-        </details>
+Deletion test: Deleting ticket R5002 removes 1 row from REPAIR_TICKET and 1 from TICKET_PART. Supplier DisplayWorks and part Screen Assembly remain safely in SUPPLIER and PART.</pre>
+        </div>
         <textarea id="answer7" data-save="answer" aria-label="Answer to task 7" placeholder="Update test: ...
 Insertion test: ...
 Deletion test: ..."></textarea>
