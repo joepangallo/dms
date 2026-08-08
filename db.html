@@ -354,8 +354,19 @@ table.data-table tfoot td{color:var(--gray-500); font-style:italic;}
 /* ============================================================
    CODE / SQL BLOCKS
    ============================================================ */
-pre.code-block{background:var(--gray-900); color:#e7ecff; padding:14px 16px; border-radius:var(--radius-md); overflow-x:auto; font-family:var(--font-mono); font-size:.85rem; line-height:1.6; margin:var(--space-3) 0; position:relative;}
-pre.code-block .kw{color:#7dd3fc; font-weight:700;}
+pre.code-block{background:#1e293b; color:#e2e8f0; padding:14px 16px; border:1px solid #334155; border-radius:var(--radius-md); overflow-x:auto; font-family:var(--font-mono); font-size:.85rem; line-height:1.6; margin:var(--space-3) 0; position:relative;}
+pre.code-block .kw{color:#38bdf8; font-weight:700;}
+.code-block-actions{position:absolute; top:8px; right:8px; display:flex; gap:6px; align-items:center; z-index:2;}
+.code-block-actions button{border:1px solid #475569; border-radius:4px; padding:3px 8px; font-size:.72rem; cursor:pointer; font-weight:600; font-family:var(--font-sans);}
+.btn-code-copy{background:#334155; color:#cbd5e1;}
+.btn-code-copy:hover{background:#475569; color:#fff;}
+.btn-code-run{background:#0284c7; color:#fff; border-color:#0284c7!important;}
+.btn-code-run:hover{background:#0369a1;}
+.code-block-output{margin-top:-8px; margin-bottom:16px; border:1px solid var(--gray-300); border-radius:0 0 var(--radius-md) var(--radius-md); background:#fff; overflow:hidden; padding:10px 14px; font-size:.85rem; box-shadow:var(--shadow-sm); display:none;}
+.code-block-output.has-content{display:block;}
+.code-block-output table{width:100%; border-collapse:collapse; font-size:.82rem;}
+.code-block-output th{background:#f1f5f9; color:#1e293b; font-weight:700; padding:6px 9px; text-align:left; border-bottom:2px solid #cbd5e1;}
+.code-block-output td{padding:6px 9px; border-bottom:1px solid #e2e8f0; color:#334155;}
 code.inline-code{background:var(--primary-100); color:var(--primary-800); padding:2px 7px; border-radius:5px; font-family:var(--font-mono); font-size:.87em; overflow-wrap:anywhere;}
 .checklist li,.checklist li span{min-width:0; overflow-wrap:anywhere;}
 .step-body{min-width:0;} .step-body p,.step-body h4{overflow-wrap:anywhere;}
@@ -22205,26 +22216,89 @@ SELECT COUNT(*) FROM CUSTOMER;</pre>
   });
 
   /* ---------------------------------------------------------
-     14. Copy-to-clipboard for code blocks
+     14. Live SQL Engine & Copy-to-clipboard for code blocks
   --------------------------------------------------------- */
+  function detectSeedForCode(sqlText){
+    var upper = sqlText.toUpperCase();
+    if (upper.indexOf('INVOICE_FLAT') !== -1) return 'kimtay_flat';
+    if (upper.indexOf('LEASE_REPORT') !== -1) return 'staywell_flat';
+    if (upper.indexOf('PROPERTY_SHEET') !== -1) return 'staywell_sheet';
+    if (upper.indexOf('INVOICE_2NF') !== -1 || upper.indexOf('CUSTOMER_3NF') !== -1) return 'kimtay_2nf';
+    if (upper.indexOf('PAYMENT_1NF') !== -1 || upper.indexOf('LEASE_1NF') !== -1) return 'staywell_1nf';
+
+    var hasKimtay = /\b(CUSTOMER|REP|ITEM|INVOICE|INVOICE_LINE)\b/i.test(sqlText);
+    var hasStaywell = /\b(PROPERTY|ROOM|LEASE|PAYMENT|STUDENT|MANAGER)\b/i.test(sqlText);
+    if (hasKimtay && hasStaywell) return 'both_full';
+    if (hasStaywell) return 'staywell_full';
+    if (hasKimtay) return 'kimtay_full';
+    return 'kimtay_full';
+  }
+
   qsa('pre.code-block').forEach(function(pre){
-    var btn = document.createElement('button');
-    btn.type = 'button';
-    btn.className = 'btn btn-ghost btn-sm';
-    btn.style.cssText = 'position:absolute; top:8px; right:8px; color:#cdd7ff;';
-    btn.textContent = 'Copy';
-    btn.setAttribute('aria-label','Copy code to clipboard');
     pre.style.position = 'relative';
-    pre.appendChild(btn);
-    btn.addEventListener('click', function(){
-      var text = pre.innerText.replace(/Copy$/, '').trim();
+    var text = (pre.innerText || '').trim();
+    var cleanCode = text.replace(/^(Copy|▶ Run Live in Engine|Copied!)\s*/i, '').trim();
+    var isSql = /^\s*(?:--[^\n]*\n\s*)*(?:SELECT|CREATE|INSERT|UPDATE|DELETE|WITH|ALTER|DROP|PRAGMA|SHOW)\b/i.test(cleanCode);
+
+    var actions = document.createElement('div');
+    actions.className = 'code-block-actions';
+
+    var copyBtn = document.createElement('button');
+    copyBtn.type = 'button';
+    copyBtn.className = 'btn-code-copy';
+    copyBtn.textContent = 'Copy';
+    copyBtn.setAttribute('aria-label','Copy code to clipboard');
+    actions.appendChild(copyBtn);
+
+    copyBtn.addEventListener('click', function(e){
+      e.stopPropagation();
+      var codeText = pre.innerText.replace(/Copy|▶ Run Live in Engine|Copied!/g, '').trim();
       if (navigator.clipboard && navigator.clipboard.writeText){
-        navigator.clipboard.writeText(text).then(function(){
-          btn.textContent = 'Copied!';
-          setTimeout(function(){ btn.textContent = 'Copy'; }, 1400);
-        }).catch(function(){ btn.textContent = 'Select & Ctrl+C'; });
+        navigator.clipboard.writeText(codeText).then(function(){
+          copyBtn.textContent = 'Copied!';
+          setTimeout(function(){ copyBtn.textContent = 'Copy'; }, 1400);
+        }).catch(function(){ copyBtn.textContent = 'Select & Ctrl+C'; });
       }
     });
+
+    if (isSql){
+      var runBtn = document.createElement('button');
+      runBtn.type = 'button';
+      runBtn.className = 'btn-code-run';
+      runBtn.textContent = '▶ Run Live in Engine';
+      runBtn.setAttribute('aria-label','Run query live in browser SQLite engine');
+      actions.appendChild(runBtn);
+
+      var output = document.createElement('div');
+      output.className = 'code-block-output';
+      pre.insertAdjacentElement('afterend', output);
+
+      runBtn.addEventListener('click', function(e){
+        e.stopPropagation();
+        var sqlToRun = pre.innerText.replace(/Copy|▶ Run Live in Engine|Copied!/g, '').trim();
+        output.classList.add('has-content');
+        output.innerHTML = '<div style="color:var(--primary-700); font-weight:600; padding:6px 0;">⚡ Running in SQLite engine...</div>';
+
+        var seedKey = detectSeedForCode(sqlToRun);
+        loadSqlJs().then(function(SQL){
+          var seedSql = (window.SANDBOX_SEEDS && window.SANDBOX_SEEDS[seedKey]) || '';
+          var db = new SQL.Database();
+          try {
+            if (seedSql) db.run(seedSql);
+            var results = db.exec(sqlToRun);
+            renderResults(output, results, null);
+          } catch(err){
+            renderResults(output, null, err.message || String(err));
+          } finally {
+            try { db.close(); } catch(errClose){}
+          }
+        }).catch(function(err){
+          output.innerHTML = '<div style="color:var(--red); padding:6px 0;">✗ SQLite engine error: ' + (err.message || String(err)) + '</div>';
+        });
+      });
+    }
+
+    pre.appendChild(actions);
   });
 
   /* ---------------------------------------------------------
