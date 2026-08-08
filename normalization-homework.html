@@ -98,6 +98,17 @@ thead th{background:#edf0f6;color:#2c3650;font:800 .67rem/1.25 var(--mono)}
 .template strong{display:block;color:var(--navy);font-size:.78rem}
 .template pre{margin:5px 0 0;overflow:auto;color:#26324b;font:12px/1.6 var(--mono);white-space:pre-wrap}
 
+.lesson-step{margin-top:18px;padding:19px;border:1px solid var(--line);border-radius:11px;background:#fff}
+.lesson-head{display:grid;grid-template-columns:42px 1fr;gap:11px;align-items:start}
+.lesson-num{display:grid;place-items:center;width:42px;height:42px;border-radius:10px;background:var(--orange);color:#fff;font:850 .9rem/1 var(--mono)}
+.lesson-head h3{font-size:1.05rem;color:var(--navy)}
+.lesson-head p{margin:4px 0 0;color:var(--muted);font-size:.88rem}
+.example-grid{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(240px,.75fr);gap:13px;margin-top:14px;align-items:start}
+.explain{padding:14px;border:1px solid var(--line);border-radius:9px;background:#f8f9fb;font-size:.84rem}
+.explain h4{margin:0 0 7px;color:var(--navy);font-size:.9rem}
+.explain ol,.explain ul{margin:0;padding-left:18px}.explain li+li{margin-top:5px}
+@media(max-width:850px){.example-grid{grid-template-columns:1fr}}
+
 .rubric{margin-top:16px}.rubric th:nth-child(2),.rubric td:nth-child(2){text-align:center}.rubric td{white-space:normal}.rubric td:first-child{font-weight:750;color:var(--navy)}
 .checklist{display:grid;gap:8px;margin-top:14px}.check{display:flex;align-items:flex-start;gap:9px;padding:10px 12px;border:1px solid var(--line);border-radius:8px;background:#fff}.check input{width:18px;height:18px;margin-top:2px;accent-color:var(--navy)}.check span{font-size:.87rem}
 footer{padding:24px 0;border-top:1px solid var(--line);color:var(--muted);font-size:.78rem}
@@ -189,6 +200,76 @@ footer{padding:24px 0;border-top:1px solid var(--line);color:var(--muted);font-s
             </tr>
           </tbody>
         </table>
+      </div>
+
+      <div style="margin-top:28px;">
+        <span class="section-label">Detailed Step-by-Step Walkthrough</span>
+        <h3>Worked Example: Normalizing an Order System</h3>
+        <p style="margin-top:6px; color:var(--muted); font-size:0.92rem;">Follow this step-by-step example showing how an unnormalized table is transformed through 1NF, 2NF, and 3NF.</p>
+
+        <article class="lesson-step">
+          <div class="lesson-head"><span class="lesson-num">1</span><div><h3>Stage 0 &rarr; 1NF: Eliminate Repeating Groups</h3><p>Flatten multi-valued cells so every single column holds atomic values, then define a composite primary key.</p></div></div>
+          <div class="example-grid">
+            <div class="template"><strong>UNF (Unnormalized Form) Table</strong><pre>ORDER_ID | ORDER_DATE | CUST_ID | CUST_NAME | ITEMS_ORDERED (ITEM_ID, ITEM_NAME, VENDOR_ID, VENDOR_NAME, QTY, PRICE)</pre>
+              <br><strong>Converted to 1NF Relation</strong><pre>ORDER_1NF(ORDER_ID, ORDER_DATE, CUST_ID, CUST_NAME, ITEM_ID, ITEM_NAME, VENDOR_ID, VENDOR_NAME, QTY, PRICE)
+PK = (ORDER_ID, ITEM_ID)</pre>
+            </div>
+            <div class="explain"><h4>Key 1NF Insights</h4><ul><li>In UNF, <code>ITEMS_ORDERED</code> contains multiple items packed in 1 cell.</li><li>In 1NF, each item line becomes its own row.</li><li><code>ORDER_ID</code> alone cannot be PK (repeats per item). <code>ITEM_ID</code> alone cannot be PK (repeats across orders).</li><li>The composite key <code>(ORDER_ID, ITEM_ID)</code> uniquely identifies each line item row.</li></ul></div>
+          </div>
+        </article>
+
+        <article class="lesson-step">
+          <div class="lesson-head"><span class="lesson-num">2</span><div><h3>Classify Functional Dependencies</h3><p>Identify what determines what based on business rules, classifying each dependency by type.</p></div></div>
+          <div class="example-grid">
+            <div class="template"><strong>Functional Dependencies List</strong><pre>(ORDER_ID, ITEM_ID) → QTY                 [Full-Key Dependency]
+ORDER_ID → ORDER_DATE, CUST_ID, CUST_NAME [Partial Dependency]
+ITEM_ID → ITEM_NAME, VENDOR_ID, VENDOR_NAME, PRICE [Partial Dependency]
+CUST_ID → CUST_NAME                       [Transitive Dependency]
+VENDOR_ID → VENDOR_NAME                   [Transitive Dependency]</pre>
+            </div>
+            <div class="explain"><h4>Dependency Types Explained</h4><ul><li><strong>Full-Key</strong>: Requires BOTH <code>ORDER_ID</code> and <code>ITEM_ID</code> to determine <code>QTY</code>.</li><li><strong>Partial</strong>: Depends on only PART of the composite key (e.g. <code>ORDER_ID</code> alone or <code>ITEM_ID</code> alone).</li><li><strong>Transitive</strong>: Non-key attribute determines another non-key attribute (e.g. <code>CUST_ID → CUST_NAME</code>).</li></ul></div>
+          </div>
+        </article>
+
+        <article class="lesson-step">
+          <div class="lesson-head"><span class="lesson-num">3</span><div><h3>1NF &rarr; 2NF: Remove Partial Dependencies</h3><p>Separate attributes that depend on only part of the composite primary key into their own tables.</p></div></div>
+          <div class="example-grid">
+            <div class="template"><strong>2NF Decomposition Relations</strong><pre>ORDER_HEADER(ORDER_ID, ORDER_DATE, CUST_ID, CUST_NAME)
+PK: ORDER_ID | FK: none
+
+ITEM(ITEM_ID, ITEM_NAME, VENDOR_ID, VENDOR_NAME, PRICE)
+PK: ITEM_ID | FK: none
+
+ORDER_LINE(ORDER_ID, ITEM_ID, QTY)
+PK: (ORDER_ID, ITEM_ID) 
+FK: ORDER_ID → ORDER_HEADER(ORDER_ID), ITEM_ID → ITEM(ITEM_ID)</pre>
+            </div>
+            <div class="explain"><h4>Why 2NF Works</h4><ul><li>Partial dependencies are gone: <code>ORDER_DATE</code> moved to <code>ORDER_HEADER</code>, <code>ITEM_NAME</code> moved to <code>ITEM</code>.</li><li><code>ORDER_LINE</code> keeps only attributes that depend on the ENTIRE composite key (<code>QTY</code>).</li><li>Transitive dependencies (like <code>CUST_ID → CUST_NAME</code>) still remain for 3NF.</li></ul></div>
+          </div>
+        </article>
+
+        <article class="lesson-step">
+          <div class="lesson-head"><span class="lesson-num">4</span><div><h3>2NF &rarr; 3NF: Remove Transitive Dependencies</h3><p>Move non-key attributes that depend on other non-key attributes into separate lookup tables.</p></div></div>
+          <div class="example-grid">
+            <div class="template"><strong>Final 3NF Normalized Schema</strong><pre>CUSTOMER(CUST_ID, CUST_NAME)
+PK: CUST_ID | FK: none
+
+VENDOR(VENDOR_ID, VENDOR_NAME)
+PK: VENDOR_ID | FK: none
+
+ORDER_HEADER(ORDER_ID, ORDER_DATE, CUST_ID)
+PK: ORDER_ID | FK: CUST_ID → CUSTOMER(CUST_ID)
+
+ITEM(ITEM_ID, ITEM_NAME, PRICE, VENDOR_ID)
+PK: ITEM_ID | FK: VENDOR_ID → VENDOR(VENDOR_ID)
+
+ORDER_LINE(ORDER_ID, ITEM_ID, QTY)
+PK: (ORDER_ID, ITEM_ID)
+FK: ORDER_ID → ORDER_HEADER(ORDER_ID), ITEM_ID → ITEM(ITEM_ID)</pre>
+            </div>
+            <div class="explain"><h4>Why 3NF is Ideal</h4><ul><li>Every non-key attribute depends on <em>the key, the whole key, and nothing but the key</em>.</li><li>No update anomalies: Updating vendor name happens in 1 place in <code>VENDOR</code>.</li><li>No insertion/deletion anomalies: New vendors or items can be added independently.</li></ul></div>
+          </div>
+        </article>
       </div>
     </section>
 
