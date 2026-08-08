@@ -6515,10 +6515,11 @@ FROM ITEM;</pre>
       <pre class="code-block">SELECT CUSTOMER_NUM, CUSTOMER_NAME, CREDIT_LIMIT - BALANCE AS AVAILABLE_CREDIT
 FROM CUSTOMER;</pre>
       <p>All four customers come back: 1120 with 3987.50 available, 1225 with 3800.00, 1310 with the full 10000.00, and 1420 with 1179.25. These subtractions land on exact cents in both engines, so the only difference you will see on this page is the missing trailing zeros.</p>
-      <pre class="code-block">SELECT CUSTOMER_NUM, CREDIT_LIMIT - BALANCE AS AVAILABLE_CREDIT
-FROM CUSTOMER
-WHERE CREDIT_LIMIT - BALANCE &gt; 3900;</pre>
       <p>Two rows come back: 1120 at 3987.50 and 1310 at 10000.00. Notice that the whole expression is repeated in the <code class="inline-code">WHERE</code> clause rather than the alias being reused. That is deliberate, and it is a real difference between engines: the browser engine on this page would accept <code class="inline-code">WHERE AVAILABLE_CREDIT &gt; 3900</code>, while MySQL rejects an alias in <code class="inline-code">WHERE</code>. Repeating the expression runs everywhere.</p>
+      <div class="callout callout-note">
+        <div class="callout-icon" aria-hidden="true">&#128221;</div>
+        <div class="callout-body"><strong class="callout-label">Logical Execution Order of SQL Clauses</strong><p>Why can't you use a <code class="inline-code">SELECT</code> alias in a <code class="inline-code">WHERE</code> clause on standard SQL engines? Because of the order SQL evaluates your query: <strong>FROM &rarr; WHERE &rarr; GROUP BY &rarr; HAVING &rarr; SELECT &rarr; ORDER BY</strong>. <code class="inline-code">WHERE</code> runs <em>before</em> <code class="inline-code">SELECT</code> creates the alias, while <code class="inline-code">ORDER BY</code> runs <em>after</em> <code class="inline-code">SELECT</code>, so <code class="inline-code">ORDER BY</code> can use the alias safely.</p></div>
+      </div>
       <div class="sandbox" data-sandbox data-seed="kimtay_full" data-starter="-- Stock value per item, calculated on the fly.
 SELECT ITEM_ID, DESCRIPTION, ON_HAND * PRICE AS ON_HAND_VALUE
 FROM ITEM;
@@ -6568,6 +6569,10 @@ WHERE ITEM_ID LIKE &#39;_F__&#39;;</pre>
       <div class="callout callout-warning">
         <div class="callout-icon" aria-hidden="true">&#9888;&#65039;</div>
         <div class="callout-body"><strong class="callout-label">Two things to know before you rely on LIKE</strong><p>First, letter case. As configured here, both MySQL and the browser engine ignore case for these ASCII values, so <code class="inline-code">&#39;%cat%&#39;</code> and <code class="inline-code">&#39;%Cat%&#39;</code> behave alike; other systems and other collations do not, so match the case you see in the data. Second, speed. A pattern that starts with <code class="inline-code">%</code> forces the engine to examine every row, which costs nothing on five items and a great deal on five million.</p></div>
+      </div>
+      <div class="callout callout-tip">
+        <div class="callout-icon" aria-hidden="true">&#128161;</div>
+        <div class="callout-body"><strong class="callout-label">Database Portability: LIKE vs ILIKE</strong><p>While SQLite and MySQL treat ASCII text in <code class="inline-code">LIKE</code> case-insensitively by default, standard ANSI SQL and PostgreSQL treat <code class="inline-code">LIKE</code> case-sensitively. In PostgreSQL, use <code class="inline-code">ILIKE</code> for case-insensitive pattern matching (e.g. <code class="inline-code">WHERE STREET ILIKE '%st.'</code>).</p></div>
       </div>
       <div class="sandbox" data-sandbox data-seed="kimtay_full" data-starter="-- Customers whose street address ends in St.
 SELECT CUSTOMER_NUM, CUSTOMER_NAME, STREET
@@ -7712,6 +7717,7 @@ HAVING COUNT(*) &gt; 1;</pre>
         <div class="callout-icon" aria-hidden="true">&#9888;&#65039;</div>
         <div class="callout-body"><strong class="callout-label">An aggregate cannot go in WHERE</strong><p>Moving the same test up to <code class="inline-code">WHERE COUNT(*) &gt; 1</code> fails on both engines, because when <code class="inline-code">WHERE</code> runs there are no groups yet and so no count to compare against. SQLite reports <code class="inline-code">misuse of aggregate: COUNT()</code> and MySQL reports <code class="inline-code">Invalid use of group function</code>. Different wording, same reason.</p></div>
       </div>
+      <div class="two-col" style="margin-top:16px;"><div class="card"><h4>WHERE (Row Filter)</h4><p>Runs <strong>before</strong> grouping. Filters individual rows using raw table columns (e.g., <code class="inline-code">WHERE PRICE &gt; 20</code>). <em>Cannot contain aggregate functions like COUNT() or SUM().</em></p></div><div class="card"><h4>HAVING (Group Filter)</h4><p>Runs <strong>after</strong> grouping. Filters entire summary rows using aggregate calculations (e.g., <code class="inline-code">HAVING COUNT(*) &gt; 1</code>). <em>Designed specifically for aggregate function results.</em></p></div></div>
       <h4>WHERE first, then GROUP BY, then HAVING</h4>
       <p>You write a query in one order and the engine runs it in another. Committing the running order to memory is what makes the rest of this lesson obvious instead of fiddly.</p>
       <div class="stepper">
@@ -8157,6 +8163,10 @@ ORDER BY CATEGORY;</pre>
         <tbody><tr><td>COUNT(*)</td><td>The number of rows, whatever those rows contain</td><td>Counts every row, nulls included</td></tr><tr><td>COUNT(column)</td><td>The number of rows where that column holds a value</td><td>Skips nulls</td></tr><tr><td>SUM(column)</td><td>The total of the values present in that column</td><td>Skips nulls</td></tr><tr><td>AVG(column)</td><td>The total divided by the number of values present</td><td>Skips nulls in the total and in the divisor</td></tr><tr><td>MAX(column)</td><td>The largest value present</td><td>Skips nulls</td></tr><tr><td>MIN(column)</td><td>The smallest value present</td><td>Skips nulls</td></tr></tbody>
       </table></div>
       <p>Run <code class="inline-code">SELECT MIN(PRICE), MAX(PRICE), SUM(ON_HAND), COUNT(*) FROM ITEM;</code> against KimTay and you get 11.99, 64.99, 235 and 5. Every ITEM row is filled in, so nothing is skipped and the four numbers describe all five items.</p>
+      <div class="callout callout-warning">
+        <div class="callout-icon" aria-hidden="true">&#9888;&#65039;</div>
+        <div class="callout-body"><strong class="callout-label">Crucial Distinction: COUNT(*) vs. COUNT(column)</strong><p><code class="inline-code">COUNT(*)</code> counts every row in the table or group, including rows with NULLs. <code class="inline-code">COUNT(column)</code> counts <em>only</em> rows where that specific column is NOT NULL. For example, if 2 out of 5 reps have a NULL commission, <code class="inline-code">COUNT(*)</code> returns 5 while <code class="inline-code">COUNT(COMMISSION)</code> returns 3.</p></div>
+      </div>
       <h4>The operators</h4>
       <p>Operators are what you build conditions out of. The comparison and logical operators came from Module 3 and lesson 4-1; <code class="inline-code">BETWEEN</code>, <code class="inline-code">LIKE</code>, <code class="inline-code">IN</code>, and <code class="inline-code">IS NULL</code> were added across this module. The examples below are written against KimTay&#39;s ITEM and CUSTOMER tables.</p>
       <div class="table-scroll"><table class="data-table wrap-cells">
