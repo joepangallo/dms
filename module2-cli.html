@@ -432,7 +432,7 @@ SELECT '7. Your tables rebuild the sheet exactly',
 <tr><td>Test a dependency A &rarr; B</td><td><code>SELECT A, COUNT(DISTINCT B) FROM T GROUP BY A;</code> &mdash; all 1s means it holds</td></tr>
 <tr><td>Export everything as SQL</td><td><code>sqlite3 mydb.db .dump &gt; backup.sql</code></td></tr>
 <tr><td>Leave</td><td><code>.quit</code></td></tr>
-</tbody></table><h2><span class="part">Solution</span>Lab 3 answer &mdash; try it yourself first</h2><p>Only open this after your own attempt has failed at least one check.</p><details><summary style="cursor:pointer;font-weight:700;color:#1e3a8a;padding:10px 0">Show the Lab 3 solution</summary><div class="cb"><div class="cb-head"><span class="cb-tag k-sqlite">sqlite&gt; prompt</span><button class="cb-copy" type="button">Copy</button></div><pre><code>DROP TABLE IF EXISTS MY_REBUILT;
+</tbody></table><h2><span class="part">Solution</span>Lab 3 answer &mdash; try it yourself first</h2><p>Only open this after your own attempt has failed at least one check.</p><div class="cb"><div class="cb-head"><span class="cb-tag k-sqlite">sqlite&gt; prompt</span><button class="cb-copy" type="button">Copy</button></div><pre><code>DROP TABLE IF EXISTS MY_REBUILT;
 DROP TABLE IF EXISTS MY_AMENITY;
 DROP TABLE IF EXISTS MY_ROOM;
 DROP TABLE IF EXISTS MY_PROPERTY;
@@ -488,7 +488,7 @@ INSERT INTO MY_AMENITY VALUES ('P100', 'Laundry');
 INSERT INTO MY_AMENITY VALUES ('P100', 'Parking');
 INSERT INTO MY_AMENITY VALUES ('P200', 'Laundry');
 INSERT INTO MY_AMENITY VALUES ('P200', 'Gym');
-INSERT INTO MY_AMENITY VALUES ('P200', 'Parking');</code></pre></div></details><footer>
+INSERT INTO MY_AMENITY VALUES ('P200', 'Parking');</code></pre></div><footer>
 <p><strong>Database Concepts &amp; SQL &mdash; Module 2 companion.</strong> The SQL here is identical to the
 in-browser labs in Lesson 2-5; only the way you run it differs. Keep your <code>.db</code> files &mdash; Module 3
 picks up where this leaves off.</p>
