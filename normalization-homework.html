@@ -203,6 +203,72 @@ footer{padding:24px 0;border-top:1px solid var(--line);color:var(--muted);font-s
       </div>
 
       <div style="margin-top:28px;">
+        <span class="section-label">Key Concept Breakdown</span>
+        <h3>What is a Foreign Key (FK) &amp; How to Determine Where It Goes</h3>
+        <p style="margin-top:6px; color:var(--muted); font-size:0.92rem;">A Foreign Key is a column in one table that links to the Primary Key of another table, enforcing relationships and preventing orphan data.</p>
+
+        <div class="two-col" style="margin-top:14px;">
+          <div class="note" style="border-left-color:var(--navy-2); background:var(--blue-soft);">
+            <strong>1. The Golden Rule for 1-to-Many Relationships</strong>
+            Put the Foreign Key on the <strong>"MANY"</strong> side of the relationship.<br><br>
+            <em>Example:</em> One <code>CUSTOMER</code> places Many <code>REPAIR_TICKET</code>s.
+            <ul style="margin:5px 0 0; padding-left:18px;">
+              <li>Parent (1-Side): <code>CUSTOMER</code> (Primary Key: <code>CUSTOMER_ID</code>)</li>
+              <li>Child (Many-Side): <code>REPAIR_TICKET</code> (Foreign Key: <code>CUSTOMER_ID</code>)</li>
+            </ul>
+            <span style="display:block; margin-top:6px; font-size:0.83rem; color:var(--muted);"><em>Why?</em> Placing <code>CUSTOMER_ID</code> in <code>REPAIR_TICKET</code> allows Alice Smith to place 100 tickets without duplicating her name or creating array columns!</span>
+          </div>
+
+          <div class="note" style="border-left-color:var(--orange); background:var(--orange-soft);">
+            <strong>2. Resolving Many-to-Many Relationships</strong>
+            Create an <strong>Associative (Bridge) Table</strong> that holds two Foreign Keys.<br><br>
+            <em>Example:</em> One <code>REPAIR_TICKET</code> has Many <code>PART</code>s, and one <code>PART</code> appears on Many <code>REPAIR_TICKET</code>s.
+            <ul style="margin:5px 0 0; padding-left:18px;">
+              <li>Bridge Table: <code>TICKET_PART</code></li>
+              <li>FK 1: <code>TICKET_ID</code> (points to REPAIR_TICKET)</li>
+              <li>FK 2: <code>PART_ID</code> (points to PART)</li>
+              <li>Composite PK: <code>(TICKET_ID, PART_ID)</code></li>
+            </ul>
+            <span style="display:block; margin-top:6px; font-size:0.83rem; color:var(--muted);"><em>Why?</em> The bridge table holds line-item attributes like <code>QUANTITY</code> that depend on BOTH keys.</span>
+          </div>
+        </div>
+
+        <div class="table-wrap" style="margin-top:16px;">
+          <table>
+            <caption>How to Determine Foreign Keys in 3 Steps</caption>
+            <thead>
+              <tr>
+                <th>Step</th>
+                <th>Action</th>
+                <th>Question to Ask</th>
+                <th>Result</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>Step 1</strong></td>
+                <td>Identify the Parent Table</td>
+                <td>Where is the master record defined once? (e.g. <code>CUSTOMER</code>, <code>SUPPLIER</code>, <code>TECHNICIAN</code>)</td>
+                <td>The Parent table owns the <strong>Primary Key (PK)</strong>.</td>
+              </tr>
+              <tr>
+                <td><strong>Step 2</strong></td>
+                <td>Identify the Child Table</td>
+                <td>Which table records transactions or occurrences of the parent? (e.g. <code>REPAIR_TICKET</code>, <code>PART</code>)</td>
+                <td>Add the Parent's PK as a <strong>Foreign Key (FK)</strong> in the Child table.</td>
+              </tr>
+              <tr>
+                <td><strong>Step 3</strong></td>
+                <td>Validate Referential Integrity</td>
+                <td>Does every value in the FK column exist in the Parent's PK column?</td>
+                <td>Prevents invalid entries (e.g., creating a ticket for non-existent Customer C999).</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div style="margin-top:28px;">
         <span class="section-label">Detailed Step-by-Step Walkthrough</span>
         <h3>Worked Example: Normalizing an Order System</h3>
         <p style="margin-top:6px; color:var(--muted); font-size:0.92rem;">Follow this step-by-step example showing how an unnormalized table is transformed through 1NF, 2NF, and 3NF.</p>
