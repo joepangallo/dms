@@ -50,7 +50,7 @@ h1,h2,h3,h4{margin:0;color:var(--navy);line-height:1.22}header h1{max-width:900p
 .btn{min-height:38px;border:1px solid transparent;border-radius:8px;padding:7px 12px;background:var(--navy);color:#fff;font-weight:760}.btn:hover{background:var(--navy-2)}.btn:disabled{cursor:not-allowed;opacity:.56}
 .btn.secondary{border-color:#aab3c2;background:#fff;color:var(--ink)}.btn.secondary:hover{background:#f1f3f7}.btn.danger{border-color:#dfaaa6;background:#fff;color:var(--red)}.btn.danger:hover{background:var(--red-soft)}
 
-main{padding:34px 0 60px}.student-grid{display:grid;grid-template-columns:2fr 1fr 1fr;gap:12px;margin-bottom:22px}
+main{padding:34px 0 60px}.student-grid{display:grid;grid-template-columns:1fr;max-width:400px;margin-bottom:22px}
 label{display:block;color:var(--navy);font-size:.78rem;font-weight:800;letter-spacing:.02em}input[type="text"],input[type="date"],textarea{width:100%;border:1px solid #aeb7c5;border-radius:8px;background:#fff;color:var(--ink)}input[type="text"],input[type="date"]{height:42px;margin-top:4px;padding:8px 10px}
 textarea{display:block;min-height:138px;padding:13px 14px;resize:vertical;font:14px/1.55 var(--mono)}textarea::placeholder{color:#8993a1}
 
@@ -109,8 +109,6 @@ textarea{display:block;min-height:138px;padding:13px 14px;resize:vertical;font:1
   <div class="wrap">
     <div class="student-grid" role="group" aria-label="Student information">
       <label>Student name<input type="text" id="studentName" data-save="meta" autocomplete="name"></label>
-      <label>Course / section<input type="text" id="courseSection" data-save="meta"></label>
-      <label>Date<input type="date" id="workDate" data-save="meta"></label>
     </div>
 
     <section class="card">
@@ -156,6 +154,40 @@ textarea{display:block;min-height:138px;padding:13px 14px;resize:vertical;font:1
       <span class="section-label">Guided lesson</span>
       <h2>How joins work</h2>
       <p class="lede">A join places columns from related rows side by side. Every join needs two decisions: which rows should be preserved, and which columns prove that two rows match.</p>
+
+      <div class="table-wrap" style="margin-top:18px;">
+        <table>
+          <caption>Join Types at a Glance: INNER JOIN, LEFT JOIN, and RIGHT JOIN</caption>
+          <thead>
+            <tr>
+              <th>Join Type</th>
+              <th>Which Rows Survive?</th>
+              <th>Handling of Unmatched Rows</th>
+              <th>Common Use Case</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong><code>INNER JOIN</code></strong></td>
+              <td>Only rows matching in <strong>BOTH</strong> tables</td>
+              <td>Unmatched rows from either side are excluded</td>
+              <td>Show completed pairs (e.g. students enrolled in courses)</td>
+            </tr>
+            <tr>
+              <td><strong><code>LEFT JOIN</code></strong></td>
+              <td><strong>ALL</strong> rows from the <em>Left</em> table (first table)</td>
+              <td>Right-side columns are filled with <code>NULL</code> when missing</td>
+              <td>Show master lists (e.g. all students regardless of enrollment)</td>
+            </tr>
+            <tr>
+              <td><strong><code>RIGHT JOIN</code></strong></td>
+              <td><strong>ALL</strong> rows from the <em>Right</em> table (second table)</td>
+              <td>Left-side columns are filled with <code>NULL</code> when missing</td>
+              <td>Show target master lists (Equivalent to swapping tables in a <code>LEFT JOIN</code>)</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
 
       <article class="lesson-step">
         <div class="lesson-head"><span class="lesson-num">1</span><div><h3>Start with an INNER JOIN</h3><p>An inner join keeps only pairs for which the <code>ON</code> condition is true. Rows without a partner disappear.</p></div></div>
@@ -271,6 +303,22 @@ LEFT JOIN table_that_may_not_have_a_match AS b
         </div>
         <div class="note lesson-note"><strong>For this homework, use the explicit style</strong>It keeps join conditions in <code>ON</code> and leaves <code>WHERE</code> for filters. Also, the word <code>INNER</code> is optional: <code>JOIN</code> by itself means <code>INNER JOIN</code>.</div>
       </article>
+
+      <article class="lesson-step">
+        <div class="lesson-head"><span class="lesson-num">8</span><div><h3>Understand RIGHT JOIN and SQLite equivalence</h3><p>A <code>RIGHT JOIN</code> preserves all rows from the right-side table. SQLite does not support the <code>RIGHT JOIN</code> keyword directly, but you can write any <code>RIGHT JOIN</code> by swapping table order and using <code>LEFT JOIN</code>.</p></div></div>
+        <div class="bridge">
+          <div class="codebox"><div class="code-head"><span>Standard SQL RIGHT JOIN</span></div><pre><span class="sql-key">SELECT</span> c.course_id, c.course_name, e.student_id
+<span class="sql-key">FROM</span> <span class="sql-name">ENROLLMENT</span> <span class="sql-key">AS</span> e
+<span class="sql-key">RIGHT JOIN</span> <span class="sql-name">COURSE</span> <span class="sql-key">AS</span> c
+    <span class="sql-key">ON</span> e.course_id = c.course_id;</pre></div>
+          <span>＝</span>
+          <div class="codebox"><div class="code-head"><span>SQLite equivalent (Swap tables + LEFT JOIN)</span><button class="copy-btn" type="button">Copy SQL</button></div><pre><span class="sql-key">SELECT</span> c.course_id, c.course_name, e.student_id
+<span class="sql-key">FROM</span> <span class="sql-name">COURSE</span> <span class="sql-key">AS</span> c
+<span class="sql-key">LEFT JOIN</span> <span class="sql-name">ENROLLMENT</span> <span class="sql-key">AS</span> e
+    <span class="sql-key">ON</span> c.course_id = e.course_id;</pre></div>
+        </div>
+        <div class="note lesson-note"><strong>Key Rule:</strong> <code>A RIGHT JOIN B</code> produces the exact same output as <code>B LEFT JOIN A</code>. To solve right-join tasks in SQLite, place the table whose rows must all survive first in your <code>FROM</code> clause and use <code>LEFT JOIN</code>.</div>
+      </article>
     </section>
 
     <section class="card" id="practice">
@@ -281,7 +329,14 @@ LEFT JOIN table_that_may_not_have_a_match AS b
       <article class="task" data-task="1">
         <div class="task-head"><span class="task-num">1</span><div class="task-title"><h3>Courses and their instructors</h3><p>Use an <code>INNER JOIN</code> to show each course ID, course name, and faculty name. Sort by course ID.</p></div><span class="points">10 points</span></div>
         <div class="requirements"><span>COURSE + FACULTY</span><span>6 rows</span><span>ORDER BY course_id</span></div>
-        <details><summary>Hint</summary><p>Start with <code>COURSE AS c</code>. Join <code>FACULTY AS f</code> where the two <code>faculty_id</code> values match.</p></details>
+        <details><summary>Hint &amp; Example Pattern</summary>
+          <p>Start with <code>COURSE AS c</code>. Join <code>FACULTY AS f</code> where the two <code>faculty_id</code> values match.</p>
+          <div class="template" style="margin-top:8px;"><strong>Worked Example Solution</strong><pre>SELECT c.course_id, c.course_name, f.faculty_name
+FROM COURSE AS c
+INNER JOIN FACULTY AS f
+    ON c.faculty_id = f.faculty_id
+ORDER BY c.course_id;</pre></div>
+        </details>
         <div class="editor-wrap"><textarea id="query1" data-save="query" spellcheck="false" aria-label="SQL answer for question 1" placeholder="-- Write question 1 here
 SELECT ..."></textarea><div class="task-actions"><button class="btn run" type="button">Run query</button><button class="btn secondary clear-query" type="button">Clear</button><span class="shortcut">Tip: Ctrl/⌘ + Enter runs this box.</span></div><div class="output" aria-live="polite"></div></div>
       </article>
@@ -289,7 +344,14 @@ SELECT ..."></textarea><div class="task-actions"><button class="btn run" type="b
       <article class="task" data-task="2">
         <div class="task-head"><span class="task-num">2</span><div class="task-title"><h3>Students and their course IDs</h3><p>Use an <code>INNER JOIN</code> to show student ID, first name, last name, and course ID for every enrollment. Sort by student ID, then course ID.</p></div><span class="points">10 points</span></div>
         <div class="requirements"><span>STUDENT + ENROLLMENT</span><span>10 rows</span><span>2-column sort</span></div>
-        <details><summary>Hint</summary><p>Use the same table path as worked example 1. A student with two courses should appear twice.</p></details>
+        <details><summary>Hint &amp; Example Pattern</summary>
+          <p>Use an <code>INNER JOIN</code> matching <code>STUDENT AS s</code> to <code>ENROLLMENT AS e</code> on <code>student_id</code>.</p>
+          <div class="template" style="margin-top:8px;"><strong>Worked Example Solution</strong><pre>SELECT s.student_id, s.first_name, s.last_name, e.course_id
+FROM STUDENT AS s
+INNER JOIN ENROLLMENT AS e
+    ON s.student_id = e.student_id
+ORDER BY s.student_id, e.course_id;</pre></div>
+        </details>
         <div class="editor-wrap"><textarea id="query2" data-save="query" spellcheck="false" aria-label="SQL answer for question 2" placeholder="-- Write question 2 here
 SELECT ..."></textarea><div class="task-actions"><button class="btn run" type="button">Run query</button><button class="btn secondary clear-query" type="button">Clear</button><span class="shortcut">Tip: Ctrl/⌘ + Enter runs this box.</span></div><div class="output" aria-live="polite"></div></div>
       </article>
@@ -297,7 +359,16 @@ SELECT ..."></textarea><div class="task-actions"><button class="btn run" type="b
       <article class="task" data-task="3">
         <div class="task-head"><span class="task-num">3</span><div class="task-title"><h3>Readable enrollment report</h3><p>Join three tables to show each student's first name, last name, course name, and final grade. Sort by course name, then last name.</p></div><span class="points">10 points</span></div>
         <div class="requirements"><span>STUDENT + ENROLLMENT + COURSE</span><span>10 rows</span><span>2 joins</span></div>
-        <details><summary>Hint</summary><p>Walk <code>STUDENT → ENROLLMENT → COURSE</code>. The first link uses <code>student_id</code>; the second uses <code>course_id</code>.</p></details>
+        <details><summary>Hint &amp; Example Pattern</summary>
+          <p>Walk <code>STUDENT → ENROLLMENT → COURSE</code>. The first link uses <code>student_id</code>; the second uses <code>course_id</code>.</p>
+          <div class="template" style="margin-top:8px;"><strong>Worked Example Solution</strong><pre>SELECT s.first_name, s.last_name, c.course_name, e.final_grade
+FROM STUDENT AS s
+INNER JOIN ENROLLMENT AS e
+    ON s.student_id = e.student_id
+INNER JOIN COURSE AS c
+    ON e.course_id = c.course_id
+ORDER BY c.course_name, s.last_name;</pre></div>
+        </details>
         <div class="editor-wrap"><textarea id="query3" data-save="query" spellcheck="false" aria-label="SQL answer for question 3" placeholder="-- Write question 3 here
 SELECT ..."></textarea><div class="task-actions"><button class="btn run" type="button">Run query</button><button class="btn secondary clear-query" type="button">Clear</button><span class="shortcut">Tip: Ctrl/⌘ + Enter runs this box.</span></div><div class="output" aria-live="polite"></div></div>
       </article>
@@ -305,7 +376,15 @@ SELECT ..."></textarea><div class="task-actions"><button class="btn run" type="b
       <article class="task" data-task="4">
         <div class="task-head"><span class="task-num">4</span><div class="task-title"><h3>One course only</h3><p>Use an inner join and a <code>WHERE</code> clause to show first name, last name, and final grade for students in <code>CIS101</code>. Sort by last name.</p></div><span class="points">10 points</span></div>
         <div class="requirements"><span>STUDENT + ENROLLMENT</span><span>3 rows</span><span>WHERE course_id = 'CIS101'</span></div>
-        <details><summary>Hint</summary><p>The <code>ON</code> condition still matches student IDs. Put the course restriction in a separate <code>WHERE</code> clause after the join.</p></details>
+        <details><summary>Hint &amp; Example Pattern</summary>
+          <p>The <code>ON</code> condition matches <code>student_id</code>. Put the course restriction in a <code>WHERE</code> clause after the join.</p>
+          <div class="template" style="margin-top:8px;"><strong>Worked Example Solution</strong><pre>SELECT s.first_name, s.last_name, e.final_grade
+FROM STUDENT AS s
+INNER JOIN ENROLLMENT AS e
+    ON s.student_id = e.student_id
+WHERE e.course_id = 'CIS101'
+ORDER BY s.last_name;</pre></div>
+        </details>
         <div class="editor-wrap"><textarea id="query4" data-save="query" spellcheck="false" aria-label="SQL answer for question 4" placeholder="-- Write question 4 here
 SELECT ..."></textarea><div class="task-actions"><button class="btn run" type="button">Run query</button><button class="btn secondary clear-query" type="button">Clear</button><span class="shortcut">Tip: Ctrl/⌘ + Enter runs this box.</span></div><div class="output" aria-live="polite"></div></div>
       </article>
@@ -313,7 +392,17 @@ SELECT ..."></textarea><div class="task-actions"><button class="btn run" type="b
       <article class="task" data-task="5">
         <div class="task-head"><span class="task-num">5</span><div class="task-title"><h3>Grades of 90 or higher</h3><p>Join STUDENT, ENROLLMENT, and COURSE. Show first name, last name, course name, and final grade only when the grade is at least 90. Sort highest grade first.</p></div><span class="points">10 points</span></div>
         <div class="requirements"><span>3 tables</span><span>5 rows</span><span>final_grade &gt;= 90</span><span>DESC</span></div>
-        <details><summary>Hint</summary><p>Begin with the three-table pattern from question 3. Add <code>WHERE e.final_grade &gt;= 90</code>, then sort by <code>e.final_grade DESC</code>.</p></details>
+        <details><summary>Hint &amp; Example Pattern</summary>
+          <p>Begin with the three-table pattern from question 3. Add <code>WHERE e.final_grade &gt;= 90</code>, then sort by <code>e.final_grade DESC</code>.</p>
+          <div class="template" style="margin-top:8px;"><strong>Worked Example Solution</strong><pre>SELECT s.first_name, s.last_name, c.course_name, e.final_grade
+FROM STUDENT AS s
+INNER JOIN ENROLLMENT AS e
+    ON s.student_id = e.student_id
+INNER JOIN COURSE AS c
+    ON e.course_id = c.course_id
+WHERE e.final_grade &gt;= 90
+ORDER BY e.final_grade DESC;</pre></div>
+        </details>
         <div class="editor-wrap"><textarea id="query5" data-save="query" spellcheck="false" aria-label="SQL answer for question 5" placeholder="-- Write question 5 here
 SELECT ..."></textarea><div class="task-actions"><button class="btn run" type="button">Run query</button><button class="btn secondary clear-query" type="button">Clear</button><span class="shortcut">Tip: Ctrl/⌘ + Enter runs this box.</span></div><div class="output" aria-live="polite"></div></div>
       </article>
@@ -321,7 +410,14 @@ SELECT ..."></textarea><div class="task-actions"><button class="btn run" type="b
       <article class="task" data-task="6">
         <div class="task-head"><span class="task-num">6</span><div class="task-title"><h3>All students, including no enrollment</h3><p>Use a <code>LEFT JOIN</code> to show every student's ID, first name, last name, and any course ID. Sort by student ID, then course ID.</p></div><span class="points">10 points</span></div>
         <div class="requirements"><span>STUDENT on the left</span><span>11 rows</span><span>S107 must appear</span></div>
-        <details><summary>Hint</summary><p>The table whose every row must survive belongs before <code>LEFT JOIN</code>. Here that table is STUDENT.</p></details>
+        <details><summary>Hint &amp; Example Pattern</summary>
+          <p>The table whose every row must survive belongs before <code>LEFT JOIN</code>. Here that table is STUDENT.</p>
+          <div class="template" style="margin-top:8px;"><strong>Worked Example Solution</strong><pre>SELECT s.student_id, s.first_name, s.last_name, e.course_id
+FROM STUDENT AS s
+LEFT JOIN ENROLLMENT AS e
+    ON s.student_id = e.student_id
+ORDER BY s.student_id, e.course_id;</pre></div>
+        </details>
         <div class="editor-wrap"><textarea id="query6" data-save="query" spellcheck="false" aria-label="SQL answer for question 6" placeholder="-- Write question 6 here
 SELECT ..."></textarea><div class="task-actions"><button class="btn run" type="button">Run query</button><button class="btn secondary clear-query" type="button">Clear</button><span class="shortcut">Tip: Ctrl/⌘ + Enter runs this box.</span></div><div class="output" aria-live="polite"></div></div>
       </article>
@@ -329,7 +425,14 @@ SELECT ..."></textarea><div class="task-actions"><button class="btn run" type="b
       <article class="task" data-task="7">
         <div class="task-head"><span class="task-num">7</span><div class="task-title"><h3>All courses, including an empty course</h3><p>Use a <code>LEFT JOIN</code> to show every course ID, course name, and any enrolled student ID. Sort by course ID, then student ID.</p></div><span class="points">10 points</span></div>
         <div class="requirements"><span>COURSE on the left</span><span>11 rows</span><span>CIS240 must appear</span></div>
-        <details><summary>Hint</summary><p>This time courses must survive, so put COURSE before <code>LEFT JOIN ENROLLMENT</code>. Match the two course IDs.</p></details>
+        <details><summary>Hint &amp; Example Pattern</summary>
+          <p>This time courses must survive, so put COURSE before <code>LEFT JOIN ENROLLMENT</code>. Match the two course IDs.</p>
+          <div class="template" style="margin-top:8px;"><strong>Worked Example Solution</strong><pre>SELECT c.course_id, c.course_name, e.student_id
+FROM COURSE AS c
+LEFT JOIN ENROLLMENT AS e
+    ON c.course_id = e.course_id
+ORDER BY c.course_id, e.student_id;</pre></div>
+        </details>
         <div class="editor-wrap"><textarea id="query7" data-save="query" spellcheck="false" aria-label="SQL answer for question 7" placeholder="-- Write question 7 here
 SELECT ..."></textarea><div class="task-actions"><button class="btn run" type="button">Run query</button><button class="btn secondary clear-query" type="button">Clear</button><span class="shortcut">Tip: Ctrl/⌘ + Enter runs this box.</span></div><div class="output" aria-live="polite"></div></div>
       </article>
@@ -337,7 +440,14 @@ SELECT ..."></textarea><div class="task-actions"><button class="btn run" type="b
       <article class="task" data-task="8">
         <div class="task-head"><span class="task-num">8</span><div class="task-title"><h3>Find the course with no enrollment</h3><p>Use <code>LEFT JOIN</code> and <code>IS NULL</code> to show the course ID and course name for courses that have no enrolled students.</p></div><span class="points">10 points</span></div>
         <div class="requirements"><span>LEFT JOIN</span><span>IS NULL</span><span>1 row</span></div>
-        <details><summary>Hint</summary><p>Keep every COURSE row first. Then test a column from ENROLLMENT with <code>IS NULL</code>. Do not use <code>= NULL</code>.</p></details>
+        <details><summary>Hint &amp; Example Pattern</summary>
+          <p>Keep every COURSE row first. Then test a column from ENROLLMENT with <code>IS NULL</code>. Do not use <code>= NULL</code>.</p>
+          <div class="template" style="margin-top:8px;"><strong>Worked Example Solution</strong><pre>SELECT c.course_id, c.course_name
+FROM COURSE AS c
+LEFT JOIN ENROLLMENT AS e
+    ON c.course_id = e.course_id
+WHERE e.course_id IS NULL;</pre></div>
+        </details>
         <div class="editor-wrap"><textarea id="query8" data-save="query" spellcheck="false" aria-label="SQL answer for question 8" placeholder="-- Write question 8 here
 SELECT ..."></textarea><div class="task-actions"><button class="btn run" type="button">Run query</button><button class="btn secondary clear-query" type="button">Clear</button><span class="shortcut">Tip: Ctrl/⌘ + Enter runs this box.</span></div><div class="output" aria-live="polite"></div></div>
       </article>
@@ -345,7 +455,15 @@ SELECT ..."></textarea><div class="task-actions"><button class="btn run" type="b
       <article class="task" data-task="9">
         <div class="task-head"><span class="task-num">9</span><div class="task-title"><h3>Count students in every course</h3><p>Show course ID, course name, and a count named <code>student_count</code>. Include courses with zero students. Sort by course ID.</p></div><span class="points">10 points</span></div>
         <div class="requirements"><span>LEFT JOIN</span><span>COUNT(e.student_id)</span><span>GROUP BY</span><span>6 rows</span></div>
-        <details><summary>Hint</summary><p>Put COURSE on the left. Count a non-NULL column from ENROLLMENT—not <code>COUNT(*)</code>—and group by both selected COURSE columns.</p></details>
+        <details><summary>Hint &amp; Example Pattern</summary>
+          <p>Put COURSE on the left. Count a non-NULL column from ENROLLMENT—not <code>COUNT(*)</code>—and group by both selected COURSE columns.</p>
+          <div class="template" style="margin-top:8px;"><strong>Worked Example Solution</strong><pre>SELECT c.course_id, c.course_name, COUNT(e.student_id) AS student_count
+FROM COURSE AS c
+LEFT JOIN ENROLLMENT AS e
+    ON c.course_id = e.course_id
+GROUP BY c.course_id, c.course_name
+ORDER BY c.course_id;</pre></div>
+        </details>
         <div class="editor-wrap"><textarea id="query9" data-save="query" spellcheck="false" aria-label="SQL answer for question 9" placeholder="-- Write question 9 here
 SELECT ..."></textarea><div class="task-actions"><button class="btn run" type="button">Run query</button><button class="btn secondary clear-query" type="button">Clear</button><span class="shortcut">Tip: Ctrl/⌘ + Enter runs this box.</span></div><div class="output" aria-live="polite"></div></div>
       </article>
@@ -353,24 +471,24 @@ SELECT ..."></textarea><div class="task-actions"><button class="btn run" type="b
       <article class="task" data-task="10">
         <div class="task-head"><span class="task-num">10</span><div class="task-title"><h3>Complete four-table report</h3><p>Use inner joins to show student first name, student last name, course name, faculty name, and final grade for every enrollment. Sort by student last name, then course name.</p></div><span class="points">10 points</span></div>
         <div class="requirements"><span>4 tables</span><span>3 joins</span><span>10 rows</span></div>
-        <details><summary>Hint</summary><p>Follow the complete path: <code>STUDENT → ENROLLMENT → COURSE → FACULTY</code>. Each arrow becomes one <code>JOIN ... ON</code> clause.</p></details>
+        <details><summary>Hint &amp; Example Pattern</summary>
+          <p>Follow the complete path: <code>STUDENT → ENROLLMENT → COURSE → FACULTY</code>. Each arrow becomes one <code>JOIN ... ON</code> clause.</p>
+          <div class="template" style="margin-top:8px;"><strong>Worked Example Solution</strong><pre>SELECT s.first_name, s.last_name, c.course_name, f.faculty_name, e.final_grade
+FROM STUDENT AS s
+INNER JOIN ENROLLMENT AS e
+    ON s.student_id = e.student_id
+INNER JOIN COURSE AS c
+    ON e.course_id = c.course_id
+INNER JOIN FACULTY AS f
+    ON c.faculty_id = f.faculty_id
+ORDER BY s.last_name, c.course_name;</pre></div>
+        </details>
         <div class="editor-wrap"><textarea id="query10" data-save="query" spellcheck="false" aria-label="SQL answer for question 10" placeholder="-- Write question 10 here
 SELECT ..."></textarea><div class="task-actions"><button class="btn run" type="button">Run query</button><button class="btn secondary clear-query" type="button">Clear</button><span class="shortcut">Tip: Ctrl/⌘ + Enter runs this box.</span></div><div class="output" aria-live="polite"></div></div>
       </article>
     </section>
 
-    <section class="card">
-      <span class="section-label">Grading</span>
-      <h2>Query rubric and final check</h2>
-      <p class="lede">Each question is worth 10 points and is evaluated using the same four-part rubric.</p>
-      <div class="table-wrap rubric"><table><thead><tr><th>Evidence in each query</th><th>Points</th></tr></thead><tbody><tr><td>Correct tables and requested join type</td><td>3</td></tr><tr><td>Correct <code>ON</code> condition for every table link</td><td>3</td></tr><tr><td>Correct selected columns, aliases, filter, or grouping</td><td>2</td></tr><tr><td>Correct result and requested sort order</td><td>2</td></tr></tbody></table></div>
-      <div class="checklist" role="group" aria-label="Submission checklist">
-        <label class="check"><input type="checkbox" id="check1" data-save="check"><span>Every query ran without a SQLite error.</span></label>
-        <label class="check"><input type="checkbox" id="check2" data-save="check"><span>My row counts match the expected counts shown on the question cards.</span></label>
-        <label class="check"><input type="checkbox" id="check3" data-save="check"><span>I used <code>ON</code> for relationships and <code>WHERE</code> for requested filters.</span></label>
-        <label class="check"><input type="checkbox" id="check4" data-save="check"><span>I exported my ten queries as a <code>.sql</code> file or printed this page to PDF.</span></label>
-      </div>
-    </section>
+
   </div>
 </main>
 
@@ -484,7 +602,7 @@ SELECT ..."></textarea><div class="task-actions"><button class="btn run" type="b
 
   document.getElementById('setupBtn').addEventListener('click', function(){ download('keiser-college-joins-starter.sql', SEED_SQL + '\n', 'text/sql;charset=utf-8'); });
   document.getElementById('exportBtn').addEventListener('click', function(){
-    save(); var lines = ['-- GUIDED JOINS HOMEWORK','-- Student: ' + document.getElementById('studentName').value,'-- Course / section: ' + document.getElementById('courseSection').value,'-- Date: ' + document.getElementById('workDate').value,''];
+    save(); var lines = ['-- GUIDED JOINS HOMEWORK','-- Student: ' + (document.getElementById('studentName') ? document.getElementById('studentName').value : ''),''];
     for (var i=1;i<=10;i++){ lines.push('-- ============================================================','-- QUESTION ' + i,'-- ============================================================',document.getElementById('query' + i).value.trim(),''); }
     download(safeName(document.getElementById('studentName').value) + '-joins-homework.sql', lines.join('\n'), 'text/sql;charset=utf-8');
   });
