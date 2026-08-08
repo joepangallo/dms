@@ -408,6 +408,116 @@ VENDOR_ID → VENDOR_NAME                   [Transitive Dependency]</pre>
       </div>
     </section>
 
+    <section class="card" id="normalized-tables">
+      <span class="section-label">Target Architecture</span>
+      <h2>Final 3NF Normalized Tables (Northstar Repair Database)</h2>
+      <p class="lede">When <code>REPAIR_ORDER_RAW</code> is correctly normalized to Third Normal Form (3NF), the unnormalized table is split into these 7 clean, connected tables with zero redundancy:</p>
+
+      <div class="two-col" style="margin-top:16px;">
+        <div class="table-wrap">
+          <table>
+            <caption>CUSTOMER (PK = CUSTOMER_ID) · 4 rows</caption>
+            <thead><tr><th>CUSTOMER_ID <span class="key">PK</span></th><th>CUSTOMER_NAME</th><th>CUSTOMER_EMAIL</th></tr></thead>
+            <tbody>
+              <tr><td>C101</td><td>Maya Patel</td><td>maya.patel@example.com</td></tr>
+              <tr><td>C102</td><td>Liam Brooks</td><td>liam.brooks@example.com</td></tr>
+              <tr><td>C103</td><td>Zoe Chen</td><td>zoe.chen@example.com</td></tr>
+              <tr><td>C104</td><td>Noah Williams</td><td>noah.w@example.com</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="table-wrap">
+          <table>
+            <caption>TECHNICIAN (PK = TECH_ID) · 3 rows</caption>
+            <thead><tr><th>TECH_ID <span class="key">PK</span></th><th>TECH_NAME</th><th>TECH_EXT</th></tr></thead>
+            <tbody>
+              <tr><td>T07</td><td>Andre Lewis</td><td>214</td></tr>
+              <tr><td>T12</td><td>Kiara Stone</td><td>219</td></tr>
+              <tr><td>T18</td><td>Damon Price</td><td>223</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="two-col" style="margin-top:14px;">
+        <div class="table-wrap">
+          <table>
+            <caption>DEVICE (PK = DEVICE_SERIAL) · 5 rows</caption>
+            <thead><tr><th>DEVICE_SERIAL <span class="key">PK</span></th><th>DEVICE_TYPE</th></tr></thead>
+            <tbody>
+              <tr><td>SN-A14</td><td>Laptop</td></tr>
+              <tr><td>SN-B52</td><td>Tablet</td></tr>
+              <tr><td>SN-C08</td><td>Desktop</td></tr>
+              <tr><td>SN-D91</td><td>Laptop</td></tr>
+              <tr><td>SN-E77</td><td>Laptop</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="table-wrap">
+          <table>
+            <caption>SUPPLIER (PK = SUPPLIER_ID) · 3 rows</caption>
+            <thead><tr><th>SUPPLIER_ID <span class="key">PK</span></th><th>SUPPLIER_NAME</th></tr></thead>
+            <tbody>
+              <tr><td>S20</td><td>TechSource</td></tr>
+              <tr><td>S35</td><td>Component Hub</td></tr>
+              <tr><td>S48</td><td>DisplayWorks</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="two-col" style="margin-top:14px;">
+        <div class="table-wrap">
+          <table>
+            <caption>PART (PK = PART_ID) · 6 rows</caption>
+            <thead><tr><th>PART_ID <span class="key">PK</span></th><th>PART_NAME</th><th>PART_PRICE</th><th>SUPPLIER_ID <span class="key">FK</span></th></tr></thead>
+            <tbody>
+              <tr><td>P110</td><td>USB-C Port</td><td>$18.00</td><td>S20</td></tr>
+              <tr><td>P225</td><td>65W Charger</td><td>$32.00</td><td>S20</td></tr>
+              <tr><td>P310</td><td>Cooling Fan</td><td>$24.50</td><td>S35</td></tr>
+              <tr><td>P415</td><td>1TB SSD</td><td>$69.00</td><td>S35</td></tr>
+              <tr><td>P520</td><td>Screen Assembly</td><td>$105.00</td><td>S48</td></tr>
+              <tr><td>P630</td><td>Keyboard</td><td>$41.00</td><td>S20</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="table-wrap">
+          <table>
+            <caption>TICKET_PART (Associative Table · PK = TICKET_ID + PART_ID) · 8 rows</caption>
+            <thead><tr><th>TICKET_ID <span class="key">PK · FK</span></th><th>PART_ID <span class="key">PK · FK</span></th><th>QUANTITY</th></tr></thead>
+            <tbody>
+              <tr><td>R5001</td><td>P110</td><td>1</td></tr>
+              <tr><td>R5001</td><td>P225</td><td>1</td></tr>
+              <tr><td>R5002</td><td>P520</td><td>1</td></tr>
+              <tr><td>R5003</td><td>P310</td><td>2</td></tr>
+              <tr><td>R5004</td><td>P415</td><td>1</td></tr>
+              <tr><td>R5004</td><td>P310</td><td>1</td></tr>
+              <tr><td>R5005</td><td>P630</td><td>1</td></tr>
+              <tr><td>R5006</td><td>P225</td><td>1</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="table-wrap" style="margin-top:14px;">
+        <table>
+          <caption>REPAIR_TICKET (PK = TICKET_ID) · 6 rows</caption>
+          <thead><tr><th>TICKET_ID <span class="key">PK</span></th><th>OPENED_DATE</th><th>LABOR_HOURS</th><th>CUSTOMER_ID <span class="key">FK</span></th><th>TECH_ID <span class="key">FK</span></th><th>DEVICE_SERIAL <span class="key">FK</span></th></tr></thead>
+          <tbody>
+            <tr><td>R5001</td><td>2026-07-08</td><td>1.50</td><td>C101</td><td>T07</td><td>SN-A14</td></tr>
+            <tr><td>R5002</td><td>2026-07-09</td><td>2.00</td><td>C102</td><td>T12</td><td>SN-B52</td></tr>
+            <tr><td>R5003</td><td>2026-07-10</td><td>1.00</td><td>C101</td><td>T12</td><td>SN-C08</td></tr>
+            <tr><td>R5004</td><td>2026-07-12</td><td>2.50</td><td>C103</td><td>T07</td><td>SN-D91</td></tr>
+            <tr><td>R5005</td><td>2026-07-14</td><td>1.25</td><td>C104</td><td>T18</td><td>SN-E77</td></tr>
+            <tr><td>R5006</td><td>2026-07-18</td><td>0.75</td><td>C101</td><td>T07</td><td>SN-A14</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
     <section class="card" id="business-rules">
       <span class="section-label">Evidence</span>
       <h2>Business rules</h2>
