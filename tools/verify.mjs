@@ -254,6 +254,28 @@ const queryLab = await page.evaluate(async () => {
   const module4Section = document.querySelector('#module4 #m4-1');
   const staticItem = module4Section.querySelector('.source-table-reference');
   const firstQuery = module4Section.querySelector('pre.code-block');
+  const referenceSpecs = {
+    module5: { section: 'm5-1', shapes: [[9, 4], [9, 3]] },
+    module6: { section: 'm6-1', shapes: [[6, 5]] },
+    module7: { section: 'm7-1', shapes: [[6, 5]] },
+    module8: { section: 'm8-1', shapes: [[9, 4]] },
+  };
+  const staticReferences = {};
+  for (const [moduleId, spec] of Object.entries(referenceSpecs)) {
+    const section = document.querySelector(`#${moduleId} #${spec.section}`);
+    const refs = [...section.querySelectorAll('.source-table-reference')];
+    const firstSql = section.querySelector('pre.code-block, [data-sandbox]');
+    staticReferences[moduleId] = {
+      count: refs.length,
+      beforeFirstSql: !!firstSql && refs.every((ref) =>
+        !!(ref.compareDocumentPosition(firstSql) & Node.DOCUMENT_POSITION_FOLLOWING)),
+      shapes: refs.map((ref) => [
+        ref.querySelectorAll('thead th').length,
+        ref.querySelectorAll('tbody tr').length,
+      ]),
+      expectedShapes: spec.shapes,
+    };
+  }
   await single._ensureSqlBoot();
   const item = [...single.querySelectorAll('.source-table-card')]
     .find((card) => card.querySelector('.source-table-name')?.textContent.trim() === 'ITEM');
@@ -280,6 +302,7 @@ const queryLab = await page.evaluate(async () => {
       !!(staticItem.compareDocumentPosition(firstQuery) & Node.DOCUMENT_POSITION_FOLLOWING) &&
       staticItem.querySelectorAll('thead th').length === 6 &&
       staticItem.querySelectorAll('tbody tr').length === 5,
+    staticReferences,
     hasThreeStages: single.querySelectorAll('.lab-stage').length === 3,
     datasetHidden: single.querySelector('.sandbox-load').hidden &&
       getComputedStyle(single.querySelector('.sandbox-load')).display === 'none',
@@ -294,6 +317,12 @@ const queryLab = await page.evaluate(async () => {
   };
 });
 note(queryLab.itemBeforeFirstQuery, 'complete ITEM table appears before the first Module 4 query');
+for (const moduleId of ['module5', 'module6', 'module7', 'module8']) {
+  const ref = queryLab.staticReferences[moduleId];
+  note(ref.count === ref.expectedShapes.length && ref.beforeFirstSql &&
+    JSON.stringify(ref.shapes) === JSON.stringify(ref.expectedShapes),
+    `${moduleId.replace('module', 'Module ')} source table(s) appear in full before the first SQL example`);
+}
 note(queryLab.hasThreeStages, 'Module 4 sandbox is ordered as source data, SQL, then result');
 note(queryLab.datasetHidden, 'Module 4 dataset dropdown is removed from the student-facing flow');
 note(queryLab.sourceIsItem && queryLab.itemRows === 5, 'single-table exercise visibly shows all five ITEM rows');

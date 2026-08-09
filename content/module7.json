@@ -13,6 +13,65 @@
        "text": "A view is a stored query. You hand the database a `SELECT` statement, give it a name, and from that point on the name can be used almost anywhere a table name is allowed. Nothing is copied. No second set of rows is written anywhere. The rows you see through a view still live in the tables underneath it."
       },
       {
+       "type": "p",
+       "text": "**Start with the data:** the first view reads from `ITEM`. This is the complete base table before the `HABITAT` view filters its rows and columns."
+      },
+      {
+       "type": "table",
+       "className": "source-table-reference",
+       "caption": "Base table: ITEM — the rows available to the first view",
+       "headers": [
+        "ITEM_ID",
+        "DESCRIPTION",
+        "CATEGORY",
+        "ON_HAND",
+        "PRICE",
+        "REORDER_LEVEL"
+       ],
+       "rows": [
+        [
+         "AV07",
+         "Aviary Starter Cage",
+         "Habitat",
+         "15",
+         "64.99",
+         "5"
+        ],
+        [
+         "CF21",
+         "Grain-Free Dry Food 30lb",
+         "Food",
+         "48",
+         "42.50",
+         "15"
+        ],
+        [
+         "DG04",
+         "Nylon Dog Leash 6ft",
+         "Accessory",
+         "120",
+         "11.99",
+         "25"
+        ],
+        [
+         "FT88",
+         "Fish Tank Filter Kit",
+         "Habitat",
+         "30",
+         "27.75",
+         "10"
+        ],
+        [
+         "GR15",
+         "Small Animal Grooming Kit",
+         "Grooming",
+         "22",
+         "15.25",
+         "8"
+        ]
+       ]
+      },
+      {
        "type": "callout",
        "variant": "definition",
        "label": "Three words you need",

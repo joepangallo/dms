@@ -8908,6 +8908,17 @@ ORDER BY PRICE DESC;">
       <h3><span class="num">5-1</span> Querying Multiple Tables</h3>
       <p>Every query you have written so far has looked at one table. That was never the real limit of SQL - it was the limit of the questions. Ask the KimTay bookkeeper what she needs on a Monday morning and it sounds like this: &quot;Give me each customer with the name of the rep who handles them.&quot; Nothing in <code class="inline-code">CUSTOMER</code> stores a rep&#39;s name, and nothing in <code class="inline-code">REP</code> stores a customer&#39;s name. The answer lives in two tables at once.</p>
       <p>That split is on purpose. Back in the design modules you saw why a rep&#39;s name is stored once in <code class="inline-code">REP</code> instead of being repeated on every customer row: one place to store it, one place to correct it. The price of that clean design is that answering a business question often means putting two tables back together for the length of one query. That is what a join does.</p>
+      <p><strong>Start with the data:</strong> the first join uses <code class="inline-code">CUSTOMER</code> and <code class="inline-code">REP</code>. Read both complete source tables before seeing how SQL matches their <code class="inline-code">REP_NUM</code> values.</p>
+      <div class="table-scroll source-table-reference"><table class="data-table wrap-cells">
+        <caption>Source table: CUSTOMER — all columns and all four rows</caption>
+        <thead><tr><th>CUSTOMER_NUM</th><th>CUSTOMER_NAME</th><th>STREET</th><th>CITY</th><th>STATE</th><th>ZIP</th><th>BALANCE</th><th>CREDIT_LIMIT</th><th>REP_NUM</th></tr></thead>
+        <tbody><tr><td>1120</td><td>Access Pet Center</td><td>215 Foster Ave.</td><td>Maple Grove</td><td>OH</td><td>44601</td><td>3512.50</td><td>7500.00</td><td>20</td></tr><tr><td>1225</td><td>Downtown Aquarium &amp; Pets</td><td>642 Chestnut St.</td><td>Northfield</td><td>OH</td><td>44067</td><td>1200.00</td><td>5000.00</td><td>35</td></tr><tr><td>1310</td><td>Companion Care Clinic</td><td>89 River Rd.</td><td>Maple Grove</td><td>OH</td><td>44601</td><td>0.00</td><td>10000.00</td><td>20</td></tr><tr><td>1420</td><td>Whiskers &amp; Wags Boutique</td><td>77 Elm St.</td><td>Brookville</td><td>OH</td><td>44403</td><td>4820.75</td><td>6000.00</td><td>65</td></tr></tbody>
+      </table></div>
+      <div class="table-scroll source-table-reference"><table class="data-table wrap-cells">
+        <caption>Source table: REP — all columns and all three rows</caption>
+        <thead><tr><th>REP_NUM</th><th>LAST_NAME</th><th>FIRST_NAME</th><th>STREET</th><th>CITY</th><th>STATE</th><th>ZIP</th><th>COMMISSION</th><th>RATE</th></tr></thead>
+        <tbody><tr><td>20</td><td>Kaiser</td><td>Valerie</td><td>624 Randall Dr.</td><td>Maple Grove</td><td>OH</td><td>44601</td><td>21560.00</td><td>0.05</td></tr><tr><td>35</td><td>Hull</td><td>Richard</td><td>313 Palma Dr.</td><td>Maple Grove</td><td>OH</td><td>44601</td><td>39355.00</td><td>0.07</td></tr><tr><td>65</td><td>Perez</td><td>Juan</td><td>2632 Marshall Ave.</td><td>Brookville</td><td>OH</td><td>44403</td><td>23764.00</td><td>0.05</td></tr></tbody>
+      </table></div>
       <div class="callout callout-definition">
         <div class="callout-icon" aria-hidden="true">&#128214;</div>
         <div class="callout-body"><strong class="callout-label">Join</strong><p>A join combines rows from two tables by matching values in a column they share. <code class="inline-code">CUSTOMER.REP_NUM</code> and <code class="inline-code">REP.REP_NUM</code> hold the same kind of value, so a row in <code class="inline-code">CUSTOMER</code> and a row in <code class="inline-code">REP</code> belong together whenever those two values are equal.</p></div>
@@ -11189,6 +11200,12 @@ SELECT CITY FROM REP;">
       <h3><span class="num">6-1</span> Creating a New Table from an Existing Table</h3>
       <p>Every statement you have written so far has pointed at KimTay&#39;s real tables, and every one of them has been a <code class="inline-code">SELECT</code>. A <code class="inline-code">SELECT</code> only reads. Module 6 is about statements that change what is stored, and a change you get wrong is not something you can undo by looking away from the screen. So the first skill in this module is not changing data at all. It is making yourself a working copy to change instead.</p>
       <p>SQL can build a brand-new table out of the rows a query returns. You write <code class="inline-code">CREATE TABLE</code>, the name you want for the new table, the word <code class="inline-code">AS</code>, and then an ordinary <code class="inline-code">SELECT</code>. Whatever that <code class="inline-code">SELECT</code> returns becomes the contents of the new table.</p>
+      <p><strong>Start with the data:</strong> this is the complete <code class="inline-code">ITEM</code> table that the first statement copies. Inspect the original five rows before <code class="inline-code">ITEM_COPY</code> is created.</p>
+      <div class="table-scroll source-table-reference"><table class="data-table wrap-cells">
+        <caption>Source table: ITEM — the original table before any changes</caption>
+        <thead><tr><th>ITEM_ID</th><th>DESCRIPTION</th><th>CATEGORY</th><th>ON_HAND</th><th>PRICE</th><th>REORDER_LEVEL</th></tr></thead>
+        <tbody><tr><td>AV07</td><td>Aviary Starter Cage</td><td>Habitat</td><td>15</td><td>64.99</td><td>5</td></tr><tr><td>CF21</td><td>Grain-Free Dry Food 30lb</td><td>Food</td><td>48</td><td>42.50</td><td>15</td></tr><tr><td>DG04</td><td>Nylon Dog Leash 6ft</td><td>Accessory</td><td>120</td><td>11.99</td><td>25</td></tr><tr><td>FT88</td><td>Fish Tank Filter Kit</td><td>Habitat</td><td>30</td><td>27.75</td><td>10</td></tr><tr><td>GR15</td><td>Small Animal Grooming Kit</td><td>Grooming</td><td>22</td><td>15.25</td><td>8</td></tr></tbody>
+      </table></div>
       <pre class="code-block">CREATE TABLE ITEM_COPY AS
 SELECT *
 FROM ITEM;</pre>
@@ -13453,6 +13470,12 @@ ORDER BY name;">
       <div class="lesson-content"><section class="lesson-section" id="m7-1" data-slide data-slide-title="7-1. Creating and Using Views">
       <h3><span class="num">7-1</span> Creating and Using Views</h3>
       <p>A view is a stored query. You hand the database a <code class="inline-code">SELECT</code> statement, give it a name, and from that point on the name can be used almost anywhere a table name is allowed. Nothing is copied. No second set of rows is written anywhere. The rows you see through a view still live in the tables underneath it.</p>
+      <p><strong>Start with the data:</strong> the first view reads from <code class="inline-code">ITEM</code>. This is the complete base table before the <code class="inline-code">HABITAT</code> view filters its rows and columns.</p>
+      <div class="table-scroll source-table-reference"><table class="data-table wrap-cells">
+        <caption>Base table: ITEM — the rows available to the first view</caption>
+        <thead><tr><th>ITEM_ID</th><th>DESCRIPTION</th><th>CATEGORY</th><th>ON_HAND</th><th>PRICE</th><th>REORDER_LEVEL</th></tr></thead>
+        <tbody><tr><td>AV07</td><td>Aviary Starter Cage</td><td>Habitat</td><td>15</td><td>64.99</td><td>5</td></tr><tr><td>CF21</td><td>Grain-Free Dry Food 30lb</td><td>Food</td><td>48</td><td>42.50</td><td>15</td></tr><tr><td>DG04</td><td>Nylon Dog Leash 6ft</td><td>Accessory</td><td>120</td><td>11.99</td><td>25</td></tr><tr><td>FT88</td><td>Fish Tank Filter Kit</td><td>Habitat</td><td>30</td><td>27.75</td><td>10</td></tr><tr><td>GR15</td><td>Small Animal Grooming Kit</td><td>Grooming</td><td>22</td><td>15.25</td><td>8</td></tr></tbody>
+      </table></div>
       <div class="callout callout-definition">
         <div class="callout-icon" aria-hidden="true">&#128214;</div>
         <div class="callout-body"><strong class="callout-label">Three words you need</strong><p>The <strong>base tables</strong> are the real tables the data lives in, such as <code class="inline-code">ITEM</code> and <code class="inline-code">CUSTOMER</code>. The <strong>defining query</strong> is the <code class="inline-code">SELECT</code> statement you stored. The <strong>view</strong> is the name you gave that query. A view has no rows of its own.</p></div>
@@ -16171,6 +16194,12 @@ ORDER BY m.name;">
       <h3><span class="num">8-1</span> Using SQL in a Programming Environment</h3>
       <p>Every statement you have written so far, you typed yourself. You opened a window, entered a <code class="inline-code">SELECT</code>, and read the rows that came back. That is a fine way to learn SQL and a fine way to answer a one-time question, but it is not how KimTay&#39;s business actually runs. Nobody at a pet supply distributor types a <code class="inline-code">SELECT</code> to look up a customer. A clerk clicks a name on a screen.</p>
       <p>The screen is a program. Behind that program is the same database and the same SQL. This lesson is about the seam between the two: what changes when SQL stops being typed and starts being sent.</p>
+      <p><strong>Start with the data:</strong> the first program sends a query to <code class="inline-code">CUSTOMER</code>. Read the complete table first, including the two rows assigned to rep 20.</p>
+      <div class="table-scroll source-table-reference"><table class="data-table wrap-cells">
+        <caption>Source table: CUSTOMER — the data behind the first program query</caption>
+        <thead><tr><th>CUSTOMER_NUM</th><th>CUSTOMER_NAME</th><th>STREET</th><th>CITY</th><th>STATE</th><th>ZIP</th><th>BALANCE</th><th>CREDIT_LIMIT</th><th>REP_NUM</th></tr></thead>
+        <tbody><tr><td>1120</td><td>Access Pet Center</td><td>215 Foster Ave.</td><td>Maple Grove</td><td>OH</td><td>44601</td><td>3512.50</td><td>7500.00</td><td>20</td></tr><tr><td>1225</td><td>Downtown Aquarium &amp; Pets</td><td>642 Chestnut St.</td><td>Northfield</td><td>OH</td><td>44067</td><td>1200.00</td><td>5000.00</td><td>35</td></tr><tr><td>1310</td><td>Companion Care Clinic</td><td>89 River Rd.</td><td>Maple Grove</td><td>OH</td><td>44601</td><td>0.00</td><td>10000.00</td><td>20</td></tr><tr><td>1420</td><td>Whiskers &amp; Wags Boutique</td><td>77 Elm St.</td><td>Brookville</td><td>OH</td><td>44403</td><td>4820.75</td><td>6000.00</td><td>65</td></tr></tbody>
+      </table></div>
       <h4>The statement does not change</h4>
       <p>Start with the reassuring part. When the order-entry program shows every customer belonging to rep 20, it sends the database a statement you could have written in Module 5. Run it below. This is the exact text a program hands to the DBMS.</p>
       <div class="sandbox" data-sandbox data-seed="kimtay_full" data-starter="-- The statement a program sends when a clerk picks rep 20.

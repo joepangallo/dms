@@ -17,6 +17,65 @@
        "text": "SQL can build a brand-new table out of the rows a query returns. You write `CREATE TABLE`, the name you want for the new table, the word `AS`, and then an ordinary `SELECT`. Whatever that `SELECT` returns becomes the contents of the new table."
       },
       {
+       "type": "p",
+       "text": "**Start with the data:** this is the complete `ITEM` table that the first statement copies. Inspect the original five rows before `ITEM_COPY` is created."
+      },
+      {
+       "type": "table",
+       "className": "source-table-reference",
+       "caption": "Source table: ITEM — the original table before any changes",
+       "headers": [
+        "ITEM_ID",
+        "DESCRIPTION",
+        "CATEGORY",
+        "ON_HAND",
+        "PRICE",
+        "REORDER_LEVEL"
+       ],
+       "rows": [
+        [
+         "AV07",
+         "Aviary Starter Cage",
+         "Habitat",
+         "15",
+         "64.99",
+         "5"
+        ],
+        [
+         "CF21",
+         "Grain-Free Dry Food 30lb",
+         "Food",
+         "48",
+         "42.50",
+         "15"
+        ],
+        [
+         "DG04",
+         "Nylon Dog Leash 6ft",
+         "Accessory",
+         "120",
+         "11.99",
+         "25"
+        ],
+        [
+         "FT88",
+         "Fish Tank Filter Kit",
+         "Habitat",
+         "30",
+         "27.75",
+         "10"
+        ],
+        [
+         "GR15",
+         "Small Animal Grooming Kit",
+         "Grooming",
+         "22",
+         "15.25",
+         "8"
+        ]
+       ]
+      },
+      {
        "type": "code",
        "text": "CREATE TABLE ITEM_COPY AS\nSELECT *\nFROM ITEM;"
       },

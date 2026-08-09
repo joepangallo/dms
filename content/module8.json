@@ -17,6 +17,72 @@
        "text": "The screen is a program. Behind that program is the same database and the same SQL. This lesson is about the seam between the two: what changes when SQL stops being typed and starts being sent."
       },
       {
+       "type": "p",
+       "text": "**Start with the data:** the first program sends a query to `CUSTOMER`. Read the complete table first, including the two rows assigned to rep 20."
+      },
+      {
+       "type": "table",
+       "className": "source-table-reference",
+       "caption": "Source table: CUSTOMER — the data behind the first program query",
+       "headers": [
+        "CUSTOMER_NUM",
+        "CUSTOMER_NAME",
+        "STREET",
+        "CITY",
+        "STATE",
+        "ZIP",
+        "BALANCE",
+        "CREDIT_LIMIT",
+        "REP_NUM"
+       ],
+       "rows": [
+        [
+         "1120",
+         "Access Pet Center",
+         "215 Foster Ave.",
+         "Maple Grove",
+         "OH",
+         "44601",
+         "3512.50",
+         "7500.00",
+         "20"
+        ],
+        [
+         "1225",
+         "Downtown Aquarium & Pets",
+         "642 Chestnut St.",
+         "Northfield",
+         "OH",
+         "44067",
+         "1200.00",
+         "5000.00",
+         "35"
+        ],
+        [
+         "1310",
+         "Companion Care Clinic",
+         "89 River Rd.",
+         "Maple Grove",
+         "OH",
+         "44601",
+         "0.00",
+         "10000.00",
+         "20"
+        ],
+        [
+         "1420",
+         "Whiskers & Wags Boutique",
+         "77 Elm St.",
+         "Brookville",
+         "OH",
+         "44403",
+         "4820.75",
+         "6000.00",
+         "65"
+        ]
+       ]
+      },
+      {
        "type": "h4",
        "text": "The statement does not change"
       },
