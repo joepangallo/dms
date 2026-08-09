@@ -309,6 +309,15 @@ table.data-table tbody tr:nth-child(even){background:var(--gray-50);}
 table.data-table td.is-key{font-weight:800; color:var(--primary-700);}
 table.data-table td.is-fk{font-style:italic; color:var(--accent-600);}
 table.data-table tfoot td{color:var(--gray-500); font-style:italic;}
+.source-table-reference{border:2px solid #aebbe3; box-shadow:0 5px 16px rgba(27,37,89,.10);}
+.source-table-reference table.data-table caption{
+  background:linear-gradient(110deg,#e7eaf9,#f5f7ff); color:var(--primary-900);
+  padding:12px 14px; font-size:.9rem;
+}
+.source-table-reference table.data-table thead th{
+  position:static; background:var(--primary-100); color:var(--primary-900); border-bottom:2px solid #c7d0ec;
+}
+.source-table-reference table.data-table tbody td:first-child{font-weight:800; color:var(--primary-700);}
 
 /* ============================================================
    ACCORDION
@@ -799,6 +808,204 @@ table.data-table.wrap-cells td:last-child{white-space:normal; min-width:9ch;}
   .walk-btn{flex:1 1 8rem;}
   .step-row{grid-template-columns:1.3rem 1.2rem minmax(0,1fr); }
   .step-row .step-state{grid-column:3; white-space:normal;}
+}
+
+/* ============================================================
+   MODULES 4-8: VISIBLE-DATA QUERY LABS
+   From Module 4 onward the lesson is about reasoning from rows, not choosing
+   a canned database. Put the source rows, editable SQL, and result in three
+   light panels in reading order. The original seed select remains in the DOM
+   as internal state, but students no longer have to decipher it.
+   ============================================================ */
+:is(#module4,#module5,#module6,#module7,#module8) pre.code-block{
+  background:#f8fafc; color:#172033; border-color:#cbd5e1; border-left:4px solid var(--primary-500);
+  box-shadow:var(--shadow-sm);
+}
+:is(#module4,#module5,#module6,#module7,#module8) pre.code-block .kw{color:#155eaa;}
+:is(#module4,#module5,#module6,#module7,#module8) .code-block-actions button{
+  border-color:#b8c2d1; box-shadow:0 1px 1px rgba(17,24,39,.05);
+}
+:is(#module4,#module5,#module6,#module7,#module8) .btn-code-copy{background:#fff; color:#334155;}
+:is(#module4,#module5,#module6,#module7,#module8) .btn-code-copy:hover{background:#eef2ff; color:#1b2559;}
+
+:is(#module4,#module5,#module6,#module7,#module8) .sandbox{
+  background:#fff; border:1px solid #cbd5e1; border-radius:18px; box-shadow:0 9px 28px rgba(27,37,89,.10);
+}
+:is(#module4,#module5,#module6,#module7,#module8) .sandbox-toolbar{
+  background:linear-gradient(115deg,#edf1ff,#f8faff); color:var(--primary-900);
+  border-bottom:1px solid #d7def2; padding:12px 16px;
+}
+:is(#module4,#module5,#module6,#module7,#module8) .sandbox-toolbar .sandbox-label{
+  color:var(--primary-800); font-size:.77rem; letter-spacing:.065em;
+}
+.sandbox--query-lab .lab-engine-note{
+  color:var(--gray-500); font-size:.72rem; font-weight:650; text-transform:none; letter-spacing:0;
+  margin-left:8px;
+}
+.sandbox--query-lab .sandbox-load{display:none!important;}
+.sandbox--query-lab .lab-tools{margin-left:auto; position:relative;}
+.sandbox--query-lab .lab-tools summary{
+  list-style:none; cursor:pointer; color:var(--gray-600); background:#fff; border:1px solid #cbd5e1;
+  border-radius:8px; padding:6px 10px; font-size:.74rem; font-weight:750; user-select:none;
+}
+.sandbox--query-lab .lab-tools summary::-webkit-details-marker{display:none;}
+.sandbox--query-lab .lab-tools summary::before{content:"\2699\00a0"; color:var(--primary-600);}
+.sandbox--query-lab .lab-tools[open]{z-index:5;}
+.sandbox--query-lab .lab-tools[open] summary{border-color:var(--primary-500); color:var(--primary-800);}
+.sandbox--query-lab .lab-tool-menu{
+  position:absolute; right:0; top:calc(100% + 6px); display:flex; gap:7px; min-width:max-content;
+  padding:9px; background:#fff; border:1px solid #cbd5e1; border-radius:10px; box-shadow:var(--shadow-md);
+}
+.sandbox--query-lab .lab-tool-menu button{
+  background:#fff; color:var(--primary-800); border:1px solid #cbd5e1; padding:7px 10px;
+}
+.sandbox--query-lab .lab-tool-menu button:hover{background:var(--primary-50); filter:none;}
+
+.sandbox--query-lab .lab-stage{padding:16px; border-top:1px solid #e5eaf4;}
+.sandbox--query-lab .lab-stage:first-of-type{border-top:0;}
+.sandbox--query-lab .lab-stage-head{
+  display:flex; align-items:center; gap:11px; flex-wrap:wrap; margin-bottom:12px;
+}
+.sandbox--query-lab .lab-stage-index{
+  display:inline-flex; align-items:center; justify-content:center; width:27px; height:27px; flex:none;
+  border-radius:50%; background:var(--primary-700); color:#fff; font-size:.76rem; font-weight:850;
+}
+.sandbox--query-lab .lab-stage-copy{display:flex; flex-direction:column; min-width:0; line-height:1.25;}
+.sandbox--query-lab .lab-stage-title{color:var(--primary-900); font-size:.92rem; font-weight:850;}
+.sandbox--query-lab .lab-stage-help{color:var(--gray-500); font-size:.76rem; font-weight:600; margin-top:2px;}
+.sandbox--query-lab .lab-stage-status{
+  margin-left:auto; background:#ecfdf3; color:#166534; border:1px solid #bbf7d0; border-radius:999px;
+  padding:4px 10px; font-size:.7rem; font-weight:800; white-space:nowrap;
+}
+
+/* Step 1: the live database is drawn as ordinary readable tables. */
+.sandbox--query-lab .lab-stage--source{background:#fbfcff;}
+.sandbox--query-lab .sandbox-schema{
+  background:transparent; border:0; padding:0 0 12px; display:block;
+}
+.sandbox--query-lab .sandbox-schema .schema-label{
+  display:block; color:var(--gray-600); padding:0 0 7px; font-size:.68rem;
+}
+.sandbox--query-lab .sandbox-schema .schema-label em{
+  display:inline; color:var(--gray-500); margin-left:6px; font-size:.68rem;
+}
+.sandbox--query-lab .sandbox-schema .schema-chips{gap:7px;}
+.sandbox--query-lab .sandbox-schema .schema-empty{color:var(--gray-500); padding:4px 0;}
+.sandbox--query-lab .schema-chip{
+  background:#fff; color:var(--primary-800); border:1px solid #c7d0e5; padding:5px 11px;
+  font-family:var(--font-body); font-size:.75rem; box-shadow:0 1px 1px rgba(17,24,39,.04);
+}
+.sandbox--query-lab .schema-chip:hover{background:#eef2ff; border-color:var(--primary-500);}
+.sandbox--query-lab .schema-chip.is-active{
+  background:var(--primary-700); color:#fff; border-color:var(--primary-700);
+}
+.sandbox--query-lab .schema-chip .chip-rows{color:var(--gray-500);}
+.sandbox--query-lab .schema-chip.is-active .chip-rows{color:#dce3ff;}
+.source-preview-grid{display:grid; grid-template-columns:1fr; gap:12px;}
+.sandbox--query-lab .source-preview-grid + .sandbox-schema{
+  margin-top:12px; padding:10px 0 0; border-top:1px solid #e1e6f0;
+}
+.source-table-card{
+  min-width:0; background:#fff; border:1px solid #cfd7e8; border-radius:12px; overflow:hidden;
+  box-shadow:0 2px 7px rgba(27,37,89,.06);
+}
+.source-table-head{
+  display:flex; align-items:center; gap:9px; flex-wrap:wrap; padding:9px 11px;
+  background:#eef2ff; border-bottom:1px solid #d7def2;
+}
+.source-table-name{color:var(--primary-900); font-family:var(--font-mono); font-size:.9rem; font-weight:850;}
+.source-table-kind{
+  color:var(--primary-700); background:#fff; border:1px solid #ccd5ec; border-radius:999px;
+  padding:1px 7px; font-size:.62rem; font-weight:800; text-transform:uppercase; letter-spacing:.04em;
+}
+.source-row-count{margin-left:auto; color:var(--gray-600); font-size:.7rem; font-weight:750;}
+.source-table-scroll{overflow-x:auto; max-width:100%;}
+.source-preview-table{width:100%; border-collapse:collapse; font-size:.74rem; line-height:1.35;}
+.source-preview-table th{
+  background:#f8fafc; color:#27324b; padding:7px 9px; text-align:left; vertical-align:bottom;
+  border-right:1px solid #e5eaf4; border-bottom:1px solid #dce2ee; white-space:nowrap;
+}
+.source-preview-table th:last-child,.source-preview-table td:last-child{border-right:0;}
+.source-preview-table th small{display:block; color:#778199; font-size:.58rem; font-weight:650; margin-top:2px;}
+.source-preview-table th small .key-mark{color:#a65308; font-weight:850;}
+.source-preview-table td{
+  color:#273244; padding:7px 9px; border-right:1px solid #edf0f6; border-bottom:1px solid #edf0f6;
+  white-space:nowrap;
+}
+.source-preview-table tbody tr:nth-child(even){background:#fafbfe;}
+.source-preview-table tbody tr:last-child td{border-bottom:0;}
+.source-preview-table .null-value{color:#8a6370; font-style:italic;}
+.source-table-note{padding:7px 10px; color:var(--gray-500); background:#fafbfe; border-top:1px solid #edf0f6; font-size:.67rem;}
+.source-preview-empty{
+  border:1px dashed #b8c3da; border-radius:10px; background:#fff; color:var(--gray-600);
+  padding:14px; font-size:.8rem;
+}
+
+/* Step 2: a paper-like editor with the actions attached to the query. */
+.sandbox--query-lab .lab-stage--query{background:#fff;}
+.sandbox--query-lab .lab-query-actions{display:flex; gap:7px; margin-left:auto; flex-wrap:wrap;}
+.sandbox--query-lab .lab-query-actions button{
+  border:1px solid #c6cede; border-radius:8px; padding:8px 12px; font:inherit; font-size:.78rem;
+  font-weight:800; cursor:pointer; background:#fff; color:var(--primary-800);
+}
+.sandbox--query-lab .lab-query-actions button:hover{background:var(--primary-50);}
+.sandbox--query-lab .lab-query-actions .sandbox-solution{background:#fff7ed; color:#8a4309; border-color:#fed7aa;}
+.sandbox--query-lab .lab-query-actions .sandbox-run{
+  background:var(--success-700); color:#fff; border-color:var(--success-700); padding-inline:16px;
+}
+.sandbox--query-lab .lab-query-actions .sandbox-run:hover{background:#0e6b32;}
+.sandbox--query-lab .sandbox-editor{
+  display:block; min-height:150px; background:#f8fafc; color:#172033; border:1px solid #cbd5e1;
+  border-radius:10px; padding:15px 16px; font-size:.88rem; line-height:1.58; box-shadow:inset 0 1px 2px rgba(17,24,39,.04);
+}
+.sandbox--query-lab .sandbox-editor:focus{outline:3px solid rgba(217,120,45,.45); outline-offset:1px; border-color:var(--accent-500);}
+
+/* Step 3: results read like a report, while statement boundaries remain clear. */
+.sandbox--query-lab .lab-stage--result{background:#f8fafc;}
+.sandbox--query-lab .sandbox-output{
+  background:#fff; color:#273244; border:1px solid #cbd5e1; border-radius:10px; padding:13px;
+  font-family:var(--font-body); font-size:.8rem; overflow-x:auto;
+}
+.sandbox--query-lab .sandbox-output .ok-msg{color:#166534; font-weight:700;}
+.sandbox--query-lab .sandbox-output .err-msg{color:#991b1b;}
+.sandbox--query-lab .sandbox-output .stmt-outcome{color:#166534; font-weight:750;}
+.sandbox--query-lab .sandbox-output table{font-family:var(--font-body); font-size:.76rem;}
+.sandbox--query-lab .sandbox-output th,.sandbox--query-lab .sandbox-output td{
+  border-color:#d9dfeb; color:#273244; background:#fff; padding:7px 9px;
+}
+.sandbox--query-lab .sandbox-output th{background:#eef2ff; color:var(--primary-900);}
+.sandbox--query-lab .sandbox-output tbody tr:nth-child(odd){background:#fff;}
+.sandbox--query-lab .sandbox-output tbody tr:nth-child(even) td{background:#fafbfe;}
+.sandbox--query-lab .sandbox-output tbody tr:hover td{background:#fff8ed;}
+.sandbox--query-lab .sandbox-output .stmt-block{
+  background:#fff; border-color:#cbd5e1; box-shadow:0 1px 2px rgba(17,24,39,.04);
+}
+.sandbox--query-lab .sandbox-output .stmt-block.is-error{border-color:#f1a6a6;}
+.sandbox--query-lab .sandbox-output .stmt-head{
+  background:#eef2ff; color:var(--primary-800); border-bottom-color:#d7def2;
+}
+.sandbox--query-lab .sandbox-output .stmt-block.is-error .stmt-head{
+  background:#fff1f2; color:#991b1b; border-bottom-color:#fecdd3;
+}
+.sandbox--query-lab .sandbox-output .stmt-sql{
+  background:#f8fafc; color:#25304a; border-bottom-color:#e2e8f0;
+}
+.sandbox--query-lab .sandbox-output .stmt-note{color:var(--gray-600);}
+.sandbox--query-lab .sandbox-hint{
+  margin-top:10px; padding:9px 11px; background:#fff8ed; color:#7c4a16; border:1px solid #fed7aa;
+  border-radius:8px; font-size:.75rem;
+}
+
+@media (max-width:720px){
+  .sandbox--query-lab .lab-engine-note{display:block; margin:2px 0 0;}
+  .sandbox--query-lab .lab-tools{margin-left:0;}
+  .sandbox--query-lab .lab-tool-menu{left:0; right:auto;}
+  .sandbox--query-lab .lab-stage{padding:13px 11px;}
+  .sandbox--query-lab .lab-stage-status{margin-left:38px;}
+  .sandbox--query-lab .lab-query-actions{width:100%; margin-left:38px;}
+  .sandbox--query-lab .lab-query-actions button{flex:1 1 8rem;}
+  .sandbox--query-lab .lab-query-actions .sandbox-run{flex-basis:100%;}
+  .source-preview-grid{grid-template-columns:1fr;}
 }
 
 /* ============================================================
@@ -6335,6 +6542,12 @@ FROM CUSTOMER WHERE CUSTOMER_NUM = &#x27;1310&#x27;;
       <h3><span class="num">4-1</span> Constructing Simple Queries</h3>
       <p>Module 3 was about getting data into KimTay&#39;s tables and pulling it back out. Module 4 is about asking sharper questions. Every query in this lesson reads a single table, which keeps the moving parts small while you learn the clauses that do the real filtering work.</p>
       <p>A query is a question you put to the database in a form it can answer. The shape you already know is <code class="inline-code">SELECT</code> (which columns you want), <code class="inline-code">FROM</code> (which table they live in), and optionally <code class="inline-code">WHERE</code> (which rows qualify). Everything in this lesson is a refinement of those three lines.</p>
+      <p><strong>Start with the data:</strong> this is the complete <code class="inline-code">ITEM</code> table used by the first examples. Read its five rows before looking at the first query.</p>
+      <div class="table-scroll source-table-reference"><table class="data-table wrap-cells">
+        <caption>Source table: ITEM — all columns and all five rows</caption>
+        <thead><tr><th>ITEM_ID</th><th>DESCRIPTION</th><th>CATEGORY</th><th>ON_HAND</th><th>PRICE</th><th>REORDER_LEVEL</th></tr></thead>
+        <tbody><tr><td>AV07</td><td>Aviary Starter Cage</td><td>Habitat</td><td>15</td><td>64.99</td><td>5</td></tr><tr><td>CF21</td><td>Grain-Free Dry Food 30lb</td><td>Food</td><td>48</td><td>42.50</td><td>15</td></tr><tr><td>DG04</td><td>Nylon Dog Leash 6ft</td><td>Accessory</td><td>120</td><td>11.99</td><td>25</td></tr><tr><td>FT88</td><td>Fish Tank Filter Kit</td><td>Habitat</td><td>30</td><td>27.75</td><td>10</td></tr><tr><td>GR15</td><td>Small Animal Grooming Kit</td><td>Grooming</td><td>22</td><td>15.25</td><td>8</td></tr></tbody>
+      </table></div>
       <div class="callout callout-note">
         <div class="callout-icon" aria-hidden="true">&#128221;</div>
         <div class="callout-body"><strong class="callout-label">What you are building on</strong><p>You already have <code class="inline-code">SELECT</code>, <code class="inline-code">FROM</code>, a <code class="inline-code">WHERE</code> with one comparison, and <code class="inline-code">ORDER BY</code>. This lesson adds compound conditions, ranges, arithmetic, pattern matching, and value lists. None of it replaces what you know; all of it plugs into the same statement.</p></div>
@@ -22699,9 +22912,11 @@ SELECT COUNT(*) FROM CUSTOMER;</pre>
     var loadSel = qs('.sandbox-load', el);
     var dlBtn = qs('.sandbox-download', el);
     var openBtn = qs('.sandbox-open', el);
+    var schemaEl = qs('.sandbox-schema', el);
     var chips = qs('.schema-chips', el);
     var db = null, SQLref = null, bootPromise = null;
-    var shouldFitEditor = !!el.closest('#module2, #module3');
+    var isQueryLab = !!el.closest('#module4, #module5, #module6, #module7, #module8');
+    var shouldFitEditor = !!el.closest('#module2, #module3, #module4, #module5, #module6, #module7, #module8');
     /* Module 3 is the module taught live at the front of a room, so its
        sandboxes get the visible dataset rack and the step-by-step runner. */
     var isWalk = !!el.closest('#module3');
@@ -22714,7 +22929,8 @@ SELECT COUNT(*) FROM CUSTOMER;</pre>
     function fitEditor(){
       if (!editor || !shouldFitEditor) return;
       var lines = (editor.value || '').split('\n').length;
-      editor.style.height = Math.min(620, Math.max(120, lines * 25 + 30)) + 'px';
+      var cap = isQueryLab ? 430 : 620;
+      editor.style.height = Math.min(cap, Math.max(isQueryLab ? 150 : 120, lines * 25 + 30)) + 'px';
     }
 
     if (editor && starter){ editor.value = starter; fitEditor(); }
@@ -22732,9 +22948,10 @@ SELECT COUNT(*) FROM CUSTOMER;</pre>
     if (dlBtn) dlBtn.setAttribute('aria-label','Download this sandbox database as a SQLite file');
     if (openBtn) openBtn.setAttribute('aria-label','Open a SQLite database file in this sandbox');
 
-    /* Where the sandbox tells a stuck student to go for sample data. In
-       Module 3 that is a visible panel, everywhere else it is the dropdown. */
-    var seedSourceText = isWalk ? 'the Starting data panel above' : 'the menu above';
+    /* Where the sandbox tells a stuck student to look for data. Modules 4-8
+       draw the actual source rows; no dataset-menu vocabulary is needed. */
+    var seedSourceText = isWalk ? 'the Starting data panel above'
+      : (isQueryLab ? 'the visible table buttons above the editor' : 'the menu above');
 
     /* ============================================================
        MODULE 3 WALKTHROUGH
@@ -22754,6 +22971,10 @@ SELECT COUNT(*) FROM CUSTOMER;</pre>
     var walk = { stmts: [], idx: 0, snaps: [], outcomes: [], src: '', stale: false, errored: false, note: null };
     var stepsPanel = null, stepsList = null, stepsStatus = null, stepsBadge = null;
     var stepBtn = null, restBtn = null, backBtn = null, restartBtn = null;
+    var sourcePreview = null;
+    var sourceStatus = null;
+    var previewSelection = [];
+    var previewPinned = false;
 
     function panelHead(title, sub){
       var head = el2('div', 'panel-head');
@@ -22768,6 +22989,259 @@ SELECT COUNT(*) FROM CUSTOMER;</pre>
       var label = key;
       SEED_LABELS.forEach(function(pair){ if (pair[0] === key) label = pair[1]; });
       return label;
+    }
+
+    /* ============================================================
+       MODULES 4-8 QUERY LAB
+       These modules start from populated tables. Instead of making a student
+       choose an unseen seed, show the rows the statement can read before the
+       editor. The preview is rebuilt from the live SQLite database after every
+       run, so an UPDATE or DELETE visibly changes the source of truth.
+       ============================================================ */
+    function labStageHead(number, title, help){
+      var head = el2('div', 'lab-stage-head');
+      head.appendChild(el2('span', 'lab-stage-index', String(number)));
+      var copy = el2('span', 'lab-stage-copy');
+      copy.appendChild(el2('span', 'lab-stage-title', title));
+      copy.appendChild(el2('span', 'lab-stage-help', help));
+      head.appendChild(copy);
+      return head;
+    }
+
+    function buildQueryLab(){
+      if (!isQueryLab || !editor || !output) return;
+      el.classList.add('sandbox--query-lab');
+
+      var toolbar = qs('.sandbox-toolbar', el);
+      var label = qs('.sandbox-label', el);
+      if (label){
+        label.textContent = 'Interactive query lab';
+        label.appendChild(el2('span', 'lab-engine-note', 'SQLite practice copy'));
+      }
+      if (loadSel){
+        loadSel.hidden = true;
+        loadSel.setAttribute('aria-hidden', 'true');
+        loadSel.tabIndex = -1;
+      }
+
+      /* File import/export is useful, but it is not part of the lesson's
+         three-step path. Keep it available without letting it compete with
+         Run, Reset, or the source data. */
+      if (toolbar && (dlBtn || openBtn)){
+        var toolsMenu = document.createElement('details');
+        toolsMenu.className = 'lab-tools';
+        var toolsSummary = document.createElement('summary');
+        toolsSummary.textContent = 'Database file';
+        toolsMenu.appendChild(toolsSummary);
+        var toolButtons = el2('div', 'lab-tool-menu');
+        if (dlBtn) toolButtons.appendChild(dlBtn);
+        if (openBtn) toolButtons.appendChild(openBtn);
+        toolsMenu.appendChild(toolButtons);
+        toolbar.appendChild(toolsMenu);
+      }
+
+      var sourceStage = el2('section', 'lab-stage lab-stage--source');
+      sourceStage.setAttribute('aria-label', 'Step 1: source data');
+      var sourceHead = labStageHead(1, 'See the data', 'These are the rows and columns your SQL starts with.');
+      sourceStatus = el2('span', 'lab-stage-status', 'Loading source table');
+      sourceHead.appendChild(sourceStatus);
+      sourceStage.appendChild(sourceHead);
+      sourcePreview = el2('div', 'source-preview-grid');
+      sourcePreview.setAttribute('aria-live', 'polite');
+      sourcePreview.setAttribute('aria-label', 'Visible source tables');
+      sourceStage.appendChild(sourcePreview);
+      if (schemaEl){
+        var schemaLabel = qs('.schema-label', schemaEl);
+        if (schemaLabel){
+          schemaLabel.textContent = 'Show another table';
+          schemaLabel.appendChild(el2('em', '', 'these buttons add or remove full tables above'));
+        }
+        sourceStage.appendChild(schemaEl);
+      }
+      editor.parentNode.insertBefore(sourceStage, editor);
+
+      var queryStage = el2('section', 'lab-stage lab-stage--query');
+      queryStage.setAttribute('aria-label', 'Step 2: SQL editor');
+      var queryHead = labStageHead(2, 'Write the SQL', 'Edit the statement, predict the answer, then run it.');
+      var queryActions = el2('div', 'lab-query-actions');
+      if (resetBtn){ resetBtn.textContent = 'Start over'; queryActions.appendChild(resetBtn); }
+      if (solutionBtn) queryActions.appendChild(solutionBtn);
+      if (runBtn){
+        runBtn.textContent = '\u25b6 Run SQL';
+        runBtn.setAttribute('aria-label', 'Run the SQL in this editor');
+        queryActions.appendChild(runBtn);
+      }
+      queryHead.appendChild(queryActions);
+      queryStage.appendChild(queryHead);
+      editor.parentNode.insertBefore(queryStage, editor);
+      queryStage.appendChild(editor);
+
+      var resultStage = el2('section', 'lab-stage lab-stage--result');
+      resultStage.setAttribute('aria-label', 'Step 3: query result');
+      resultStage.appendChild(labStageHead(3, 'Read the result', 'Compare the returned rows with the source tables above.'));
+      output.parentNode.insertBefore(resultStage, output);
+      resultStage.appendChild(output);
+      var hint = qs('.sandbox-hint', el);
+      if (hint) resultStage.appendChild(hint);
+    }
+
+    function quoteIdent(name){
+      return '"' + String(name).replace(/"/g, '""') + '"';
+    }
+
+    function sourceMentions(name, source){
+      var safe = String(name).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      return new RegExp('(^|[^A-Za-z0-9_])' + safe + '([^A-Za-z0-9_]|$)', 'i').test(source);
+    }
+
+    function defaultPreviewTables(names){
+      var source = [starter, solution, editor ? editor.value : ''].join('\n');
+      var sqlOnly = stripSqlComments(source);
+      var usedBySql = names.filter(function(name){ return sourceMentions(name, sqlOnly); });
+      /* Six visible cards already cover the largest joins in the course. If a
+         long review script touches more, the remaining tables stay available
+         as clearly labelled buttons instead of turning Step 1 into a wall of
+         eleven tables. */
+      if (usedBySql.length) return usedBySql.slice(0, 6);
+
+      var mentioned = names.filter(function(name){ return sourceMentions(name, source); });
+      if (mentioned.length) return mentioned.slice(0, 4);
+
+      /* Open-ended review scratchpads do not name a table yet. Give them a
+         small, useful starting view while every other table remains one click
+         away in the button row. */
+      var preferred = /^staywell/.test(seedKey)
+        ? ['ROOM', 'STUDENT', 'LEASE']
+        : (seedKey === 'both_full'
+          ? ['ITEM', 'CUSTOMER', 'ROOM']
+          : ['ITEM', 'CUSTOMER', 'INVOICE_LINE']);
+      var picked = preferred.filter(function(n){ return names.indexOf(n) !== -1; });
+      return (picked.length ? picked : names).slice(0, 3);
+    }
+
+    function relationType(name){
+      try {
+        var r = db.exec("SELECT type FROM sqlite_master WHERE name = '" + String(name).replace(/'/g, "''") + "' LIMIT 1");
+        return r.length && r[0].values.length ? r[0].values[0][0] : 'table';
+      } catch(e){ return 'table'; }
+    }
+
+    function renderSourceTable(name){
+      var card = el2('article', 'source-table-card');
+      var head = el2('div', 'source-table-head');
+      head.appendChild(el2('span', 'source-table-name', name));
+      head.appendChild(el2('span', 'source-table-kind', relationType(name)));
+
+      var total = 0;
+      try { total = db.exec('SELECT COUNT(*) FROM ' + quoteIdent(name))[0].values[0][0]; } catch(e){}
+      head.appendChild(el2('span', 'source-row-count', total + (total === 1 ? ' row' : ' rows')));
+      card.appendChild(head);
+
+      var info = [];
+      try {
+        var ti = db.exec('PRAGMA table_info(' + quoteIdent(name) + ')');
+        if (ti.length) info = ti[0].values;
+      } catch(e){}
+
+      var limit = 8;
+      var result = null;
+      try {
+        var rows = db.exec('SELECT * FROM ' + quoteIdent(name) + ' LIMIT ' + limit);
+        if (rows.length) result = rows[0];
+      } catch(err){
+        card.appendChild(el2('div', 'source-preview-empty', 'Could not preview this table: ' + (err.message || err)));
+        return card;
+      }
+
+      var columns = result ? result.columns : info.map(function(c){ return c[1]; });
+      var values = result ? result.values : [];
+      if (!columns.length){
+        card.appendChild(el2('div', 'source-preview-empty', 'This table has no columns yet.'));
+        return card;
+      }
+
+      var scroll = el2('div', 'source-table-scroll');
+      var table = el2('table', 'source-preview-table');
+      var thead = document.createElement('thead');
+      var trh = document.createElement('tr');
+      columns.forEach(function(column, index){
+        var th = document.createElement('th');
+        th.appendChild(document.createTextNode(column));
+        var meta = info[index] || [];
+        var type = meta[2] || 'value';
+        var small = document.createElement('small');
+        small.appendChild(document.createTextNode(type));
+        if (meta[5]){
+          small.appendChild(document.createTextNode(' \u00b7 '));
+          small.appendChild(el2('span', 'key-mark', 'key'));
+        }
+        th.appendChild(small);
+        trh.appendChild(th);
+      });
+      thead.appendChild(trh);
+      table.appendChild(thead);
+
+      var tbody = document.createElement('tbody');
+      values.forEach(function(row){
+        var tr = document.createElement('tr');
+        row.forEach(function(value){
+          var td = document.createElement('td');
+          if (value === null){ td.textContent = 'NULL'; td.className = 'null-value'; }
+          else td.textContent = value;
+          tr.appendChild(td);
+        });
+        tbody.appendChild(tr);
+      });
+      table.appendChild(tbody);
+      scroll.appendChild(table);
+      card.appendChild(scroll);
+
+      if (!values.length) card.appendChild(el2('div', 'source-table-note', 'The structure exists, but the table has no rows yet.'));
+      else if (total > limit) card.appendChild(el2('div', 'source-table-note', 'Showing the first ' + limit + ' of ' + total + ' rows.'));
+      return card;
+    }
+
+    function markPreviewButtons(){
+      if (!schemaEl) return;
+      qsa('.schema-chip', schemaEl).forEach(function(button){
+        var active = previewSelection.indexOf(button.getAttribute('data-relation')) !== -1;
+        button.classList.toggle('is-active', active);
+        button.setAttribute('aria-pressed', active ? 'true' : 'false');
+      });
+    }
+
+    function renderSourcePreview(names){
+      if (!sourcePreview) return;
+      sourcePreview.innerHTML = '';
+      if (!db){
+        if (sourceStatus) sourceStatus.textContent = 'Loading source table';
+        sourcePreview.appendChild(el2('div', 'source-preview-empty', 'The practice database is loading. Its source rows will appear here.'));
+        return;
+      }
+
+      previewSelection = previewSelection.filter(function(n){ return names.indexOf(n) !== -1; });
+      if (!previewPinned) previewSelection = defaultPreviewTables(names);
+      markPreviewButtons();
+
+      if (!previewSelection.length){
+        if (sourceStatus) sourceStatus.textContent = names.length ? 'No table selected' : 'No table yet';
+        sourcePreview.appendChild(el2('div', 'source-preview-empty',
+          names.length ? 'Select a table button below to show its rows.' : 'No tables exist yet. Run the CREATE TABLE statement below.'));
+        return;
+      }
+      if (sourceStatus){
+        sourceStatus.textContent = previewSelection.join(' + ') +
+          (previewSelection.length === 1 ? ' table shown' : ' tables shown');
+      }
+      previewSelection.forEach(function(name){ sourcePreview.appendChild(renderSourceTable(name)); });
+    }
+
+    function toggleSourceTable(name, names){
+      previewPinned = true;
+      var index = previewSelection.indexOf(name);
+      if (index === -1) previewSelection.push(name);
+      else previewSelection.splice(index, 1);
+      renderSourcePreview(names);
     }
 
     function buildDatasetRack(){
@@ -23096,16 +23570,17 @@ SELECT COUNT(*) FROM CUSTOMER;</pre>
     function refreshSchema(){
       if (!chips) return;
       chips.innerHTML = '';
-      if (!db){ chips.appendChild(el2('span','schema-empty','SQLite loads when this exercise enters view or you use a database control.')); return; }
-      var tables = [];
-      try {
-        var r = db.exec("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%' ORDER BY name");
-        if (r.length) tables = r[0].values.map(function(v){ return v[0]; });
-      } catch(e){ /* a half-built database still renders as empty */ }
+      if (!db){
+        chips.appendChild(el2('span','schema-empty','The practice database loads when this exercise enters view.'));
+        renderSourcePreview([]);
+        return;
+      }
+      var tables = isQueryLab ? relationList() : tableList();
 
       if (!tables.length){
         chips.appendChild(el2('span','schema-empty',
           'No tables yet \u2014 this database is empty. Run a CREATE TABLE statement, or pick sample data from ' + seedSourceText + '.'));
+        renderSourcePreview([]);
         return;
       }
       tables.forEach(function(name){
@@ -23118,12 +23593,17 @@ SELECT COUNT(*) FROM CUSTOMER;</pre>
         var b = document.createElement('button');
         b.type = 'button';
         b.className = 'schema-chip';
+        b.setAttribute('data-relation', name);
         b.title = cols ? name + '\n' + cols : name;
         b.innerHTML = '';
         b.appendChild(document.createTextNode(name));
         var s = el2('span','chip-rows', rows + (rows === 1 ? ' row' : ' rows'));
         b.appendChild(s);
         b.addEventListener('click', function(){
+          if (isQueryLab){
+            toggleSourceTable(name, tables);
+            return;
+          }
           if (!editor) return;
           editor.value = 'SELECT * FROM ' + name + ';';
           ensureBoot().then(run);
@@ -23131,6 +23611,7 @@ SELECT COUNT(*) FROM CUSTOMER;</pre>
         });
         chips.appendChild(b);
       });
+      renderSourcePreview(tables);
     }
     /* Name what was loaded, without dumping it. The results area is where a
        statement's OWN output goes; printing a whole seeded table there on page
@@ -23153,9 +23634,11 @@ SELECT COUNT(*) FROM CUSTOMER;</pre>
         try { c = db.exec('SELECT COUNT(*) FROM "' + n + '"')[0].values[0][0]; } catch(e){}
         return n + ' (' + c + (c === 1 ? ' row' : ' rows') + ')';
       });
-      output.innerHTML = '<div class="ok-msg">' + escapeHtml('\u2713 Ready. This database holds ' +
-        parts.join(', ') + '. Nothing has run yet \u2014 press Run to execute the SQL above, ' +
-        'or click a table name to see its rows.') + '</div>';
+      var ready = isQueryLab
+        ? '\u2713 Ready. The source rows are visible above the editor. Nothing has run yet \u2014 read the table, predict the answer, then press Run SQL.'
+        : '\u2713 Ready. This database holds ' + parts.join(', ') +
+          '. Nothing has run yet \u2014 press Run to execute the SQL above, or click a table name to see its rows.';
+      output.innerHTML = '<div class="ok-msg">' + escapeHtml(ready) + '</div>';
       return true;
     }
 
@@ -23224,6 +23707,14 @@ SELECT COUNT(*) FROM CUSTOMER;</pre>
       if (!db) return [];
       try {
         var r = db.exec("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%' ORDER BY name");
+        return r.length ? r[0].values.map(function(v){ return v[0]; }) : [];
+      } catch(e){ return []; }
+    }
+
+    function relationList(){
+      if (!db) return [];
+      try {
+        var r = db.exec("SELECT name FROM sqlite_master WHERE type IN ('table','view') AND name NOT LIKE 'sqlite_%' ORDER BY name");
         return r.length ? r[0].values.map(function(v){ return v[0]; }) : [];
       } catch(e){ return []; }
     }
@@ -23376,6 +23867,7 @@ SELECT COUNT(*) FROM CUSTOMER;</pre>
       var rebuildExisting = !!db;
       if (editor){ editor.value = starter; fitEditor(); }
       if (loadSel) loadSel.value = seedKey;
+      if (isQueryLab){ previewPinned = false; previewSelection = []; }
       markActiveDataset();
       ensureBoot().then(function(){
         if (rebuildExisting && SQLref) seedInto(seedKey);
@@ -23428,6 +23920,7 @@ SELECT COUNT(*) FROM CUSTOMER;</pre>
               var replacement = new SQLref.Database(new Uint8Array(reader.result));
               closeDatabase();
               db = replacement;
+              if (isQueryLab){ previewPinned = false; previewSelection = []; }
               output.innerHTML = '<div class="ok-msg">\u2713 Opened ' + escapeHtml(file.name) + '. Its tables are listed below.</div>';
               refreshSchema();
               /* This is a different database than the one the walkthrough was
@@ -23452,6 +23945,10 @@ SELECT COUNT(*) FROM CUSTOMER;</pre>
       else { editor.value = solution; solutionBtn.textContent = 'Hide solution'; solutionBtn.setAttribute('data-showing','1'); }
       fitEditor();
       planSteps();
+      if (isQueryLab && db){
+        previewPinned = false;
+        renderSourcePreview(relationList());
+      }
     });
     if (editor) editor.addEventListener('keydown', function(e){
       if ((e.ctrlKey || e.metaKey) && e.key === 'Enter'){
@@ -23471,7 +23968,10 @@ SELECT COUNT(*) FROM CUSTOMER;</pre>
       else if (editor.value !== walk.src){ walk.stale = true; renderStepRail(); }
     });
 
-    output.innerHTML = '<div class="ok-msg">SQLite will load when this exercise enters view or when you press Run.</div>';
+    buildQueryLab();
+    output.innerHTML = '<div class="ok-msg">' + (isQueryLab
+      ? 'Preparing the source tables for this exercise\u2026'
+      : 'SQLite will load when this exercise enters view or when you press Run.') + '</div>';
     refreshSchema();
     buildDatasetRack();
     buildStepsPanel();

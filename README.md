@@ -28,9 +28,10 @@ sandboxes**, and 7 slider labs.
 ### The interactive pieces
 
 - **Live SQL sandboxes** — SQLite compiled to WebAssembly (`sql.js`), running in the browser tab.
-  Each one shows a strip of the tables currently in its database with row counts (click a table to
-  query it), a menu to load KimTay, StayWell, or a blank database, and **⬇ .db / ⬆ .db** buttons to
-  export the database as a real `.sqlite` file or load one back.
+  Modules 4–8 use a light, three-step query lab that shows the relevant source tables and rows above
+  the editor, keeps them in sync after data changes, and places results directly below the SQL.
+  Table buttons show or hide previews without replacing the student's query. Database-file import
+  and export remain available from the optional **Database file** menu.
 - **Instant-reveal quizzes** — pick an answer and the explanation opens immediately, marking your
   choice and giving a reason for *every* option, not only the right one.
 - **Matching drills** — click a card, click the bucket it belongs in.
@@ -42,7 +43,7 @@ sandboxes**, and 7 slider labs.
   transitive dependencies, ending in an `EXCEPT` proof that the decomposition is lossless); the third
   is independent work on StayWell's property sheet, with a self-check that grades the student's
   tables and a **Show solution** button. They use four lab-only seeds — `staywell_flat`,
-  `kimtay_flat`, `kimtay_2nf`, `staywell_sheet` — which also appear in every sandbox's data menu.
+  `kimtay_flat`, `kimtay_2nf`, `staywell_sheet` — available in the early-module dataset controls.
 - **Study Mode / Present Mode** — the same content as a scrolling page or one idea per screen with
   arrow-key navigation, for projecting in class.
 

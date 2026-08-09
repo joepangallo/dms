@@ -17,6 +17,65 @@
        "text": "A query is a question you put to the database in a form it can answer. The shape you already know is `SELECT` (which columns you want), `FROM` (which table they live in), and optionally `WHERE` (which rows qualify). Everything in this lesson is a refinement of those three lines."
       },
       {
+       "type": "p",
+       "text": "**Start with the data:** this is the complete `ITEM` table used by the first examples. Read its five rows before looking at the first query."
+      },
+      {
+       "type": "table",
+       "className": "source-table-reference",
+       "caption": "Source table: ITEM — all columns and all five rows",
+       "headers": [
+        "ITEM_ID",
+        "DESCRIPTION",
+        "CATEGORY",
+        "ON_HAND",
+        "PRICE",
+        "REORDER_LEVEL"
+       ],
+       "rows": [
+        [
+         "AV07",
+         "Aviary Starter Cage",
+         "Habitat",
+         "15",
+         "64.99",
+         "5"
+        ],
+        [
+         "CF21",
+         "Grain-Free Dry Food 30lb",
+         "Food",
+         "48",
+         "42.50",
+         "15"
+        ],
+        [
+         "DG04",
+         "Nylon Dog Leash 6ft",
+         "Accessory",
+         "120",
+         "11.99",
+         "25"
+        ],
+        [
+         "FT88",
+         "Fish Tank Filter Kit",
+         "Habitat",
+         "30",
+         "27.75",
+         "10"
+        ],
+        [
+         "GR15",
+         "Small Animal Grooming Kit",
+         "Grooming",
+         "22",
+         "15.25",
+         "8"
+        ]
+       ]
+      },
+      {
        "type": "callout",
        "variant": "note",
        "label": "What you are building on",

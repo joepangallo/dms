@@ -244,6 +244,66 @@ note(tables.roomTableHas101atP200, 'printed ROOM table shows P200 room 101');
 note(tables.lineTableHasCF21on50711, 'printed INVOICE_LINE table shows 50711/CF21');
 note(tables.scriptHasCF21on50711, 'Lesson 3-10 build script inserts 50711/CF21');
 
+/* -------------------------------- Modules 4-8 visible-data query lab flow */
+console.log('\nquery labs');
+const queryLab = await page.evaluate(async () => {
+  const pause = (ms = 30) => new Promise((resolve) => setTimeout(resolve, ms));
+  const namesIn = (box) => [...box.querySelectorAll('.source-table-name')].map((n) => n.textContent.trim());
+
+  const single = document.querySelector('#module4 [data-sandbox]');
+  const module4Section = document.querySelector('#module4 #m4-1');
+  const staticItem = module4Section.querySelector('.source-table-reference');
+  const firstQuery = module4Section.querySelector('pre.code-block');
+  await single._ensureSqlBoot();
+  const item = [...single.querySelectorAll('.source-table-card')]
+    .find((card) => card.querySelector('.source-table-name')?.textContent.trim() === 'ITEM');
+  const editor = single.querySelector('.sandbox-editor');
+  const beforeToggle = editor.value;
+  const customerButton = [...single.querySelectorAll('.schema-chip')]
+    .find((button) => button.dataset.relation === 'CUSTOMER');
+  customerButton.click();
+  const togglePreservedSql = editor.value === beforeToggle;
+  const customerVisible = namesIn(single).includes('CUSTOMER');
+  single.querySelector('.sandbox-run').click();
+  await pause();
+
+  const join = document.querySelector('#module5 [data-sandbox]');
+  await join._ensureSqlBoot();
+
+  const update = document.querySelector('#module6 [data-sandbox]');
+  await update._ensureSqlBoot();
+  update.querySelector('.sandbox-run').click();
+  await pause();
+
+  return {
+    itemBeforeFirstQuery: !!staticItem && !!firstQuery &&
+      !!(staticItem.compareDocumentPosition(firstQuery) & Node.DOCUMENT_POSITION_FOLLOWING) &&
+      staticItem.querySelectorAll('thead th').length === 6 &&
+      staticItem.querySelectorAll('tbody tr').length === 5,
+    hasThreeStages: single.querySelectorAll('.lab-stage').length === 3,
+    datasetHidden: single.querySelector('.sandbox-load').hidden &&
+      getComputedStyle(single.querySelector('.sandbox-load')).display === 'none',
+    sourceIsItem: !!item,
+    itemRows: item ? item.querySelectorAll('tbody tr').length : 0,
+    togglePreservedSql,
+    customerVisible,
+    queryReturnedFive: /5 rows returned/.test(single.querySelector('.sandbox-output').textContent),
+    joinTables: namesIn(join),
+    createdCopyVisible: namesIn(update).includes('ITEM_COPY'),
+    lightEditor: getComputedStyle(editor).backgroundColor === 'rgb(248, 250, 252)',
+  };
+});
+note(queryLab.itemBeforeFirstQuery, 'complete ITEM table appears before the first Module 4 query');
+note(queryLab.hasThreeStages, 'Module 4 sandbox is ordered as source data, SQL, then result');
+note(queryLab.datasetHidden, 'Module 4 dataset dropdown is removed from the student-facing flow');
+note(queryLab.sourceIsItem && queryLab.itemRows === 5, 'single-table exercise visibly shows all five ITEM rows');
+note(queryLab.togglePreservedSql && queryLab.customerVisible, 'table buttons reveal data without replacing the student\'s SQL');
+note(queryLab.queryReturnedFive, 'Run SQL still returns the expected five rows');
+note(queryLab.joinTables.includes('CUSTOMER') && queryLab.joinTables.includes('REP'),
+  'Module 5 join shows both source tables together');
+note(queryLab.createdCopyVisible, 'Module 6 source preview refreshes when SQL creates ITEM_COPY');
+note(queryLab.lightEditor, 'Modules 4-8 use the light SQL editor treatment');
+
 /* -------------------------------------------- responsive overflow scan */
 console.log('\nresponsive');
 for (const width of [320, 375, 768, 1280]) {

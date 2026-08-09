@@ -95,7 +95,8 @@ function renderBlock(b) {
     case 'table': {
       if (!Array.isArray(b.headers) || !Array.isArray(b.rows)) { fail('malformed table block'); return ''; }
       const cap = b.caption ? `\n        <caption>${rich(b.caption)}</caption>` : '';
-      return `      <div class="table-scroll"><table class="data-table wrap-cells">${cap}
+      const extraClass = b.className ? ` ${esc(b.className)}` : '';
+      return `      <div class="table-scroll${extraClass}"><table class="data-table wrap-cells">${cap}
         <thead><tr>${b.headers.map((h) => `<th>${rich(h)}</th>`).join('')}</tr></thead>
         <tbody>${b.rows.map((r) => `<tr>${r.map((c) => `<td>${rich(c)}</td>`).join('')}</tr>`).join('')}</tbody>
       </table></div>`;
