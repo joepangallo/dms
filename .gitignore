@@ -6,3 +6,6 @@
 *.sqlite3
 
 node_modules/
+
+# Grading rubrics hold worked answer keys. This repo is public - they stay local.
+rubrics/

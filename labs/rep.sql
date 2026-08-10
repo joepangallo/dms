@@ -1,0 +1,11 @@
+CREATE TABLE REP (
+    REP_NUM      CHAR(2)      PRIMARY KEY,
+    LAST_NAME    VARCHAR(15)  NOT NULL,
+    FIRST_NAME   VARCHAR(15)  NOT NULL,
+    STREET       VARCHAR(20),
+    CITY         VARCHAR(15),
+    STATE        CHAR(2),
+    ZIP          CHAR(5),
+    COMMISSION   DECIMAL(8,2),
+    RATE         DECIMAL(4,2)
+);
