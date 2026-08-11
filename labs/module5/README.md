@@ -145,11 +145,19 @@ Generated from the course page itself:
 - expected results — `sqlChecks` in `content/module5.json` (123 checks)
 - table definitions and sample rows — `window.SANDBOX_SEEDS` in `db.html`
 
-**Note on the source.** The Module 4 labs were generated from `content/module4.json`. These were
-generated from `db.html` instead, because the SQL in `content/module5.json` is the same statements
-*without* the line-by-line commentary — that commentary lives only in the rendered page. The two
-sources agree on every statement; they differ only in comments. If you regenerate
-`db.html` from the content JSON, the commentary will be lost from both the page and these labs.
+**Note on the source.** The Module 4 labs were generated from `content/module4.json`. These read
+`db.html` instead — at the time it was the only place the line-by-line commentary existed. That
+commentary has since been backfilled into `content/module5.json`, so the two sources now agree on
+every statement *and* every comment, and either one can be used to regenerate.
+
+Regenerate with:
+
+```bash
+python3 tools/gen-module5-labs.py
+```
+
+It is idempotent — running it against an unchanged page reproduces these files byte for byte. The
+`00-*.sql` setup files are copied from `labs/module4/` and are not regenerated.
 
 Every statement meant to succeed was executed against SQLite 3.51 and passes. The only failures are
 the intentional ones listed above.

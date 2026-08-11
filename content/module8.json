@@ -94,7 +94,7 @@
        "type": "sandbox",
        "seed": "kimtay_full",
        "starter": "-- The statement a program sends when a clerk picks rep 20.\nSELECT CUSTOMER_NUM, CUSTOMER_NAME, BALANCE\nFROM CUSTOMER\nWHERE REP_NUM = '20'\nORDER BY CUSTOMER_NUM;",
-       "solution": "SELECT CUSTOMER_NUM, CUSTOMER_NAME, BALANCE\nFROM CUSTOMER\nWHERE REP_NUM = '20'\nORDER BY CUSTOMER_NUM;",
+       "solution": "-- The SELECT a stored procedure would wrap. Nothing about it changes because it\n-- lives inside a procedure - only where the text is kept changes.\nSELECT CUSTOMER_NUM, CUSTOMER_NAME, BALANCE\nFROM CUSTOMER\n-- In the procedure this literal is replaced by a parameter, which is the whole\n-- point: one stored query answering the question for any rep.\nWHERE REP_NUM = '20'\nORDER BY CUSTOMER_NUM;",
        "hint": "Nothing new here. Read the two rows that come back and notice that they are ordinary result rows, not anything special because a program asked for them."
       },
       {
@@ -115,7 +115,7 @@
       },
       {
        "type": "code",
-       "text": "# Host language (Python-style pseudocode). The SQL is the string in the middle.\nconn = connect(database=\"kimtay\", user=\"app_user\", password=\"...\")\n\nsql = \"SELECT CUSTOMER_NUM, CUSTOMER_NAME, BALANCE \" \\\n      \"FROM CUSTOMER \" \\\n      \"WHERE REP_NUM = ? \" \\\n      \"ORDER BY CUSTOMER_NUM\"\n\nrows = conn.execute(sql, [rep_chosen_on_screen])\n\nfor row in rows:\n    print(row.CUSTOMER_NUM, row.CUSTOMER_NAME, row.BALANCE)"
+       "text": "# Host language (Python-style pseudocode). The SQL is the string in the middle.\n# connect(): opens a session with the database server. The account named here is\n#   the one whose privileges the SQL will run under - not the end user's.\nconn = connect(database=\"kimtay\", user=\"app_user\", password=\"...\")\n\n# The SQL is just a string to the host language. These four lines are one\n#   statement, split across lines only for readability.\nsql = \"SELECT CUSTOMER_NUM, CUSTOMER_NAME, BALANCE \" \\\n      \"FROM CUSTOMER \" \\\n\n#   The ? is a PLACEHOLDER, not a value. Never paste the user's input into the\n#   string - a placeholder is what keeps a typed value a value and stops it\n#   being read as SQL, which is the whole defence against injection.\n      \"WHERE REP_NUM = ? \" \\\n      \"ORDER BY CUSTOMER_NUM\"\n\n# execute(): hands the statement and the values over separately. The database\n#   parses the SQL once and then fills the placeholder with the value.\nrows = conn.execute(sql, [rep_chosen_on_screen])\n\n# The result comes back as a set of rows, and the host language walks it one row\n#   at a time. This loop is the seam between the two languages: SQL thinks in\n#   whole tables, the program thinks in single rows.\nfor row in rows:\n    print(row.CUSTOMER_NUM, row.CUSTOMER_NAME, row.BALANCE)"
       },
       {
        "type": "steps",
@@ -162,7 +162,7 @@
       },
       {
        "type": "code",
-       "text": "-- MySQL only. Any program, in any language, can run this one line.\nCALL CUSTOMERS_OF_REP('20');"
+       "text": "-- MySQL only. Any program, in any language, can run this one line.\n-- CALL: runs a stored procedure by name, passing its arguments in order. The\n--   query text now lives in the database rather than in the application, so\n--   every program shares one definition and one place to fix it.\nCALL CUSTOMERS_OF_REP('20');"
       },
       {
        "type": "callout",
@@ -178,7 +178,7 @@
        "type": "sandbox",
        "seed": "kimtay_full",
        "starter": "DROP TRIGGER IF EXISTS LOG_PRICE_CHANGE;\nDROP TABLE IF EXISTS PRICE_LOG;\n\n-- Put CF21 back at its seeded price. The sandbox keeps whatever you did\n-- last time until you press Reset, so this line is what makes the box\n-- give the same answer on every Run.\nUPDATE ITEM SET PRICE = 42.50 WHERE ITEM_ID = 'CF21';\n\nCREATE TABLE PRICE_LOG (\n    ITEM_ID    CHAR(4),\n    OLD_PRICE  DECIMAL(7,2),\n    NEW_PRICE  DECIMAL(7,2),\n    CHANGED_ON DATE\n);\n\nCREATE TRIGGER LOG_PRICE_CHANGE\nAFTER UPDATE OF PRICE ON ITEM\nBEGIN\n    INSERT INTO PRICE_LOG\n    VALUES (OLD.ITEM_ID, OLD.PRICE, NEW.PRICE, DATE('now'));\nEND;\n\n-- A plain UPDATE. It says nothing about logging.\nUPDATE ITEM SET PRICE = 44.00 WHERE ITEM_ID = 'CF21';\n\nSELECT ITEM_ID, OLD_PRICE, NEW_PRICE FROM PRICE_LOG;",
-       "solution": "DROP TRIGGER IF EXISTS LOG_PRICE_CHANGE;\nDROP TABLE IF EXISTS PRICE_LOG;\n\nUPDATE ITEM SET PRICE = 42.50 WHERE ITEM_ID = 'CF21';\n\nCREATE TABLE PRICE_LOG (\n    ITEM_ID    CHAR(4),\n    OLD_PRICE  DECIMAL(7,2),\n    NEW_PRICE  DECIMAL(7,2),\n    CHANGED_ON DATE\n);\n\nCREATE TRIGGER LOG_PRICE_CHANGE\nAFTER UPDATE OF PRICE ON ITEM\nBEGIN\n    INSERT INTO PRICE_LOG\n    VALUES (OLD.ITEM_ID, OLD.PRICE, NEW.PRICE, DATE('now'));\nEND;\n\nUPDATE ITEM SET PRICE = 44.00 WHERE ITEM_ID = 'CF21';\n\nSELECT ITEM_ID, OLD_PRICE, NEW_PRICE FROM PRICE_LOG;",
+       "solution": "-- Housekeeping, so the box can be run more than once.\nDROP TRIGGER IF EXISTS LOG_PRICE_CHANGE;\nDROP TABLE IF EXISTS PRICE_LOG;\n\n-- Put the seeded price back, so the change below is always the same size.\nUPDATE ITEM SET PRICE = 42.50 WHERE ITEM_ID = 'CF21';\n\n-- The audit table. Nothing ever writes to it by hand.\nCREATE TABLE PRICE_LOG (\n    ITEM_ID    CHAR(4),\n    OLD_PRICE  DECIMAL(7,2),\n    NEW_PRICE  DECIMAL(7,2),\n    CHANGED_ON DATE\n);\n\n-- CREATE TRIGGER: code the database runs BY ITSELF when something happens.\nCREATE TRIGGER LOG_PRICE_CHANGE\n-- AFTER UPDATE OF PRICE ON ITEM: the event. It fires only when that one column\n-- is updated on that one table, and only after the change has succeeded.\nAFTER UPDATE OF PRICE ON ITEM\n-- BEGIN ... END wraps the body, exactly as in a stored procedure.\nBEGIN\n    INSERT INTO PRICE_LOG\n    -- OLD and NEW are supplied by the trigger: the row as it was, and as it now\n    -- is. They are the reason a trigger can record what changed.\n    VALUES (OLD.ITEM_ID, OLD.PRICE, NEW.PRICE, DATE('now'));\nEND;\n\n-- One ordinary UPDATE. Nothing here mentions PRICE_LOG at all.\nUPDATE ITEM SET PRICE = 44.00 WHERE ITEM_ID = 'CF21';\n\n-- And yet the log has a row: the trigger ran on its own. That is the point, and\n-- also the danger - work happens that the statement does not show.\nSELECT ITEM_ID, OLD_PRICE, NEW_PRICE FROM PRICE_LOG;",
        "hint": "One row comes back: CF21, 42.5, 44. The `UPDATE` at the bottom never mentions `PRICE_LOG`, yet the row is there, because `OLD` and `NEW` inside the trigger are the row before and after the change. The reset `UPDATE` near the top runs before the trigger exists, so it logs nothing and simply guarantees the same answer on a second Run."
       },
       {
@@ -284,7 +284,7 @@
        "type": "sandbox",
        "seed": "kimtay_full",
        "starter": "-- Add an upper case name column and a lower case city column.\nSELECT CUSTOMER_NUM, CUSTOMER_NAME, CITY\nFROM CUSTOMER\nORDER BY CUSTOMER_NUM;",
-       "solution": "SELECT CUSTOMER_NUM,\n       UPPER(CUSTOMER_NAME) AS UPPER_NAME,\n       LOWER(CITY) AS LOWER_CITY\nFROM CUSTOMER\nORDER BY CUSTOMER_NUM;",
+       "solution": "-- UPPER and LOWER are ROW functions: they run once per row, so five rows in\n-- means five rows out. Compare that with an aggregate, which returns one row.\nSELECT CUSTOMER_NUM,\n       UPPER(CUSTOMER_NAME) AS UPPER_NAME,\n       -- The stored value is untouched; only the output is changed.\n       LOWER(CITY) AS LOWER_CITY\nFROM CUSTOMER\nORDER BY CUSTOMER_NUM;",
        "hint": "Wrap the column in the function and give the result a column name with `AS`. Access Pet Center becomes ACCESS PET CENTER, and Maple Grove becomes maple grove."
       },
       {
@@ -295,7 +295,7 @@
        "type": "sandbox",
        "seed": "kimtay_full",
        "starter": "-- Run this first. It matches nothing. Then fix it with UPPER.\nSELECT CUSTOMER_NUM, CUSTOMER_NAME, CITY\nFROM CUSTOMER\nWHERE CITY = 'maple grove'\nORDER BY CUSTOMER_NUM;",
-       "solution": "SELECT CUSTOMER_NUM, CUSTOMER_NAME, CITY\nFROM CUSTOMER\nWHERE UPPER(CITY) = 'MAPLE GROVE'\nORDER BY CUSTOMER_NUM;",
+       "solution": "SELECT CUSTOMER_NUM, CUSTOMER_NAME, CITY\nFROM CUSTOMER\n-- Applying UPPER to the COLUMN makes the comparison case-insensitive, so\n-- 'Maple Grove' and 'MAPLE GROVE' both match. The cost is that the engine must\n-- compute the function for every row before it can compare, which stops any\n-- index on CITY from being used.\nWHERE UPPER(CITY) = 'MAPLE GROVE'\nORDER BY CUSTOMER_NUM;",
        "hint": "Put both sides of the comparison in the same case: `UPPER(CITY)` on the left, a fully capitalized literal on the right. Capitalizing only one side still matches nothing. You should get customers 1120 and 1310."
       },
       {
@@ -312,7 +312,7 @@
        "type": "sandbox",
        "seed": "kimtay_full",
        "starter": "-- Add the two-letter prefix of ITEM_ID and the length of DESCRIPTION.\nSELECT ITEM_ID, DESCRIPTION\nFROM ITEM\nORDER BY ITEM_ID;",
-       "solution": "SELECT ITEM_ID,\n       SUBSTR(ITEM_ID, 1, 2) AS PREFIX,\n       LENGTH(DESCRIPTION) AS NAME_LENGTH\nFROM ITEM\nORDER BY ITEM_ID;",
+       "solution": "SELECT ITEM_ID,\n       -- SUBSTR(value, start, length): start counts from 1, not 0, so this takes\n       -- the first two characters.\n       SUBSTR(ITEM_ID, 1, 2) AS PREFIX,\n       -- LENGTH counts characters in the value, ignoring the column's declared width.\n       LENGTH(DESCRIPTION) AS NAME_LENGTH\nFROM ITEM\nORDER BY ITEM_ID;",
        "hint": "`SUBSTR(ITEM_ID, 1, 2)` starts at character 1 and takes 2. AV07 gives AV. `LENGTH('Aviary Starter Cage')` is 19."
       },
       {
@@ -323,7 +323,7 @@
        "type": "sandbox",
        "seed": "kimtay_full",
        "starter": "-- Which item descriptions are longer than 20 characters?\nSELECT ITEM_ID, DESCRIPTION, LENGTH(DESCRIPTION) AS NAME_LENGTH\nFROM ITEM\nWHERE LENGTH(DESCRIPTION) > 20\nORDER BY ITEM_ID;",
-       "solution": "SELECT ITEM_ID, DESCRIPTION, LENGTH(DESCRIPTION) AS NAME_LENGTH\nFROM ITEM\nWHERE LENGTH(DESCRIPTION) > 20\nORDER BY ITEM_ID;",
+       "solution": "SELECT ITEM_ID, DESCRIPTION, LENGTH(DESCRIPTION) AS NAME_LENGTH\nFROM ITEM\n-- A function is legal in a WHERE clause as long as it is a ROW function - it\n-- produces one value per row, so the condition can be tested row by row. An\n-- aggregate here would be an error, because it needs the whole table first.\nWHERE LENGTH(DESCRIPTION) > 20\nORDER BY ITEM_ID;",
        "hint": "Two rows come back: CF21 at 24 characters and GR15 at 25. Change 20 to 19 and FT88, at exactly 20, joins them."
       },
       {
@@ -334,7 +334,7 @@
        "type": "sandbox",
        "seed": "kimtay_full",
        "starter": "SELECT '[' || '  Maple Grove  ' || ']' AS RAW_VALUE,\n       '[' || TRIM('  Maple Grove  ') || ']' AS TRIMMED_VALUE,\n       LENGTH('  Maple Grove  ') AS BEFORE_LEN,\n       LENGTH(TRIM('  Maple Grove  ')) AS AFTER_LEN;",
-       "solution": "SELECT '[' || '  Maple Grove  ' || ']' AS RAW_VALUE,\n       '[' || TRIM('  Maple Grove  ') || ']' AS TRIMMED_VALUE,\n       LENGTH('  Maple Grove  ') AS BEFORE_LEN,\n       LENGTH(TRIM('  Maple Grove  ')) AS AFTER_LEN;",
+       "solution": "-- Square brackets are just text, added so the spaces are visible on screen.\nSELECT '[' || '  Maple Grove  ' || ']' AS RAW_VALUE,\n       -- TRIM removes leading and trailing spaces, never the ones in the middle.\n       '[' || TRIM('  Maple Grove  ') || ']' AS TRIMMED_VALUE,\n       -- The two lengths are the proof: the spaces really were part of the value.\n       LENGTH('  Maple Grove  ') AS BEFORE_LEN,\n       LENGTH(TRIM('  Maple Grove  ')) AS AFTER_LEN;",
        "hint": "The brackets make the blanks visible. 15 characters before, 11 after. The space between Maple and Grove survives, because `TRIM` only touches the ends."
       },
       {
@@ -345,7 +345,7 @@
        "type": "sandbox",
        "seed": "kimtay_full",
        "starter": "-- Build INITIALS (first letter of each name) and CODE (first three\n-- letters of the last name, in capitals).\nSELECT REP_NUM, FIRST_NAME, LAST_NAME\nFROM REP\nORDER BY REP_NUM;",
-       "solution": "SELECT REP_NUM,\n       SUBSTR(FIRST_NAME, 1, 1) || SUBSTR(LAST_NAME, 1, 1) AS INITIALS,\n       UPPER(SUBSTR(LAST_NAME, 1, 3)) AS CODE\nFROM REP\nORDER BY REP_NUM;",
+       "solution": "SELECT REP_NUM,\n       -- Functions nest: SUBSTR takes the first letter of each name, and || glues\n       -- the two results together into a pair of initials.\n       SUBSTR(FIRST_NAME, 1, 1) || SUBSTR(LAST_NAME, 1, 1) AS INITIALS,\n       -- Nested the other way round: take three characters, then upper-case the\n       -- result. The inner function always runs first.\n       UPPER(SUBSTR(LAST_NAME, 1, 3)) AS CODE\nFROM REP\nORDER BY REP_NUM;",
        "hint": "Take one character from each name and join them with `||`, then wrap `SUBSTR(LAST_NAME, 1, 3)` in `UPPER`. Rep 20 gives VK and KAI."
       },
       {
@@ -400,7 +400,7 @@
        "type": "sandbox",
        "seed": "kimtay_full",
        "starter": "-- Add RAW_PAYOUT (COMMISSION * RATE) and PAYOUT (the same product\n-- rounded to cents). Compare the two columns on rep 35.\nSELECT REP_NUM, COMMISSION, RATE\nFROM REP\nORDER BY REP_NUM;",
-       "solution": "SELECT REP_NUM, COMMISSION, RATE,\n       COMMISSION * RATE AS RAW_PAYOUT,\n       ROUND(COMMISSION * RATE, 2) AS PAYOUT\nFROM REP\nORDER BY REP_NUM;",
+       "solution": "SELECT REP_NUM, COMMISSION, RATE,\n       -- The raw multiplication, showing every decimal place the engine produced.\n       COMMISSION * RATE AS RAW_PAYOUT,\n       -- ROUND(value, 2) cuts it to two decimals. Rounding at the point of\n       -- DISPLAY is right; rounding money before you finish calculating is not.\n       ROUND(COMMISSION * RATE, 2) AS PAYOUT\nFROM REP\nORDER BY REP_NUM;",
        "hint": "Rep 35 is the one that matters. 39355 times 0.07 comes back as 2754.8500000000004, which is binary floating point showing through, and `ROUND(COMMISSION * RATE, 2)` reports it as 2754.85. Reps 20 and 65 were already clean at 1078 and 1188.2."
       },
       {
@@ -411,7 +411,7 @@
        "type": "sandbox",
        "seed": "kimtay_full",
        "starter": "-- Add LINE_TOTAL: NUM_ORDERED * QUOTED_PRICE, rounded to cents.\nSELECT INVOICE_NUM, ITEM_ID, NUM_ORDERED, QUOTED_PRICE\nFROM INVOICE_LINE\nORDER BY INVOICE_NUM, ITEM_ID;",
-       "solution": "SELECT INVOICE_NUM, ITEM_ID, NUM_ORDERED, QUOTED_PRICE,\n       ROUND(NUM_ORDERED * QUOTED_PRICE, 2) AS LINE_TOTAL\nFROM INVOICE_LINE\nORDER BY INVOICE_NUM, ITEM_ID;",
+       "solution": "SELECT INVOICE_NUM, ITEM_ID, NUM_ORDERED, QUOTED_PRICE,\n       -- The line total, computed per row and rounded to money.\n       ROUND(NUM_ORDERED * QUOTED_PRICE, 2) AS LINE_TOTAL\nFROM INVOICE_LINE\nORDER BY INVOICE_NUM, ITEM_ID;",
        "hint": "Invoice 50710 has two lines: 3 at 42.50 is 127.5, and 2 at 11.99 is 23.98. Whole amounts print without a trailing zero, so 2 at 42.50 on invoice 50711 shows as 85."
       },
       {
@@ -422,7 +422,7 @@
        "type": "sandbox",
        "seed": "kimtay_full",
        "starter": "-- Add the raw difference and its absolute value.\nSELECT CUSTOMER_NUM, CUSTOMER_NAME, BALANCE, CREDIT_LIMIT\nFROM CUSTOMER\nORDER BY CUSTOMER_NUM;",
-       "solution": "SELECT CUSTOMER_NUM, CUSTOMER_NAME,\n       BALANCE - CREDIT_LIMIT AS DIFF,\n       ABS(BALANCE - CREDIT_LIMIT) AS GAP\nFROM CUSTOMER\nORDER BY CUSTOMER_NUM;",
+       "solution": "SELECT CUSTOMER_NUM, CUSTOMER_NAME,\n       -- The signed difference: negative for a customer who is under their limit.\n       BALANCE - CREDIT_LIMIT AS DIFF,\n       -- ABS drops the sign, giving the SIZE of the gap regardless of direction.\n       -- Useful when you care how far apart two numbers are, not which is bigger.\n       ABS(BALANCE - CREDIT_LIMIT) AS GAP\nFROM CUSTOMER\nORDER BY CUSTOMER_NUM;",
        "hint": "Customer 1120 shows -3987.5 and 3987.5. Companion Care Clinic, with a zero balance, shows the widest gap at 10000."
       },
       {
@@ -433,7 +433,7 @@
        "type": "sandbox",
        "seed": "kimtay_full",
        "starter": "SELECT CUSTOMER_NUM, CUSTOMER_NAME,\n       ABS(CREDIT_LIMIT - BALANCE) AS AVAILABLE\nFROM CUSTOMER\nORDER BY ABS(CREDIT_LIMIT - BALANCE) DESC;",
-       "solution": "SELECT CUSTOMER_NUM, CUSTOMER_NAME,\n       ABS(CREDIT_LIMIT - BALANCE) AS AVAILABLE\nFROM CUSTOMER\nORDER BY ABS(CREDIT_LIMIT - BALANCE) DESC;",
+       "solution": "SELECT CUSTOMER_NUM, CUSTOMER_NAME,\n       ABS(CREDIT_LIMIT - BALANCE) AS AVAILABLE\nFROM CUSTOMER\n-- The expression is repeated here rather than reusing the alias. ORDER BY does\n-- accept an alias, so ORDER BY AVAILABLE DESC would work too and read better.\nORDER BY ABS(CREDIT_LIMIT - BALANCE) DESC;",
        "hint": "Companion Care Clinic leads at 10000, and Whiskers and Wags Boutique trails at 1179.25."
       },
       {
@@ -442,7 +442,7 @@
       },
       {
        "type": "code",
-       "text": "-- MySQL only. TRUNCATE does not exist in this sandbox and raises\n-- \"no such function: TRUNCATE\".\nSELECT ITEM_ID, PRICE, TRUNCATE(PRICE, 0) AS WHOLE_DOLLARS\nFROM ITEM\nORDER BY ITEM_ID;"
+       "text": "-- MySQL only. TRUNCATE does not exist in this sandbox and raises\n-- \"no such function: TRUNCATE\".\n-- SELECT: the stored price next to a version of it with the pennies cut off.\n--   TRUNCATE(value, 0) chops at the decimal point - it does not round, so 64.99\n--   becomes 64 rather than 65. Compare with ROUND if that matters.\nSELECT ITEM_ID, PRICE, TRUNCATE(PRICE, 0) AS WHOLE_DOLLARS\n\n-- FROM: the table being read. Row functions like this one run once per row, so\n--   five rows in means five rows out - unlike an aggregate.\nFROM ITEM\nORDER BY ITEM_ID;"
       },
       {
        "type": "p",
@@ -452,7 +452,7 @@
        "type": "sandbox",
        "seed": "kimtay_full",
        "starter": "SELECT ITEM_ID, PRICE,\n       ROUND(PRICE, 0) AS ROUNDED,\n       CAST(PRICE AS INTEGER) AS CHOPPED\nFROM ITEM\nORDER BY ITEM_ID;",
-       "solution": "SELECT ITEM_ID, PRICE,\n       ROUND(PRICE, 0) AS ROUNDED,\n       CAST(PRICE AS INTEGER) AS CHOPPED\nFROM ITEM\nORDER BY ITEM_ID;",
+       "solution": "SELECT ITEM_ID, PRICE,\n       -- ROUND goes to the NEAREST whole number, so 64.99 becomes 65.\n       ROUND(PRICE, 0) AS ROUNDED,\n       -- CAST to INTEGER simply CHOPS the decimal part off, so 64.99 becomes 64.\n       -- Two different answers from the same value - pick deliberately.\n       CAST(PRICE AS INTEGER) AS CHOPPED\nFROM ITEM\nORDER BY ITEM_ID;",
        "hint": "AV07 at 64.99 rounds to 65 but chops to 64. GR15 at 15.25 gives 15 either way. If a report must never overstate a price, those two columns are not interchangeable."
       },
       {
@@ -513,7 +513,7 @@
       },
       {
        "type": "code",
-       "text": "-- MySQL only. Every function in this statement is unavailable in the\n-- sandbox. The four sandboxes below do the same four jobs.\nSELECT CURDATE() AS TODAY,\n       YEAR(INVOICE_DATE) AS INVOICE_YEAR,\n       DATEDIFF(CURDATE(), INVOICE_DATE) AS DAYS_OLD,\n       DATE_ADD(INVOICE_DATE, INTERVAL 30 DAY) AS DUE_DATE\nFROM INVOICE\nORDER BY INVOICE_NUM;"
+       "text": "-- MySQL only. Every function in this statement is unavailable in the\n-- sandbox. The four sandboxes below do the same four jobs.\n-- CURDATE(): today's date, taken from the server. It needs no column and no\n--   arguments, so it returns the same value on every row.\nSELECT CURDATE() AS TODAY,\n\n--   YEAR(): pulls one part out of a date. There are matching MONTH() and DAY().\n       YEAR(INVOICE_DATE) AS INVOICE_YEAR,\n\n--   DATEDIFF(): the number of days between two dates, later one first.\n       DATEDIFF(CURDATE(), INVOICE_DATE) AS DAYS_OLD,\n\n--   DATE_ADD(): moves a date forward by an interval - the way to work out a due\n--     date without doing arithmetic on the number by hand.\n       DATE_ADD(INVOICE_DATE, INTERVAL 30 DAY) AS DUE_DATE\n\n-- FROM: the table supplying INVOICE_DATE to all three date functions.\nFROM INVOICE\nORDER BY INVOICE_NUM;"
       },
       {
        "type": "p",
@@ -523,7 +523,7 @@
        "type": "sandbox",
        "seed": "kimtay_full",
        "starter": "SELECT DATE('now') AS TODAY,\n       DATETIME('now') AS RIGHT_NOW;",
-       "solution": "SELECT DATE('now') AS TODAY,\n       DATETIME('now') AS RIGHT_NOW;",
+       "solution": "-- No FROM clause at all: these functions ask the server about itself, so there\n-- is no table to read.\nSELECT DATE('now') AS TODAY,\n       -- DATETIME adds the time of day. DATE gives the calendar date alone.\n       DATETIME('now') AS RIGHT_NOW;",
        "hint": "One row, two columns. `TODAY` is a plain YYYY-MM-DD value; `RIGHT_NOW` carries hours, minutes and seconds as well. The values change every time you run it."
       },
       {
@@ -534,7 +534,7 @@
        "type": "sandbox",
        "seed": "kimtay_full",
        "starter": "-- Add the year, the month, and a combined YYYY-MM period column.\nSELECT INVOICE_NUM, INVOICE_DATE\nFROM INVOICE\nORDER BY INVOICE_NUM;",
-       "solution": "SELECT INVOICE_NUM, INVOICE_DATE,\n       strftime('%Y', INVOICE_DATE) AS INVOICE_YEAR,\n       strftime('%m', INVOICE_DATE) AS INVOICE_MONTH,\n       strftime('%Y-%m', INVOICE_DATE) AS PERIOD\nFROM INVOICE\nORDER BY INVOICE_NUM;",
+       "solution": "SELECT INVOICE_NUM, INVOICE_DATE,\n       -- strftime pulls a piece out of a date. %Y is the four-digit year.\n       strftime('%Y', INVOICE_DATE) AS INVOICE_YEAR,\n       -- %m is the two-digit month.\n       strftime('%m', INVOICE_DATE) AS INVOICE_MONTH,\n       -- Combining them gives a period label to group monthly reports by.\n       strftime('%Y-%m', INVOICE_DATE) AS PERIOD\nFROM INVOICE\nORDER BY INVOICE_NUM;",
        "hint": "All three KimTay invoices land in 2026, month 06, period 2026-06. The month comes back as the text 06, with the leading zero kept."
       },
       {
@@ -545,7 +545,7 @@
        "type": "sandbox",
        "seed": "kimtay_full",
        "starter": "-- KimTay's terms are net 30, not net 15. Fix the modifier.\nSELECT INVOICE_NUM, INVOICE_DATE,\n       DATE(INVOICE_DATE, '+15 days') AS DUE_DATE\nFROM INVOICE\nORDER BY INVOICE_NUM;",
-       "solution": "SELECT INVOICE_NUM, INVOICE_DATE,\n       DATE(INVOICE_DATE, '+30 days') AS DUE_DATE\nFROM INVOICE\nORDER BY INVOICE_NUM;",
+       "solution": "SELECT INVOICE_NUM, INVOICE_DATE,\n       -- DATE(value, modifier) shifts a date. The engine handles month ends and\n       -- leap years, which is exactly why you never do this arithmetic by hand.\n       DATE(INVOICE_DATE, '+30 days') AS DUE_DATE\nFROM INVOICE\nORDER BY INVOICE_NUM;",
        "hint": "Change '+15 days' to '+30 days'. Invoice 50710, dated 2026-06-14, is then due 2026-07-14, and 50712 is due 2026-07-15."
       },
       {
@@ -556,7 +556,7 @@
        "type": "sandbox",
        "seed": "kimtay_full",
        "starter": "-- Step 1: see the raw day numbers.\nSELECT INVOICE_NUM, INVOICE_DATE,\n       julianday(INVOICE_DATE) AS JULIAN\nFROM INVOICE\nORDER BY INVOICE_NUM;",
-       "solution": "SELECT INVOICE_NUM, INVOICE_DATE,\n       julianday('2026-07-01') - julianday(INVOICE_DATE) AS DAYS_OLD\nFROM INVOICE\nORDER BY INVOICE_NUM;",
+       "solution": "SELECT INVOICE_NUM, INVOICE_DATE,\n       -- julianday turns a date into a single number of days, so subtracting two\n       -- of them gives the days between. A fixed date is used here so the answer\n       -- is the same whenever the query is run.\n       julianday('2026-07-01') - julianday(INVOICE_DATE) AS DAYS_OLD\nFROM INVOICE\nORDER BY INVOICE_NUM;",
        "hint": "The raw numbers are around 2461205.5, which is meaningless on its own and exactly right as a difference. Subtract the invoice date from '2026-07-01' to get 17, 17 and 16 days."
       },
       {
@@ -569,7 +569,7 @@
        "type": "sandbox",
        "seed": "kimtay_full",
        "starter": "-- Age each invoice against right now instead of a fixed date.\nSELECT INVOICE_NUM, INVOICE_DATE,\n       julianday('now') - julianday(INVOICE_DATE) AS RAW_DAYS,\n       CAST(julianday('now') - julianday(INVOICE_DATE) AS INTEGER) AS DAYS_OLD\nFROM INVOICE\nORDER BY INVOICE_NUM;",
-       "solution": "SELECT INVOICE_NUM, INVOICE_DATE,\n       julianday('now') - julianday(INVOICE_DATE) AS RAW_DAYS,\n       CAST(julianday('now') - julianday(INVOICE_DATE) AS INTEGER) AS DAYS_OLD\nFROM INVOICE\nORDER BY INVOICE_NUM;",
+       "solution": "SELECT INVOICE_NUM, INVOICE_DATE,\n       -- Against 'now' the result carries a fraction, because now includes a time\n       -- of day and midnight on the invoice date does not.\n       julianday('now') - julianday(INVOICE_DATE) AS RAW_DAYS,\n       -- CAST to INTEGER chops that fraction off, giving whole days elapsed.\n       CAST(julianday('now') - julianday(INVOICE_DATE) AS INTEGER) AS DAYS_OLD\nFROM INVOICE\nORDER BY INVOICE_NUM;",
        "hint": "`RAW_DAYS` comes back with a long fraction, because 'now' includes the clock time. `DAYS_OLD` is the same value with the fraction thrown away. Both columns grow by one every day, so your numbers will be larger than a classmate's from last week. Swap `'now'` for `'2026-07-01'` and the fraction disappears."
       },
       {
@@ -602,7 +602,7 @@
        "type": "sandbox",
        "seed": "kimtay_full",
        "starter": "-- Valerie Kaiser comes back as ValerieKaiser. Add the missing space.\nSELECT REP_NUM,\n       CONCAT(FIRST_NAME, LAST_NAME) AS FULL_NAME\nFROM REP\nORDER BY REP_NUM;",
-       "solution": "SELECT REP_NUM,\n       CONCAT(FIRST_NAME, ' ', LAST_NAME) AS FULL_NAME\nFROM REP\nORDER BY REP_NUM;",
+       "solution": "SELECT REP_NUM,\n       -- CONCAT takes the pieces as arguments. It is the MySQL spelling, and\n       -- SQLite has accepted it since version 3.44.\n       CONCAT(FIRST_NAME, ' ', LAST_NAME) AS FULL_NAME\nFROM REP\nORDER BY REP_NUM;",
        "hint": "A space is a value like any other. Pass `' '` as a middle argument: `CONCAT(FIRST_NAME, ' ', LAST_NAME)`."
       },
       {
@@ -619,7 +619,7 @@
        "type": "sandbox",
        "seed": "kimtay_full",
        "starter": "-- Build MAILING_LINE in the form: Maple Grove, OH 44601\nSELECT REP_NUM, CITY, STATE, ZIP\nFROM REP\nORDER BY REP_NUM;",
-       "solution": "SELECT REP_NUM,\n       CITY || ', ' || STATE || ' ' || ZIP AS MAILING_LINE\nFROM REP\nORDER BY REP_NUM;",
+       "solution": "SELECT REP_NUM,\n       -- || is the STANDARD SQL concatenation operator, used between the pieces\n       -- rather than around them. SQLite and Oracle both accept it; MySQL does\n       -- not, which makes string joining one of the least portable corners of SQL.\n       CITY || ', ' || STATE || ' ' || ZIP AS MAILING_LINE\nFROM REP\nORDER BY REP_NUM;",
        "hint": "Chain the operator: column, separator, column, separator, column. The comma and the spaces are literals in quotes. Reps 20 and 35 both give Maple Grove, OH 44601."
       },
       {
@@ -630,7 +630,7 @@
        "type": "sandbox",
        "seed": "kimtay_full",
        "starter": "-- Build a one-line mailing label per customer:\n-- Access Pet Center, 215 Foster Ave., Maple Grove OH 44601\nSELECT CUSTOMER_NUM, CUSTOMER_NAME, STREET, CITY, STATE, ZIP\nFROM CUSTOMER\nORDER BY CUSTOMER_NUM;",
-       "solution": "SELECT CUSTOMER_NUM,\n       CONCAT(CUSTOMER_NAME, ', ', STREET, ', ', CITY, ' ', STATE, ' ', ZIP) AS MAILING_LABEL\nFROM CUSTOMER\nORDER BY CUSTOMER_NUM;",
+       "solution": "SELECT CUSTOMER_NUM,\n       -- One CONCAT call can take as many arguments as you need. The literal\n       -- commas and spaces are supplied as their own arguments.\n       CONCAT(CUSTOMER_NAME, ', ', STREET, ', ', CITY, ' ', STATE, ' ', ZIP) AS MAILING_LABEL\nFROM CUSTOMER\nORDER BY CUSTOMER_NUM;",
        "hint": "Nine arguments in all: the five columns and the four separators between them. Watch the comma after the street but the plain space before the state."
       },
       {
@@ -645,7 +645,7 @@
        "type": "sandbox",
        "seed": "kimtay_full",
        "starter": "SELECT CONCAT('Rep: ', NULL) AS CONCAT_RESULT,\n       'Rep: ' || NULL AS PIPE_RESULT,\n       'Rep: ' || COALESCE(NULL, 'unassigned') AS SAFE_RESULT;",
-       "solution": "SELECT CONCAT('Rep: ', NULL) AS CONCAT_RESULT,\n       'Rep: ' || NULL AS PIPE_RESULT,\n       'Rep: ' || COALESCE(NULL, 'unassigned') AS SAFE_RESULT;",
+       "solution": "-- The three ways a null behaves when you join strings, side by side.\n-- CONCAT treats a null as an empty string, so the label survives.\nSELECT CONCAT('Rep: ', NULL) AS CONCAT_RESULT,\n       -- || is stricter: a null anywhere makes the WHOLE result null, so the\n       -- text you wrote disappears too.\n       'Rep: ' || NULL AS PIPE_RESULT,\n       -- COALESCE returns its first argument that is not null, which is how you\n       -- substitute a readable stand-in before the null can spread.\n       'Rep: ' || COALESCE(NULL, 'unassigned') AS SAFE_RESULT;",
        "hint": "`CONCAT_RESULT` is the text Rep: with the null skipped. `PIPE_RESULT` is null, and this sandbox prints a null cell as the word NULL, so you will see NULL there rather than a blank. `SAFE_RESULT` is Rep: unassigned, because `COALESCE` replaced the null before the join happened."
       },
       {
@@ -692,7 +692,7 @@
        "type": "sandbox",
        "seed": "kimtay_full",
        "starter": "SELECT C.CUSTOMER_NAME,\n       C.CUSTOMER_NAME || ' / ' || I.INVOICE_NUM AS PIPE_LABEL,\n       CONCAT(C.CUSTOMER_NAME, ' / ', I.INVOICE_NUM) AS CONCAT_LABEL,\n       C.CUSTOMER_NAME || ' / ' || COALESCE(I.INVOICE_NUM, 'no invoice') AS SAFE_LABEL\nFROM CUSTOMER C\nLEFT JOIN INVOICE I ON C.CUSTOMER_NUM = I.CUSTOMER_NUM\nORDER BY C.CUSTOMER_NUM;",
-       "solution": "SELECT C.CUSTOMER_NAME,\n       C.CUSTOMER_NAME || ' / ' || I.INVOICE_NUM AS PIPE_LABEL,\n       CONCAT(C.CUSTOMER_NAME, ' / ', I.INVOICE_NUM) AS CONCAT_LABEL,\n       C.CUSTOMER_NAME || ' / ' || COALESCE(I.INVOICE_NUM, 'no invoice') AS SAFE_LABEL\nFROM CUSTOMER C\nLEFT JOIN INVOICE I ON C.CUSTOMER_NUM = I.CUSTOMER_NUM\nORDER BY C.CUSTOMER_NUM;",
+       "solution": "SELECT C.CUSTOMER_NAME,\n       -- For the unmatched customer the LEFT JOIN supplies a null invoice number,\n       -- and || turns the entire label null.\n       C.CUSTOMER_NAME || ' / ' || I.INVOICE_NUM AS PIPE_LABEL,\n       -- CONCAT keeps the name and simply leaves a gap where the null was.\n       CONCAT(C.CUSTOMER_NAME, ' / ', I.INVOICE_NUM) AS CONCAT_LABEL,\n       -- COALESCE is the version to actually ship: it says what the gap means.\n       C.CUSTOMER_NAME || ' / ' || COALESCE(I.INVOICE_NUM, 'no invoice') AS SAFE_LABEL\nFROM CUSTOMER C\n-- LEFT JOIN keeps the customer with no invoice, which is what creates the null.\nLEFT JOIN INVOICE I ON C.CUSTOMER_NUM = I.CUSTOMER_NUM\nORDER BY C.CUSTOMER_NUM;",
        "hint": "Four rows. Three customers look identical across all three label columns. Companion Care Clinic does not: `PIPE_LABEL` prints as NULL, `CONCAT_LABEL` trails off after the slash, and only `SAFE_LABEL` says what is going on."
       },
       {
@@ -1263,7 +1263,7 @@
       },
       {
        "type": "code",
-       "text": "DELIMITER //\n\nDROP PROCEDURE IF EXISTS SHOW_REP_COUNT //\n\nCREATE PROCEDURE SHOW_REP_COUNT()\nBEGIN\n    SELECT COUNT(*) AS REP_COUNT FROM REP;\nEND //\n\nDELIMITER ;"
+       "text": "-- DELIMITER //: switch the statement terminator so the semicolons inside the\n--   procedure are not mistaken for the end of it.\nDELIMITER //\n\n-- DROP PROCEDURE IF EXISTS: makes the script re-runnable. Without it, the second\n--   run fails because the procedure already exists.\nDROP PROCEDURE IF EXISTS SHOW_REP_COUNT //\n\n-- CREATE PROCEDURE: the simplest possible one - empty parentheses mean it takes\n--   no parameters at all.\nCREATE PROCEDURE SHOW_REP_COUNT()\n\n-- BEGIN ... END wrap the body.\nBEGIN\n\n    -- One ordinary statement. Its result is returned to the caller.\n    SELECT COUNT(*) AS REP_COUNT FROM REP;\nEND //\n\n-- Restore the normal semicolon.\nDELIMITER ;"
       },
       {
        "type": "p",
@@ -1285,7 +1285,7 @@
       },
       {
        "type": "code",
-       "text": "CALL SHOW_REP_COUNT();"
+       "text": "-- CALL: runs the procedure. The empty parentheses are still required even though\n--   there is nothing to pass, and the SELECT inside sends its result back.\nCALL SHOW_REP_COUNT();"
       },
       {
        "type": "p",
@@ -1341,11 +1341,11 @@
       },
       {
        "type": "code",
-       "text": "DELIMITER //\n\nDROP PROCEDURE IF EXISTS BAD_REP_NAME //\n\nCREATE PROCEDURE BAD_REP_NAME(\n    IN  REP_NUM     CHAR(2),\n    OUT o_last_name VARCHAR(20))\nBEGIN\n    SELECT LAST_NAME\n    INTO   o_last_name\n    FROM   REP\n    WHERE  REP_NUM = REP_NUM;\nEND //\n\nDELIMITER ;"
+       "text": "-- DELIMITER //: as always, so inner semicolons are safe.\nDELIMITER //\n\nDROP PROCEDURE IF EXISTS BAD_REP_NAME //\n\n-- CREATE PROCEDURE: this one is broken on purpose - watch the parameter name.\nCREATE PROCEDURE BAD_REP_NAME(\n\n    -- IN parameter named REP_NUM, which is ALSO the name of a column in REP.\n    --   That collision is the bug.\n    IN  REP_NUM     CHAR(2),\n\n    -- OUT parameter: a value the procedure hands back to the caller.\n    OUT o_last_name VARCHAR(20))\nBEGIN\n\n    -- SELECT ... INTO: instead of returning a result set, the value found is put\n    --   into a variable. It expects exactly one row.\n    SELECT LAST_NAME\n    INTO   o_last_name\n    FROM   REP\n\n    -- BROKEN. Both sides of this comparison are read as the COLUMN REP_NUM, so\n    --   the condition says \"where the column equals itself\" - true for every row.\n    --   That is why parameters are conventionally prefixed i_ or p_: the prefix\n    --   makes a collision like this impossible.\n    WHERE  REP_NUM = REP_NUM;\nEND //\n\nDELIMITER ;"
       },
       {
        "type": "code",
-       "text": "CALL BAD_REP_NAME('35', @last);"
+       "text": "-- CALL: passing the rep number and a session variable to receive the answer.\n--   Because of the name collision, the WHERE clause matched every rep, so the\n--   procedure returns whichever last name the engine happened to reach - not\n--   necessarily rep 35's.\nCALL BAD_REP_NAME('35', @last);"
       },
       {
        "type": "p",
@@ -1361,7 +1361,7 @@
       },
       {
        "type": "code",
-       "text": "DELIMITER //\n\nDROP PROCEDURE IF EXISTS DISP_REP_NAME //\n\nCREATE PROCEDURE DISP_REP_NAME(\n    IN  i_rep_num    CHAR(2),\n    OUT o_last_name  VARCHAR(20),\n    OUT o_first_name VARCHAR(20))\nBEGIN\n    SELECT LAST_NAME, FIRST_NAME\n    INTO   o_last_name, o_first_name\n    FROM   REP\n    WHERE  REP_NUM = i_rep_num;\nEND //\n\nDELIMITER ;"
+       "text": "DELIMITER //\n\nDROP PROCEDURE IF EXISTS DISP_REP_NAME //\n\n-- CREATE PROCEDURE: the fixed version of the previous example.\nCREATE PROCEDURE DISP_REP_NAME(\n\n    -- The i_ prefix keeps the parameter name distinct from the column name.\n    IN  i_rep_num    CHAR(2),\n\n    -- Two OUT parameters: a procedure may hand back as many values as you like.\n    OUT o_last_name  VARCHAR(20),\n    OUT o_first_name VARCHAR(20))\nBEGIN\n\n    -- SELECT ... INTO with two columns and two variables. They are matched by\n    --   position, so the order of the two lists has to agree.\n    SELECT LAST_NAME, FIRST_NAME\n    INTO   o_last_name, o_first_name\n    FROM   REP\n\n    -- Now the comparison is genuinely column against parameter.\n    WHERE  REP_NUM = i_rep_num;\nEND //\n\nDELIMITER ;"
       },
       {
        "type": "p",
@@ -1369,7 +1369,7 @@
       },
       {
        "type": "code",
-       "text": "CALL DISP_REP_NAME('35', @last, @first);\nSELECT @last AS LAST_NAME, @first AS FIRST_NAME;"
+       "text": "-- CALL: the two @ variables are session variables, supplied as somewhere for the\n--   OUT parameters to land. They need no declaration.\nCALL DISP_REP_NAME('35', @last, @first);\n\n-- SELECT: OUT parameters are not displayed automatically - reading the variables\n--   back is how you see what the procedure produced.\nSELECT @last AS LAST_NAME, @first AS FIRST_NAME;"
       },
       {
        "type": "p",
@@ -1431,11 +1431,11 @@
       },
       {
        "type": "code",
-       "text": "DELIMITER //\n\nDROP PROCEDURE IF EXISTS GET_CREDIT_AVAILABLE //\n\nCREATE PROCEDURE GET_CREDIT_AVAILABLE(\n    IN  i_customer_num CHAR(4),\n    OUT o_available    DECIMAL(9,2))\nBEGIN\n    DECLARE v_balance      DECIMAL(9,2);\n    DECLARE v_credit_limit DECIMAL(9,2);\n\n    SELECT BALANCE, CREDIT_LIMIT\n    INTO   v_balance, v_credit_limit\n    FROM   CUSTOMER\n    WHERE  CUSTOMER_NUM = i_customer_num;\n\n    SET o_available = v_credit_limit - v_balance;\nEND //\n\nDELIMITER ;"
+       "text": "DELIMITER //\n\nDROP PROCEDURE IF EXISTS GET_CREDIT_AVAILABLE //\n\n-- CREATE PROCEDURE: this one computes something rather than just fetching it.\nCREATE PROCEDURE GET_CREDIT_AVAILABLE(\n    IN  i_customer_num CHAR(4),\n    OUT o_available    DECIMAL(9,2))\nBEGIN\n\n    -- DECLARE: a LOCAL variable, visible only inside this procedure and gone the\n    --   moment it ends. Every DECLARE must come before the first real statement\n    --   of the body. Note there is no @ - that prefix marks session variables.\n    DECLARE v_balance      DECIMAL(9,2);\n\n    -- A second local, declared with the same type as the column it will hold.\n    DECLARE v_credit_limit DECIMAL(9,2);\n\n    -- SELECT ... INTO: read both values from the row in one statement rather than\n    --   querying the table twice.\n    SELECT BALANCE, CREDIT_LIMIT\n    INTO   v_balance, v_credit_limit\n    FROM   CUSTOMER\n    WHERE  CUSTOMER_NUM = i_customer_num;\n\n    -- SET: assigns a value to a variable. The calculation is done in the\n    --   procedure, not in SQL, and the answer goes into the OUT parameter.\n    SET o_available = v_credit_limit - v_balance;\nEND //\n\nDELIMITER ;"
       },
       {
        "type": "code",
-       "text": "CALL GET_CREDIT_AVAILABLE('1420', @avail);\nSELECT @avail AS CREDIT_AVAILABLE;\n\nCALL GET_CREDIT_AVAILABLE('1310', @avail);\nSELECT @avail AS CREDIT_AVAILABLE;"
+       "text": "-- CALL: a customer that owes money - the available credit is limit minus balance.\nCALL GET_CREDIT_AVAILABLE('1420', @avail);\nSELECT @avail AS CREDIT_AVAILABLE;\n\n-- CALL: a customer with a zero balance, so the whole limit is still available.\n--   Same procedure, different argument - which is the point of parameters.\nCALL GET_CREDIT_AVAILABLE('1310', @avail);\nSELECT @avail AS CREDIT_AVAILABLE;"
       },
       {
        "type": "p",
@@ -1493,11 +1493,11 @@
       },
       {
        "type": "code",
-       "text": "DELIMITER //\n\nDROP PROCEDURE IF EXISTS ADD_SALE_TO_COMMISSION //\n\nCREATE PROCEDURE ADD_SALE_TO_COMMISSION(\n    IN    i_rep_num     CHAR(2),\n    IN    i_sale_amount DECIMAL(9,2),\n    INOUT io_commission DECIMAL(8,2))\nBEGIN\n    DECLARE v_rate DECIMAL(4,2);\n\n    SELECT RATE\n    INTO   v_rate\n    FROM   REP\n    WHERE  REP_NUM = i_rep_num;\n\n    SET io_commission = io_commission + (i_sale_amount * v_rate);\nEND //\n\nDELIMITER ;"
+       "text": "DELIMITER //\n\nDROP PROCEDURE IF EXISTS ADD_SALE_TO_COMMISSION //\n\n-- CREATE PROCEDURE: demonstrates the third parameter direction.\nCREATE PROCEDURE ADD_SALE_TO_COMMISSION(\n    IN    i_rep_num     CHAR(2),\n    IN    i_sale_amount DECIMAL(9,2),\n\n    -- INOUT: the caller passes a value IN, the procedure changes it, and the new\n    --   value goes back OUT through the same parameter. Use it when the answer\n    --   depends on what was there before.\n    INOUT io_commission DECIMAL(8,2))\nBEGIN\n\n    -- A local to hold the rate looked up from the table.\n    DECLARE v_rate DECIMAL(4,2);\n\n    -- SELECT ... INTO: fetch this rep's commission rate.\n    SELECT RATE\n    INTO   v_rate\n    FROM   REP\n    WHERE  REP_NUM = i_rep_num;\n\n    -- SET: the INOUT parameter appears on BOTH sides - its incoming value is\n    --   read on the right, and the updated total is written back on the left.\n    SET io_commission = io_commission + (i_sale_amount * v_rate);\nEND //\n\nDELIMITER ;"
       },
       {
        "type": "code",
-       "text": "SET @comm = 39355.00;\nCALL ADD_SALE_TO_COMMISSION('35', 1200.00, @comm);\nSELECT @comm AS NEW_COMMISSION;"
+       "text": "-- SET: give the session variable a starting value. An INOUT parameter must\n--   already hold something, because the procedure reads it before writing it.\nSET @comm = 39355.00;\n\n-- CALL: the variable goes in holding the old commission and comes out holding\n--   the new one.\nCALL ADD_SALE_TO_COMMISSION('35', 1200.00, @comm);\n\n-- SELECT: read the changed value back.\nSELECT @comm AS NEW_COMMISSION;"
       },
       {
        "type": "p",
@@ -1513,7 +1513,7 @@
       },
       {
        "type": "code",
-       "text": "SELECT ROUTINE_NAME, ROUTINE_TYPE\nFROM   INFORMATION_SCHEMA.ROUTINES\nWHERE  ROUTINE_SCHEMA = DATABASE()\nORDER  BY ROUTINE_NAME;"
+       "text": "-- SELECT: the catalogue again, this time listing stored routines rather than\n--   tables - procedures and functions both appear here.\nSELECT ROUTINE_NAME, ROUTINE_TYPE\n\n-- FROM: INFORMATION_SCHEMA.ROUTINES, one row per stored routine on the server.\nFROM   INFORMATION_SCHEMA.ROUTINES\n\n-- WHERE: DATABASE() returns the name of the database you are currently connected\n--   to, so this narrows the list to your own routines without hard-coding a name.\nWHERE  ROUTINE_SCHEMA = DATABASE()\nORDER  BY ROUTINE_NAME;"
       },
       {
        "type": "p",
@@ -1525,7 +1525,7 @@
       },
       {
        "type": "code",
-       "text": "SHOW CREATE PROCEDURE DISP_REP_NAME;"
+       "text": "-- SHOW CREATE PROCEDURE: prints the full text of a procedure as the server\n--   stored it. This is how you read code somebody else wrote, or recover your\n--   own when the script that created it has been lost.\nSHOW CREATE PROCEDURE DISP_REP_NAME;"
       },
       {
        "type": "steps",
@@ -1579,11 +1579,11 @@
       },
       {
        "type": "code",
-       "text": "DELIMITER //\n\nDROP PROCEDURE IF EXISTS GET_CUST_BALANCE_UNSAFE //\n\nCREATE PROCEDURE GET_CUST_BALANCE_UNSAFE(\n    IN  i_customer_num CHAR(4),\n    OUT o_balance      DECIMAL(9,2))\nBEGIN\n    SELECT BALANCE\n    INTO   o_balance\n    FROM   CUSTOMER\n    WHERE  CUSTOMER_NUM = i_customer_num;\nEND //\n\nDELIMITER ;"
+       "text": "DELIMITER //\n\nDROP PROCEDURE IF EXISTS GET_CUST_BALANCE_UNSAFE //\n\n-- CREATE PROCEDURE: written the obvious way, with no error handling at all -\n--   which is exactly what makes it unsafe.\nCREATE PROCEDURE GET_CUST_BALANCE_UNSAFE(\n    IN  i_customer_num CHAR(4),\n    OUT o_balance      DECIMAL(9,2))\nBEGIN\n\n    -- SELECT ... INTO: fine when the customer exists. When it does not, the\n    --   SELECT finds no row, MySQL raises a NOT FOUND warning rather than an\n    --   error, and o_balance is left holding whatever it held before. The caller\n    --   is never told that anything went wrong.\n    SELECT BALANCE\n    INTO   o_balance\n    FROM   CUSTOMER\n    WHERE  CUSTOMER_NUM = i_customer_num;\nEND //\n\nDELIMITER ;"
       },
       {
        "type": "code",
-       "text": "SET @bal = 0;\nCALL GET_CUST_BALANCE_UNSAFE('1120', @bal);\nSELECT @bal AS BALANCE_FOUND;\n\nCALL GET_CUST_BALANCE_UNSAFE('9999', @bal);\nSHOW WARNINGS;\nSELECT @bal AS BALANCE_FOUND;"
+       "text": "-- SET: clear the variable so the next result is unambiguous.\nSET @bal = 0;\n\n-- CALL: a customer that exists. The balance comes back correctly.\nCALL GET_CUST_BALANCE_UNSAFE('1120', @bal);\nSELECT @bal AS BALANCE_FOUND;\n\n-- CALL: a customer that does NOT exist. No error is raised.\nCALL GET_CUST_BALANCE_UNSAFE('9999', @bal);\n\n-- SHOW WARNINGS: the only evidence that anything happened - a NOT FOUND warning\n--   that a program would have to go looking for.\nSHOW WARNINGS;\n\n-- SELECT: the variable still holds the PREVIOUS customer's balance, now being\n--   reported as if it belonged to customer 9999. A wrong answer, silently.\nSELECT @bal AS BALANCE_FOUND;"
       },
       {
        "type": "p",
@@ -1595,11 +1595,11 @@
       },
       {
        "type": "code",
-       "text": "DELIMITER //\n\nDROP PROCEDURE IF EXISTS STALE_DEMO //\n\nCREATE PROCEDURE STALE_DEMO(\n    IN    i_customer_num CHAR(4),\n    INOUT io_balance     DECIMAL(9,2))\nBEGIN\n    SELECT BALANCE\n    INTO   io_balance\n    FROM   CUSTOMER\n    WHERE  CUSTOMER_NUM = i_customer_num;\nEND //\n\nDELIMITER ;"
+       "text": "DELIMITER //\n\nDROP PROCEDURE IF EXISTS STALE_DEMO //\n\n-- CREATE PROCEDURE: the same trap, made even easier to fall into by using INOUT.\nCREATE PROCEDURE STALE_DEMO(\n    IN    i_customer_num CHAR(4),\n\n    -- INOUT means the parameter arrives holding the caller's old value, so a\n    --   failed lookup leaves that stale value sitting in place.\n    INOUT io_balance     DECIMAL(9,2))\nBEGIN\n\n    -- No handler, so a miss changes nothing and says nothing.\n    SELECT BALANCE\n    INTO   io_balance\n    FROM   CUSTOMER\n    WHERE  CUSTOMER_NUM = i_customer_num;\nEND //\n\nDELIMITER ;"
       },
       {
        "type": "code",
-       "text": "SET @bal = 0;\nCALL STALE_DEMO('1120', @bal);\nSELECT @bal AS BALANCE_FOUND;\n\nCALL STALE_DEMO('9999', @bal);\nSELECT @bal AS BALANCE_FOUND;"
+       "text": "SET @bal = 0;\n\n-- CALL: a real customer, so the variable is filled correctly.\nCALL STALE_DEMO('1120', @bal);\nSELECT @bal AS BALANCE_FOUND;\n\n-- CALL: a customer that does not exist.\nCALL STALE_DEMO('9999', @bal);\n\n-- SELECT: the previous customer's balance is still there, and nothing in the\n--   output distinguishes a real answer from a leftover one. This is why a\n--   procedure must report what happened, not just what it found.\nSELECT @bal AS BALANCE_FOUND;"
       },
       {
        "type": "p",
@@ -1629,11 +1629,11 @@
       },
       {
        "type": "code",
-       "text": "DELIMITER //\n\nDROP PROCEDURE IF EXISTS GET_CUST_BALANCE //\n\nCREATE PROCEDURE GET_CUST_BALANCE(\n    IN  i_customer_num CHAR(4),\n    OUT o_balance      DECIMAL(9,2),\n    OUT o_status       VARCHAR(60))\nBEGIN\n    DECLARE CONTINUE HANDLER FOR NOT FOUND\n        SET o_status = CONCAT('No customer numbered ', i_customer_num);\n\n    SET o_balance = NULL;\n    SET o_status  = 'OK';\n\n    SELECT BALANCE\n    INTO   o_balance\n    FROM   CUSTOMER\n    WHERE  CUSTOMER_NUM = i_customer_num;\nEND //\n\nDELIMITER ;"
+       "text": "DELIMITER //\n\nDROP PROCEDURE IF EXISTS GET_CUST_BALANCE //\n\n-- CREATE PROCEDURE: the safe version of the lookup.\nCREATE PROCEDURE GET_CUST_BALANCE(\n    IN  i_customer_num CHAR(4),\n    OUT o_balance      DECIMAL(9,2),\n\n    -- A second OUT parameter carrying a plain-language status, so the caller\n    --   learns what happened as well as what was found.\n    OUT o_status       VARCHAR(60))\nBEGIN\n\n    -- DECLARE ... HANDLER: registers what to do when a condition arises. CONTINUE\n    --   means \"run this, then carry on with the next statement\"; NOT FOUND is the\n    --   condition raised when a SELECT ... INTO matches no row.\n    DECLARE CONTINUE HANDLER FOR NOT FOUND\n\n        -- CONCAT builds a message that names the customer that was missing.\n        SET o_status = CONCAT('No customer numbered ', i_customer_num);\n\n    -- Set the OUT parameters to known values BEFORE the lookup, so nothing stale\n    --   can survive. This line is what kills the previous example's bug.\n    SET o_balance = NULL;\n\n    -- The optimistic default, overwritten by the handler if the lookup misses.\n    SET o_status  = 'OK';\n\n    -- The lookup itself. If it finds nothing, the handler fires and o_status\n    --   changes; if it succeeds, o_status stays 'OK'.\n    SELECT BALANCE\n    INTO   o_balance\n    FROM   CUSTOMER\n    WHERE  CUSTOMER_NUM = i_customer_num;\nEND //\n\nDELIMITER ;"
       },
       {
        "type": "code",
-       "text": "CALL GET_CUST_BALANCE('1120', @bal, @status);\nSELECT @bal AS BALANCE_FOUND, @status AS STATUS;\n\nCALL GET_CUST_BALANCE('9999', @bal, @status);\nSELECT @bal AS BALANCE_FOUND, @status AS STATUS;"
+       "text": "-- CALL: a customer that exists - balance filled in, status 'OK'.\nCALL GET_CUST_BALANCE('1120', @bal, @status);\nSELECT @bal AS BALANCE_FOUND, @status AS STATUS;\n\n-- CALL: a customer that does not - balance NULL, status explaining why. The\n--   caller can now tell the two cases apart without guessing.\nCALL GET_CUST_BALANCE('9999', @bal, @status);\nSELECT @bal AS BALANCE_FOUND, @status AS STATUS;"
       },
       {
        "type": "p",
@@ -1751,11 +1751,11 @@
       },
       {
        "type": "code",
-       "text": "DELIMITER //\n\nDROP PROCEDURE IF EXISTS GET_BALANCE_BY_CITY //\n\nCREATE PROCEDURE GET_BALANCE_BY_CITY(\n    IN  i_city    VARCHAR(20),\n    OUT o_balance DECIMAL(9,2),\n    OUT o_status  VARCHAR(60))\nBEGIN\n    DECLARE EXIT HANDLER FOR SQLEXCEPTION\n        SET o_status = CONCAT('Lookup failed for ', i_city, ' - check the city');\n\n    SET o_balance = NULL;\n    SET o_status  = 'OK';\n\n    SELECT BALANCE\n    INTO   o_balance\n    FROM   CUSTOMER\n    WHERE  CITY = i_city;\nEND //\n\nDELIMITER ;"
+       "text": "DELIMITER //\n\nDROP PROCEDURE IF EXISTS GET_BALANCE_BY_CITY //\n\n-- CREATE PROCEDURE: this one looks up on a NON-key column, which is where the\n--   other failure mode lives - too many rows rather than none.\nCREATE PROCEDURE GET_BALANCE_BY_CITY(\n    IN  i_city    VARCHAR(20),\n    OUT o_balance DECIMAL(9,2),\n    OUT o_status  VARCHAR(60))\nBEGIN\n\n    -- DECLARE EXIT HANDLER: EXIT means \"run this, then STOP the procedure\" -\n    --   unlike CONTINUE, nothing after the failing statement runs. SQLEXCEPTION\n    --   catches any error, including a SELECT ... INTO that matched several rows.\n    DECLARE EXIT HANDLER FOR SQLEXCEPTION\n        SET o_status = CONCAT('Lookup failed for ', i_city, ' - check the city');\n\n    -- Known starting values again.\n    SET o_balance = NULL;\n    SET o_status  = 'OK';\n\n    -- One city holds one customer and works; another holds two, the INTO cannot\n    --   choose between them, and the EXIT handler takes over.\n    SELECT BALANCE\n    INTO   o_balance\n    FROM   CUSTOMER\n    WHERE  CITY = i_city;\nEND //\n\nDELIMITER ;"
       },
       {
        "type": "code",
-       "text": "CALL GET_BALANCE_BY_CITY('Northfield', @bal, @status);\nSELECT @bal AS BALANCE_FOUND, @status AS STATUS;\n\nCALL GET_BALANCE_BY_CITY('Maple Grove', @bal, @status);\nSELECT @bal AS BALANCE_FOUND, @status AS STATUS;"
+       "text": "-- CALL: Northfield has exactly one customer, so the lookup succeeds.\nCALL GET_BALANCE_BY_CITY('Northfield', @bal, @status);\nSELECT @bal AS BALANCE_FOUND, @status AS STATUS;\n\n-- CALL: Maple Grove has two, so SELECT ... INTO fails and the EXIT handler\n--   reports it instead of returning one of the two at random.\nCALL GET_BALANCE_BY_CITY('Maple Grove', @bal, @status);\nSELECT @bal AS BALANCE_FOUND, @status AS STATUS;"
       },
       {
        "type": "p",
@@ -1804,7 +1804,7 @@
       },
       {
        "type": "code",
-       "text": "-- The accident. Read it, do not run it: every worked example below\n-- assumes the shipped balances are still intact.\nUPDATE CUSTOMER\nSET    BALANCE = BALANCE + 250.00;"
+       "text": "-- The accident. Read it, do not run it: every worked example below\n-- assumes the shipped balances are still intact.\n-- UPDATE: the table.\nUPDATE CUSTOMER\n\n-- SET with no WHERE: every customer's balance goes up by 250. The statement is\n--   perfectly valid SQL, which is precisely the danger - wrapping this logic in\n--   a procedure that always carries its own WHERE clause is how you stop a\n--   missing line from reaching production.\nSET    BALANCE = BALANCE + 250.00;"
       },
       {
        "type": "p",
@@ -1816,7 +1816,7 @@
       },
       {
        "type": "code",
-       "text": "DELIMITER //\n\nDROP PROCEDURE IF EXISTS UPD_CUST_BALANCE //\n\nCREATE PROCEDURE UPD_CUST_BALANCE(\n    IN  i_customer_num CHAR(4),\n    IN  i_amount       DECIMAL(9,2),\n    OUT o_status       VARCHAR(60))\nBEGIN\n    DECLARE v_name VARCHAR(35);\n\n    DECLARE EXIT HANDLER FOR NOT FOUND\n        SET o_status = CONCAT('No customer numbered ', i_customer_num, ' - nothing changed');\n\n    SELECT CUSTOMER_NAME\n    INTO   v_name\n    FROM   CUSTOMER\n    WHERE  CUSTOMER_NUM = i_customer_num;\n\n    UPDATE CUSTOMER\n    SET    BALANCE = BALANCE + i_amount\n    WHERE  CUSTOMER_NUM = i_customer_num;\n\n    SET o_status = CONCAT('Balance for ', v_name, ' changed by ', i_amount);\nEND //\n\nDELIMITER ;"
+       "text": "DELIMITER //\n\nDROP PROCEDURE IF EXISTS UPD_CUST_BALANCE //\n\n-- CREATE PROCEDURE: an UPDATE wrapped safely, so the WHERE clause can never be\n--   forgotten and a missing customer is reported rather than ignored.\nCREATE PROCEDURE UPD_CUST_BALANCE(\n    IN  i_customer_num CHAR(4),\n    IN  i_amount       DECIMAL(9,2),\n    OUT o_status       VARCHAR(60))\nBEGIN\n\n    -- A local to hold the customer's name, used in the status message.\n    DECLARE v_name VARCHAR(35);\n\n    -- EXIT HANDLER FOR NOT FOUND: if the customer does not exist, stop before the\n    --   UPDATE ever runs and say so. EXIT rather than CONTINUE is deliberate.\n    DECLARE EXIT HANDLER FOR NOT FOUND\n        SET o_status = CONCAT('No customer numbered ', i_customer_num, ' - nothing changed');\n\n    -- The lookup does double duty: it fetches the name AND proves the customer\n    --   exists. A miss here fires the handler and the procedure ends.\n    SELECT CUSTOMER_NAME\n    INTO   v_name\n    FROM   CUSTOMER\n    WHERE  CUSTOMER_NUM = i_customer_num;\n\n    -- The change itself, reached only when the customer is known to exist.\n    UPDATE CUSTOMER\n    SET    BALANCE = BALANCE + i_amount\n\n    -- The WHERE clause is written into the procedure once and cannot be left off\n    --   by a caller in a hurry.\n    WHERE  CUSTOMER_NUM = i_customer_num;\n\n    -- Report exactly what was done, naming the customer and the amount.\n    SET o_status = CONCAT('Balance for ', v_name, ' changed by ', i_amount);\nEND //\n\nDELIMITER ;"
       },
       {
        "type": "p",
@@ -1824,7 +1824,7 @@
       },
       {
        "type": "code",
-       "text": "CALL UPD_CUST_BALANCE('1120', 250.00, @status);\nSELECT @status AS STATUS;\nSELECT CUSTOMER_NUM, CUSTOMER_NAME, BALANCE FROM CUSTOMER ORDER BY CUSTOMER_NUM;\n\nCALL UPD_CUST_BALANCE('9999', 250.00, @status);\nSELECT @status AS STATUS;"
+       "text": "-- CALL: a real customer. The status names them and the amount.\nCALL UPD_CUST_BALANCE('1120', 250.00, @status);\nSELECT @status AS STATUS;\n\n-- SELECT: proof that exactly one row moved and the other three did not.\nSELECT CUSTOMER_NUM, CUSTOMER_NAME, BALANCE FROM CUSTOMER ORDER BY CUSTOMER_NUM;\n\n-- CALL: a customer that does not exist. The handler stops the procedure before\n--   the UPDATE, so nothing at all is changed and the caller is told why.\nCALL UPD_CUST_BALANCE('9999', 250.00, @status);\nSELECT @status AS STATUS;"
       },
       {
        "type": "p",
@@ -1882,11 +1882,11 @@
       },
       {
        "type": "code",
-       "text": "DELIMITER //\n\nDROP PROCEDURE IF EXISTS SHIP_ITEM //\n\nCREATE PROCEDURE SHIP_ITEM(\n    IN  i_item_id     CHAR(4),\n    IN  i_qty_shipped SMALLINT,\n    OUT o_status      VARCHAR(60))\nBEGIN\n    DECLARE v_description VARCHAR(30);\n\n    DECLARE EXIT HANDLER FOR SQLEXCEPTION\n    BEGIN\n        ROLLBACK;\n        SET o_status = 'Shipment failed - stock left unchanged';\n    END;\n\n    DECLARE EXIT HANDLER FOR NOT FOUND\n        SET o_status = CONCAT('No item numbered ', i_item_id);\n\n    SELECT DESCRIPTION\n    INTO   v_description\n    FROM   ITEM\n    WHERE  ITEM_ID = i_item_id;\n\n    START TRANSACTION;\n\n    UPDATE ITEM\n    SET    ON_HAND = ON_HAND - i_qty_shipped\n    WHERE  ITEM_ID = i_item_id;\n\n    COMMIT;\n\n    SET o_status = CONCAT('Shipped ', i_qty_shipped, ' of ', v_description);\nEND //\n\nDELIMITER ;"
+       "text": "DELIMITER //\n\nDROP PROCEDURE IF EXISTS SHIP_ITEM //\n\n-- CREATE PROCEDURE: a procedure that changes data inside a transaction, with two\n--   different handlers for two different kinds of failure.\nCREATE PROCEDURE SHIP_ITEM(\n    IN  i_item_id     CHAR(4),\n    IN  i_qty_shipped SMALLINT,\n    OUT o_status      VARCHAR(60))\nBEGIN\n    DECLARE v_description VARCHAR(30);\n\n    -- EXIT HANDLER FOR SQLEXCEPTION with a BEGIN ... END block: a handler can run\n    --   several statements, not just one, when it is wrapped like this.\n    DECLARE EXIT HANDLER FOR SQLEXCEPTION\n    BEGIN\n\n        -- ROLLBACK first: undo any half-finished change before reporting.\n        ROLLBACK;\n        SET o_status = 'Shipment failed - stock left unchanged';\n    END;\n\n    -- A second handler for a different condition. NOT FOUND is not an error, so\n    --   it needs its own handler; SQLEXCEPTION would never catch it.\n    DECLARE EXIT HANDLER FOR NOT FOUND\n        SET o_status = CONCAT('No item numbered ', i_item_id);\n\n    -- Look up the item, which also proves it exists before anything is changed.\n    SELECT DESCRIPTION\n    INTO   v_description\n    FROM   ITEM\n    WHERE  ITEM_ID = i_item_id;\n\n    -- START TRANSACTION: open the safety net around the change.\n    START TRANSACTION;\n\n    -- The change itself.\n    UPDATE ITEM\n    SET    ON_HAND = ON_HAND - i_qty_shipped\n    WHERE  ITEM_ID = i_item_id;\n\n    -- COMMIT: reached only if the UPDATE raised nothing. If it had, the\n    --   SQLEXCEPTION handler would have rolled back and ended the procedure\n    --   before this line.\n    COMMIT;\n\n    -- The success message, built from the description looked up earlier.\n    SET o_status = CONCAT('Shipped ', i_qty_shipped, ' of ', v_description);\nEND //\n\nDELIMITER ;"
       },
       {
        "type": "code",
-       "text": "CALL SHIP_ITEM('CF21', 3, @status);\nSELECT @status AS STATUS;\nSELECT ITEM_ID, DESCRIPTION, ON_HAND FROM ITEM WHERE ITEM_ID = 'CF21';\n\nCALL SHIP_ITEM('ZZ99', 1, @status);\nSELECT @status AS STATUS;"
+       "text": "-- CALL: a real item. Stock falls by three and the status says so.\nCALL SHIP_ITEM('CF21', 3, @status);\nSELECT @status AS STATUS;\n\n-- SELECT: confirm the new stock figure.\nSELECT ITEM_ID, DESCRIPTION, ON_HAND FROM ITEM WHERE ITEM_ID = 'CF21';\n\n-- CALL: an item id that does not exist. The NOT FOUND handler stops the\n--   procedure before the transaction is even opened.\nCALL SHIP_ITEM('ZZ99', 1, @status);\nSELECT @status AS STATUS;"
       },
       {
        "type": "p",
@@ -1906,7 +1906,7 @@
       },
       {
        "type": "code",
-       "text": "-- The accident. Read it, do not run it.\nDELETE FROM CUSTOMER;"
+       "text": "-- The accident. Read it, do not run it.\n-- DELETE with no WHERE: every customer row is removed in one statement. Nothing\n--   warns you, and outside a transaction nothing brings them back. This is the\n--   statement the procedure below exists to make impossible.\nDELETE FROM CUSTOMER;"
       },
       {
        "type": "p",
@@ -1918,7 +1918,7 @@
       },
       {
        "type": "code",
-       "text": "DELIMITER //\n\nDROP PROCEDURE IF EXISTS DEL_CUSTOMER //\n\nCREATE PROCEDURE DEL_CUSTOMER(\n    IN  i_customer_num CHAR(4),\n    OUT o_status       VARCHAR(70))\nBEGIN\n    DECLARE v_name VARCHAR(35);\n\n    DECLARE EXIT HANDLER FOR SQLEXCEPTION\n        SET o_status = CONCAT('Could not delete ', i_customer_num, ' - invoices still reference it');\n\n    DECLARE EXIT HANDLER FOR NOT FOUND\n        SET o_status = CONCAT('No customer numbered ', i_customer_num);\n\n    SELECT CUSTOMER_NAME\n    INTO   v_name\n    FROM   CUSTOMER\n    WHERE  CUSTOMER_NUM = i_customer_num;\n\n    DELETE FROM CUSTOMER\n    WHERE  CUSTOMER_NUM = i_customer_num;\n\n    SET o_status = CONCAT('Deleted ', v_name);\nEND //\n\nDELIMITER ;"
+       "text": "DELIMITER //\n\nDROP PROCEDURE IF EXISTS DEL_CUSTOMER //\n\n-- CREATE PROCEDURE: a delete that can only ever remove one named row, and that\n--   explains itself whichever way it ends.\nCREATE PROCEDURE DEL_CUSTOMER(\n    IN  i_customer_num CHAR(4),\n    OUT o_status       VARCHAR(70))\nBEGIN\n    DECLARE v_name VARCHAR(35);\n\n    -- Handler 1 - an actual error. The likeliest one here is a foreign key\n    --   violation: the customer still has invoices pointing at it.\n    DECLARE EXIT HANDLER FOR SQLEXCEPTION\n        SET o_status = CONCAT('Could not delete ', i_customer_num, ' - invoices still reference it');\n\n    -- Handler 2 - not an error at all, just nothing found. Two conditions, two\n    --   handlers, two different messages.\n    DECLARE EXIT HANDLER FOR NOT FOUND\n        SET o_status = CONCAT('No customer numbered ', i_customer_num);\n\n    -- Fetch the name, and in doing so confirm the customer exists.\n    SELECT CUSTOMER_NAME\n    INTO   v_name\n    FROM   CUSTOMER\n    WHERE  CUSTOMER_NUM = i_customer_num;\n\n    -- The delete, with its WHERE clause built in permanently.\n    DELETE FROM CUSTOMER\n    WHERE  CUSTOMER_NUM = i_customer_num;\n\n    -- Reached only when the delete succeeded.\n    SET o_status = CONCAT('Deleted ', v_name);\nEND //\n\nDELIMITER ;"
       },
       {
        "type": "p",
@@ -1926,7 +1926,7 @@
       },
       {
        "type": "code",
-       "text": "CALL DEL_CUSTOMER('1310', @status);\nSELECT @status AS STATUS;\n\nCALL DEL_CUSTOMER('1120', @status);\nSELECT @status AS STATUS;\n\nCALL DEL_CUSTOMER('9999', @status);\nSELECT @status AS STATUS;\n\nSELECT CUSTOMER_NUM, CUSTOMER_NAME FROM CUSTOMER ORDER BY CUSTOMER_NUM;"
+       "text": "-- CALL: a customer with no invoices - the delete succeeds.\nCALL DEL_CUSTOMER('1310', @status);\nSELECT @status AS STATUS;\n\n-- CALL: a customer that DOES have invoices. The foreign key refuses the delete,\n--   the SQLEXCEPTION handler catches it, and the row survives.\nCALL DEL_CUSTOMER('1120', @status);\nSELECT @status AS STATUS;\n\n-- CALL: a customer that never existed. The NOT FOUND handler answers this one.\nCALL DEL_CUSTOMER('9999', @status);\nSELECT @status AS STATUS;\n\n-- SELECT: three outcomes, and the table shows exactly one row gone.\nSELECT CUSTOMER_NUM, CUSTOMER_NAME FROM CUSTOMER ORDER BY CUSTOMER_NUM;"
       },
       {
        "type": "p",
@@ -1938,7 +1938,7 @@
       },
       {
        "type": "code",
-       "text": "INSERT INTO CUSTOMER\nVALUES ('1310', 'Companion Care Clinic', '89 River Rd.', 'Maple Grove', 'OH',\n        '44601', 0.00, 10000.00, '20');"
+       "text": "-- INSERT INTO with no column list: put the deleted customer back, supplying a\n--   value for all nine columns in the table's own order. This is the tidy-up\n--   step, so the rest of the module works against the shipped data.\nINSERT INTO CUSTOMER\nVALUES ('1310', 'Companion Care Clinic', '89 River Rd.', 'Maple Grove', 'OH',\n        '44601', 0.00, 10000.00, '20');"
       },
       {
        "type": "h4",
@@ -1963,7 +1963,7 @@
       },
       {
        "type": "code",
-       "text": "CREATE USER IF NOT EXISTS 'billing_clerk'@'localhost' IDENTIFIED BY 'change_me';\nGRANT EXECUTE ON PROCEDURE KIMTAY.DEL_CUSTOMER TO 'billing_clerk'@'localhost';\nGRANT SELECT ON KIMTAY.CUSTOMER TO 'billing_clerk'@'localhost';"
+       "text": "-- CREATE USER IF NOT EXISTS: make the account, skipping quietly if it is already\n--   there. MySQL identifies accounts as user@host.\nCREATE USER IF NOT EXISTS 'billing_clerk'@'localhost' IDENTIFIED BY 'change_me';\n\n-- GRANT EXECUTE ON PROCEDURE: the clerk may RUN the procedure. Notice what is not\n--   granted - no DELETE on CUSTOMER at all, so the only way this account can\n--   remove a customer is through the procedure, with all its checks in place.\nGRANT EXECUTE ON PROCEDURE KIMTAY.DEL_CUSTOMER TO 'billing_clerk'@'localhost';\n\n-- GRANT SELECT: read access to the table, so the clerk can see the list. Reading\n--   and deleting are separate privileges, and only one of them is given here.\nGRANT SELECT ON KIMTAY.CUSTOMER TO 'billing_clerk'@'localhost';"
       },
       {
        "type": "callout",
@@ -1987,7 +1987,7 @@
       },
       {
        "type": "code",
-       "text": "UPDATE CUSTOMER SET BALANCE = 3512.50 WHERE CUSTOMER_NUM = '1120';\nUPDATE ITEM     SET ON_HAND = 48      WHERE ITEM_ID = 'CF21';"
+       "text": "-- UPDATE: restore the balance the worked examples changed, so the shipped data\n--   is back where it started.\nUPDATE CUSTOMER SET BALANCE = 3512.50 WHERE CUSTOMER_NUM = '1120';\n\n-- UPDATE: and the stock figure the SHIP_ITEM example reduced.\nUPDATE ITEM     SET ON_HAND = 48      WHERE ITEM_ID = 'CF21';"
       },
       {
        "type": "p",
@@ -1995,7 +1995,7 @@
       },
       {
        "type": "code",
-       "text": "DROP PROCEDURE IF EXISTS SHOW_REP_COUNT;\nDROP PROCEDURE IF EXISTS BAD_REP_NAME;\nDROP PROCEDURE IF EXISTS DISP_REP_NAME;\nDROP PROCEDURE IF EXISTS GET_CREDIT_AVAILABLE;\nDROP PROCEDURE IF EXISTS ADD_SALE_TO_COMMISSION;\nDROP PROCEDURE IF EXISTS GET_CUST_BALANCE_UNSAFE;\nDROP PROCEDURE IF EXISTS STALE_DEMO;\nDROP PROCEDURE IF EXISTS GET_CUST_BALANCE;\nDROP PROCEDURE IF EXISTS GET_BALANCE_BY_CITY;\nDROP PROCEDURE IF EXISTS UPD_CUST_BALANCE;\nDROP PROCEDURE IF EXISTS SHIP_ITEM;\nDROP PROCEDURE IF EXISTS DEL_CUSTOMER;"
+       "text": "-- DROP PROCEDURE IF EXISTS: clean up every procedure this lesson created. IF\n--   EXISTS on each line means the whole script runs to the end even if some of\n--   them were never created or have already been dropped.\nDROP PROCEDURE IF EXISTS SHOW_REP_COUNT;\nDROP PROCEDURE IF EXISTS BAD_REP_NAME;\nDROP PROCEDURE IF EXISTS DISP_REP_NAME;\nDROP PROCEDURE IF EXISTS GET_CREDIT_AVAILABLE;\nDROP PROCEDURE IF EXISTS ADD_SALE_TO_COMMISSION;\nDROP PROCEDURE IF EXISTS GET_CUST_BALANCE_UNSAFE;\nDROP PROCEDURE IF EXISTS STALE_DEMO;\nDROP PROCEDURE IF EXISTS GET_CUST_BALANCE;\nDROP PROCEDURE IF EXISTS GET_BALANCE_BY_CITY;\nDROP PROCEDURE IF EXISTS UPD_CUST_BALANCE;\nDROP PROCEDURE IF EXISTS SHIP_ITEM;\nDROP PROCEDURE IF EXISTS DEL_CUSTOMER;"
       },
       {
        "type": "checklist",
@@ -2468,7 +2468,7 @@
       },
       {
        "type": "code",
-       "text": "SELECT BALANCE, CREDIT_LIMIT\n    INTO v_balance, v_credit_limit\n    FROM CUSTOMER\n    WHERE CUSTOMER_NUM = i_customer_num;"
+       "text": "-- SELECT ... INTO: the one-row form you have already used. It works only when\n--   the query returns exactly one row, which is why it is safe on a primary key\n--   lookup and dangerous on anything else.\nSELECT BALANCE, CREDIT_LIMIT\n\n    -- INTO: two columns land in two variables, matched by position.\n    INTO v_balance, v_credit_limit\n    FROM CUSTOMER\n\n    -- Filtering on the key is what guarantees the single row.\n    WHERE CUSTOMER_NUM = i_customer_num;"
       },
       {
        "type": "p",
@@ -2478,7 +2478,7 @@
        "type": "sandbox",
        "seed": "kimtay_full",
        "starter": "-- Rep 20's territory: the CUSTOMER rows whose REP_NUM is '20'.\n-- Run this and count the rows. That count is why a cursor exists.\nSELECT CUSTOMER_NUM, CUSTOMER_NAME, BALANCE, CREDIT_LIMIT\nFROM CUSTOMER\nWHERE REP_NUM = '20'\nORDER BY CUSTOMER_NUM;",
-       "solution": "SELECT CUSTOMER_NUM, CUSTOMER_NAME, BALANCE, CREDIT_LIMIT\nFROM CUSTOMER\nWHERE REP_NUM = '20'\nORDER BY CUSTOMER_NUM;",
+       "solution": "-- The four columns a stored procedure would read INTO its local variables.\nSELECT CUSTOMER_NUM, CUSTOMER_NAME, BALANCE, CREDIT_LIMIT\nFROM CUSTOMER\n-- The procedure's parameter goes here in place of the literal.\nWHERE REP_NUM = '20'\n-- ORDER BY matters more than usual for a cursor: it fixes the order the rows\n-- will be handed over, one at a time.\nORDER BY CUSTOMER_NUM;",
        "hint": "Two rows come back: 1120 Access Pet Center and 1310 Companion Care Clinic. Ask yourself which one a single set of variables could hold."
       },
       {
@@ -2497,7 +2497,7 @@
       },
       {
        "type": "code",
-       "text": "DECLARE cust_cursor CURSOR FOR\n    SELECT CUSTOMER_NUM, CUSTOMER_NAME, BALANCE, CREDIT_LIMIT\n    FROM CUSTOMER\n    WHERE REP_NUM = i_rep_num\n    ORDER BY CUSTOMER_NUM;"
+       "text": "-- DECLARE ... CURSOR FOR: a cursor is a query held ready, so the procedure can\n--   walk its rows ONE AT A TIME. This line only defines it - nothing runs yet,\n--   and the SELECT below is not executed until OPEN.\nDECLARE cust_cursor CURSOR FOR\n\n    -- The query the cursor will walk. Four columns, so four variables will be\n    --   needed to receive each row.\n    SELECT CUSTOMER_NUM, CUSTOMER_NAME, BALANCE, CREDIT_LIMIT\n    FROM CUSTOMER\n\n    -- A cursor query may use a parameter exactly like any other query.\n    WHERE REP_NUM = i_rep_num\n\n    -- ORDER BY matters more than usual here: it fixes the order the rows will be\n    --   handed to you in, one by one.\n    ORDER BY CUSTOMER_NUM;"
       },
       {
        "type": "p",
@@ -2519,7 +2519,7 @@
       },
       {
        "type": "code",
-       "text": "OPEN cust_cursor;"
+       "text": "-- OPEN: runs the cursor's query and positions it just BEFORE the first row.\n--   Nothing has been read yet; the cursor is simply ready to start.\nOPEN cust_cursor;"
       },
       {
        "type": "list",
@@ -2546,7 +2546,7 @@
       },
       {
        "type": "code",
-       "text": "FETCH cust_cursor INTO v_customer_num, v_customer_name,\n                       v_balance, v_credit_limit;"
+       "text": "-- FETCH ... INTO: moves the cursor on by one row and copies that row's values\n--   into the listed variables. The variables must match the cursor's SELECT list\n--   in number, order and type. One FETCH gets exactly one row, which is why a\n--   loop is needed to reach them all.\nFETCH cust_cursor INTO v_customer_num, v_customer_name,\n                       v_balance, v_credit_limit;"
       },
       {
        "type": "p",
@@ -2558,7 +2558,7 @@
       },
       {
        "type": "code",
-       "text": "DECLARE v_done INT DEFAULT 0;\n\nDECLARE CONTINUE HANDLER FOR NOT FOUND SET v_done = 1;\n\ncust_loop: LOOP\n    FETCH cust_cursor INTO v_customer_num, v_customer_name,\n                           v_balance, v_credit_limit;\n    IF v_done = 1 THEN\n        LEAVE cust_loop;\n    END IF;\n\n    -- work on the row that was retrieved goes here\nEND LOOP cust_loop;"
+       "text": "-- DECLARE ... DEFAULT: a flag variable, starting at 0 meaning \"not finished\".\nDECLARE v_done INT DEFAULT 0;\n\n-- CONTINUE HANDLER FOR NOT FOUND: when a FETCH runs past the last row, NOT FOUND\n--   is raised. This handler sets the flag and lets execution carry on, which is\n--   how the loop learns that the rows have run out.\nDECLARE CONTINUE HANDLER FOR NOT FOUND SET v_done = 1;\n\n-- LOOP with a LABEL: cust_loop names the loop so it can be left by name.\ncust_loop: LOOP\n\n    -- Read the next row into the variables.\n    FETCH cust_cursor INTO v_customer_num, v_customer_name,\n                           v_balance, v_credit_limit;\n\n    -- Test the flag IMMEDIATELY after the fetch. If the fetch failed, the\n    --   variables still hold the PREVIOUS row, so processing them here would\n    --   duplicate the last row - a classic off-by-one in cursor code.\n    IF v_done = 1 THEN\n\n        -- LEAVE: jumps out of the named loop. Without it this runs forever.\n        LEAVE cust_loop;\n    END IF;\n\n    -- work on the row that was retrieved goes here\n-- END LOOP: sends control back to the top for the next row.\nEND LOOP cust_loop;"
       },
       {
        "type": "p",
@@ -2584,7 +2584,7 @@
       },
       {
        "type": "code",
-       "text": "CLOSE cust_cursor;"
+       "text": "-- CLOSE: releases the cursor and the resources the server was holding for it.\n--   Always close what you open, so a long-running procedure does not accumulate\n--   open cursors.\nCLOSE cust_cursor;"
       },
       {
        "type": "list",
@@ -2609,7 +2609,7 @@
       },
       {
        "type": "code",
-       "text": "DROP TABLE IF EXISTS CUST_REVIEW;\n\nCREATE TABLE CUST_REVIEW\n    (CUSTOMER_NUM CHAR(4),\n     CUSTOMER_NAME VARCHAR(35),\n     AVAILABLE_CREDIT DECIMAL(9,2),\n     REVIEW_NOTE VARCHAR(10));"
+       "text": "-- DROP TABLE IF EXISTS: clear out any table left behind by an earlier run, so\n--   this script can be re-run from the top.\nDROP TABLE IF EXISTS CUST_REVIEW;\n\n-- CREATE TABLE: somewhere for the procedure to write its results. A stored\n--   procedure that loops over rows usually has to put its output somewhere, and\n--   a small result table is the simplest place.\nCREATE TABLE CUST_REVIEW\n    (CUSTOMER_NUM CHAR(4),\n     CUSTOMER_NAME VARCHAR(35),\n\n     -- The computed figure the procedure will work out per customer.\n     AVAILABLE_CREDIT DECIMAL(9,2),\n\n     -- The verdict, chosen by an IF inside the loop.\n     REVIEW_NOTE VARCHAR(10));"
       },
       {
        "type": "steps",
@@ -2634,7 +2634,7 @@
       },
       {
        "type": "code",
-       "text": "DELIMITER //\n\nDROP PROCEDURE IF EXISTS REP_CREDIT_REVIEW //\n\nCREATE PROCEDURE REP_CREDIT_REVIEW (IN i_rep_num CHAR(2))\nBEGIN\n    DECLARE v_done INT DEFAULT 0;\n    DECLARE v_customer_num CHAR(4);\n    DECLARE v_customer_name VARCHAR(35);\n    DECLARE v_balance DECIMAL(9,2);\n    DECLARE v_credit_limit DECIMAL(9,2);\n    DECLARE v_available DECIMAL(9,2);\n    DECLARE v_note VARCHAR(10);\n\n    DECLARE cust_cursor CURSOR FOR\n        SELECT CUSTOMER_NUM, CUSTOMER_NAME, BALANCE, CREDIT_LIMIT\n        FROM CUSTOMER\n        WHERE REP_NUM = i_rep_num\n        ORDER BY CUSTOMER_NUM;\n\n    DECLARE CONTINUE HANDLER FOR NOT FOUND SET v_done = 1;\n\n    OPEN cust_cursor;\n    CLOSE cust_cursor;\nEND //\n\nDELIMITER ;"
+       "text": "DELIMITER //\n\nDROP PROCEDURE IF EXISTS REP_CREDIT_REVIEW //\n\n-- CREATE PROCEDURE: stage one of building a cursor procedure - declarations only,\n--   with an OPEN and CLOSE and nothing in between. Build it in stages like this\n--   and each piece can be checked before the next is added.\nCREATE PROCEDURE REP_CREDIT_REVIEW (IN i_rep_num CHAR(2))\nBEGIN\n\n    -- The finished flag.\n    DECLARE v_done INT DEFAULT 0;\n\n    -- One variable per column the cursor returns, declared with matching types.\n    DECLARE v_customer_num CHAR(4);\n    DECLARE v_customer_name VARCHAR(35);\n    DECLARE v_balance DECIMAL(9,2);\n    DECLARE v_credit_limit DECIMAL(9,2);\n\n    -- Two more for values the procedure will calculate rather than fetch.\n    DECLARE v_available DECIMAL(9,2);\n    DECLARE v_note VARCHAR(10);\n\n    -- The cursor declaration. MySQL demands a strict order inside a procedure:\n    --   variables first, then cursors, then handlers. Get it wrong and the\n    --   procedure will not compile.\n    DECLARE cust_cursor CURSOR FOR\n        SELECT CUSTOMER_NUM, CUSTOMER_NAME, BALANCE, CREDIT_LIMIT\n        FROM CUSTOMER\n        WHERE REP_NUM = i_rep_num\n        ORDER BY CUSTOMER_NUM;\n\n    -- The handler comes last of the three, and arms the finished flag.\n    DECLARE CONTINUE HANDLER FOR NOT FOUND SET v_done = 1;\n\n    -- Open and close with nothing between them: this version does no work, but it\n    --   proves the declarations are correct.\n    OPEN cust_cursor;\n    CLOSE cust_cursor;\nEND //\n\nDELIMITER ;"
       },
       {
        "type": "p",
@@ -2642,7 +2642,7 @@
       },
       {
        "type": "code",
-       "text": "    OPEN cust_cursor;\n\n    cust_loop: LOOP\n        FETCH cust_cursor INTO v_customer_num, v_customer_name,\n                               v_balance, v_credit_limit;\n        IF v_done = 1 THEN\n            LEAVE cust_loop;\n        END IF;\n    END LOOP cust_loop;\n\n    CLOSE cust_cursor;"
+       "text": "-- OPEN: run the query and get ready to read.\n    OPEN cust_cursor;\n\n    -- The loop skeleton: fetch, test, leave. Stage two adds the walking, still\n    --   without doing anything to the rows.\n    cust_loop: LOOP\n        FETCH cust_cursor INTO v_customer_num, v_customer_name,\n                               v_balance, v_credit_limit;\n\n        -- The exit test goes straight after the FETCH and before any processing.\n        IF v_done = 1 THEN\n            LEAVE cust_loop;\n        END IF;\n    END LOOP cust_loop;\n\n    -- CLOSE: tidy up once the rows are exhausted.\n    CLOSE cust_cursor;"
       },
       {
        "type": "p",
@@ -2650,7 +2650,7 @@
       },
       {
        "type": "code",
-       "text": "DELIMITER //\n\nDROP PROCEDURE IF EXISTS REP_CREDIT_REVIEW //\n\nCREATE PROCEDURE REP_CREDIT_REVIEW (IN i_rep_num CHAR(2))\nBEGIN\n    DECLARE v_done INT DEFAULT 0;\n    DECLARE v_customer_num CHAR(4);\n    DECLARE v_customer_name VARCHAR(35);\n    DECLARE v_balance DECIMAL(9,2);\n    DECLARE v_credit_limit DECIMAL(9,2);\n    DECLARE v_available DECIMAL(9,2);\n    DECLARE v_note VARCHAR(10);\n\n    DECLARE cust_cursor CURSOR FOR\n        SELECT CUSTOMER_NUM, CUSTOMER_NAME, BALANCE, CREDIT_LIMIT\n        FROM CUSTOMER\n        WHERE REP_NUM = i_rep_num\n        ORDER BY CUSTOMER_NUM;\n\n    DECLARE CONTINUE HANDLER FOR NOT FOUND SET v_done = 1;\n\n    OPEN cust_cursor;\n\n    cust_loop: LOOP\n        FETCH cust_cursor INTO v_customer_num, v_customer_name,\n                               v_balance, v_credit_limit;\n        IF v_done = 1 THEN\n            LEAVE cust_loop;\n        END IF;\n\n        SET v_available = v_credit_limit - v_balance;\n\n        IF v_available < 5000 THEN\n            SET v_note = 'Call rep';\n        ELSE\n            SET v_note = 'No action';\n        END IF;\n\n        INSERT INTO CUST_REVIEW\n               (CUSTOMER_NUM, CUSTOMER_NAME, AVAILABLE_CREDIT, REVIEW_NOTE)\n        VALUES (v_customer_num, v_customer_name, v_available, v_note);\n    END LOOP cust_loop;\n\n    CLOSE cust_cursor;\nEND //\n\nDELIMITER ;"
+       "text": "DELIMITER //\n\nDROP PROCEDURE IF EXISTS REP_CREDIT_REVIEW //\n\n-- CREATE PROCEDURE: the finished version - declarations, cursor, loop, and real\n--   work inside the loop.\nCREATE PROCEDURE REP_CREDIT_REVIEW (IN i_rep_num CHAR(2))\nBEGIN\n\n    -- The finished flag, starting at 0.\n    DECLARE v_done INT DEFAULT 0;\n\n    -- One variable per cursor column...\n    DECLARE v_customer_num CHAR(4);\n    DECLARE v_customer_name VARCHAR(35);\n    DECLARE v_balance DECIMAL(9,2);\n    DECLARE v_credit_limit DECIMAL(9,2);\n\n    -- ...plus two for the values computed inside the loop.\n    DECLARE v_available DECIMAL(9,2);\n    DECLARE v_note VARCHAR(10);\n\n    -- The cursor: the set of rows to be walked, one at a time.\n    DECLARE cust_cursor CURSOR FOR\n        SELECT CUSTOMER_NUM, CUSTOMER_NAME, BALANCE, CREDIT_LIMIT\n        FROM CUSTOMER\n        WHERE REP_NUM = i_rep_num\n        ORDER BY CUSTOMER_NUM;\n\n    -- The handler that trips the flag when the rows run out.\n    DECLARE CONTINUE HANDLER FOR NOT FOUND SET v_done = 1;\n\n    -- Run the query and position before the first row.\n    OPEN cust_cursor;\n\n    -- The walking loop.\n    cust_loop: LOOP\n\n        -- Read one row into the variables.\n        FETCH cust_cursor INTO v_customer_num, v_customer_name,\n                               v_balance, v_credit_limit;\n\n        -- Stop as soon as the fetch fails, before processing stale values.\n        IF v_done = 1 THEN\n            LEAVE cust_loop;\n        END IF;\n\n        -- Row-at-a-time work, part 1: a calculation.\n        SET v_available = v_credit_limit - v_balance;\n\n        -- Row-at-a-time work, part 2: a DECISION. This is what a cursor buys you -\n        --   plain SQL can compute the number, but choosing different actions per\n        --   row is procedural logic.\n        IF v_available < 5000 THEN\n            SET v_note = 'Call rep';\n        ELSE\n            SET v_note = 'No action';\n        END IF;\n\n        -- Row-at-a-time work, part 3: write the verdict out. One INSERT per pass\n        --   of the loop, so one result row per customer.\n        INSERT INTO CUST_REVIEW\n               (CUSTOMER_NUM, CUSTOMER_NAME, AVAILABLE_CREDIT, REVIEW_NOTE)\n        VALUES (v_customer_num, v_customer_name, v_available, v_note);\n    END LOOP cust_loop;\n\n    -- Release the cursor.\n    CLOSE cust_cursor;\nEND //\n\nDELIMITER ;"
       },
       {
        "type": "p",
@@ -2658,7 +2658,7 @@
       },
       {
        "type": "code",
-       "text": "CALL REP_CREDIT_REVIEW('20');\n\nSELECT * FROM CUST_REVIEW\nORDER BY CUSTOMER_NUM;"
+       "text": "-- CALL: run the review for one rep. The procedure returns nothing directly -\n--   its output is the rows it wrote into CUST_REVIEW.\nCALL REP_CREDIT_REVIEW('20');\n\n-- SELECT: read the results table to see what the loop produced, one row per\n--   customer the cursor walked.\nSELECT * FROM CUST_REVIEW\nORDER BY CUSTOMER_NUM;"
       },
       {
        "type": "table",
@@ -2704,7 +2704,7 @@
       },
       {
        "type": "code",
-       "text": "DECLARE line_cursor CURSOR FOR\n    SELECT C.CUSTOMER_NAME, I.INVOICE_NUM, T.DESCRIPTION,\n           L.NUM_ORDERED * L.QUOTED_PRICE\n    FROM CUSTOMER C\n    JOIN INVOICE I ON C.CUSTOMER_NUM = I.CUSTOMER_NUM\n    JOIN INVOICE_LINE L ON I.INVOICE_NUM = L.INVOICE_NUM\n    JOIN ITEM T ON L.ITEM_ID = T.ITEM_ID\n    WHERE C.REP_NUM = i_rep_num\n    ORDER BY I.INVOICE_NUM, T.DESCRIPTION;"
+       "text": "-- DECLARE ... CURSOR FOR: a cursor's query can be as complex as any other. This\n--   one joins four tables, and the procedure still walks the result one row at a\n--   time exactly as before.\nDECLARE line_cursor CURSOR FOR\n\n    -- Three stored columns and one calculated column. A cursor column does not\n    --   have to correspond to anything stored.\n    SELECT C.CUSTOMER_NAME, I.INVOICE_NUM, T.DESCRIPTION,\n           L.NUM_ORDERED * L.QUOTED_PRICE\n    FROM CUSTOMER C\n\n    -- Hop 1 - customer to invoice.\n    JOIN INVOICE I ON C.CUSTOMER_NUM = I.CUSTOMER_NUM\n\n    -- Hop 2 - invoice to line item.\n    JOIN INVOICE_LINE L ON I.INVOICE_NUM = L.INVOICE_NUM\n\n    -- Hop 3 - line item to item.\n    JOIN ITEM T ON L.ITEM_ID = T.ITEM_ID\n\n    -- The parameter filters the joined rows.\n    WHERE C.REP_NUM = i_rep_num\n\n    -- Fixes the order the rows will be fetched in.\n    ORDER BY I.INVOICE_NUM, T.DESCRIPTION;"
       },
       {
        "type": "p",
@@ -2718,7 +2718,7 @@
        "type": "sandbox",
        "seed": "kimtay_full",
        "starter": "-- The cursor's query with i_rep_num written out as '20'.\n-- Run it, then change '20' to '65' and predict the rows before you run it again.\nSELECT C.CUSTOMER_NAME, I.INVOICE_NUM, T.DESCRIPTION,\n       L.NUM_ORDERED * L.QUOTED_PRICE AS LINE_TOTAL\nFROM CUSTOMER C\nJOIN INVOICE I ON C.CUSTOMER_NUM = I.CUSTOMER_NUM\nJOIN INVOICE_LINE L ON I.INVOICE_NUM = L.INVOICE_NUM\nJOIN ITEM T ON L.ITEM_ID = T.ITEM_ID\nWHERE C.REP_NUM = '20'\nORDER BY I.INVOICE_NUM, T.DESCRIPTION;",
-       "solution": "SELECT C.CUSTOMER_NAME, I.INVOICE_NUM, T.DESCRIPTION,\n       L.NUM_ORDERED * L.QUOTED_PRICE AS LINE_TOTAL\nFROM CUSTOMER C\nJOIN INVOICE I ON C.CUSTOMER_NUM = I.CUSTOMER_NUM\nJOIN INVOICE_LINE L ON I.INVOICE_NUM = L.INVOICE_NUM\nJOIN ITEM T ON L.ITEM_ID = T.ITEM_ID\nWHERE C.REP_NUM = '65'\nORDER BY I.INVOICE_NUM, T.DESCRIPTION;",
+       "solution": "-- The query a cursor would walk, written as a plain SELECT first. Run it before\n-- wrapping it in a cursor, so you know exactly what rows the loop will see.\nSELECT C.CUSTOMER_NAME, I.INVOICE_NUM, T.DESCRIPTION,\n       -- Three stored columns and one calculated one.\n       L.NUM_ORDERED * L.QUOTED_PRICE AS LINE_TOTAL\nFROM CUSTOMER C\n-- Hop 1: customer to invoice.\nJOIN INVOICE I ON C.CUSTOMER_NUM = I.CUSTOMER_NUM\n-- Hop 2: invoice to line item.\nJOIN INVOICE_LINE L ON I.INVOICE_NUM = L.INVOICE_NUM\n-- Hop 3: line item to item.\nJOIN ITEM T ON L.ITEM_ID = T.ITEM_ID\n-- The parameter the procedure would accept.\nWHERE C.REP_NUM = '65'\nORDER BY I.INVOICE_NUM, T.DESCRIPTION;",
        "hint": "Rep 20 gives two rows, both on invoice 50710: Grain-Free Dry Food 30lb at 127.5 and Nylon Dog Leash 6ft at 23.98. Rep 65 also gives two rows, both on invoice 50711: Grain-Free Dry Food 30lb at 85.0 and Small Animal Grooming Kit at 15.25. Drop the ITEM join and the query fails, because DESCRIPTION has nowhere to come from."
       },
       {
@@ -2727,7 +2727,7 @@
       },
       {
        "type": "code",
-       "text": "DROP TABLE IF EXISTS BIG_LINE_LOG;\n\nCREATE TABLE BIG_LINE_LOG\n    (CUSTOMER_NAME VARCHAR(35),\n     INVOICE_NUM CHAR(5),\n     DESCRIPTION VARCHAR(30),\n     LINE_TOTAL DECIMAL(9,2));\n\nDELIMITER //\n\nDROP PROCEDURE IF EXISTS BIG_LINE_ITEMS //\n\nCREATE PROCEDURE BIG_LINE_ITEMS (IN i_rep_num CHAR(2),\n                                 IN i_min_total DECIMAL(7,2))\nBEGIN\n    DECLARE v_done INT DEFAULT 0;\n    DECLARE v_customer_name VARCHAR(35);\n    DECLARE v_invoice_num CHAR(5);\n    DECLARE v_description VARCHAR(30);\n    DECLARE v_line_total DECIMAL(9,2);\n\n    DECLARE line_cursor CURSOR FOR\n        SELECT C.CUSTOMER_NAME, I.INVOICE_NUM, T.DESCRIPTION,\n               L.NUM_ORDERED * L.QUOTED_PRICE\n        FROM CUSTOMER C\n        JOIN INVOICE I ON C.CUSTOMER_NUM = I.CUSTOMER_NUM\n        JOIN INVOICE_LINE L ON I.INVOICE_NUM = L.INVOICE_NUM\n        JOIN ITEM T ON L.ITEM_ID = T.ITEM_ID\n        WHERE C.REP_NUM = i_rep_num\n          AND L.NUM_ORDERED * L.QUOTED_PRICE >= i_min_total\n        ORDER BY I.INVOICE_NUM, T.DESCRIPTION;\n\n    DECLARE CONTINUE HANDLER FOR NOT FOUND SET v_done = 1;\n\n    OPEN line_cursor;\n\n    line_loop: LOOP\n        FETCH line_cursor INTO v_customer_name, v_invoice_num,\n                               v_description, v_line_total;\n        IF v_done = 1 THEN\n            LEAVE line_loop;\n        END IF;\n\n        INSERT INTO BIG_LINE_LOG\n               (CUSTOMER_NAME, INVOICE_NUM, DESCRIPTION, LINE_TOTAL)\n        VALUES (v_customer_name, v_invoice_num, v_description, v_line_total);\n    END LOOP line_loop;\n\n    CLOSE line_cursor;\nEND //\n\nDELIMITER ;\n\nCALL BIG_LINE_ITEMS('65', 50.00);"
+       "text": "-- DROP TABLE IF EXISTS: make the script re-runnable.\nDROP TABLE IF EXISTS BIG_LINE_LOG;\n\n-- CREATE TABLE: the destination for whatever the procedure finds. Its columns\n--   match the four the cursor returns.\nCREATE TABLE BIG_LINE_LOG\n    (CUSTOMER_NAME VARCHAR(35),\n     INVOICE_NUM CHAR(5),\n     DESCRIPTION VARCHAR(30),\n     LINE_TOTAL DECIMAL(9,2));\n\nDELIMITER //\n\nDROP PROCEDURE IF EXISTS BIG_LINE_ITEMS //\n\n-- CREATE PROCEDURE: two parameters this time, and both are used inside the\n--   cursor's query rather than in the loop.\nCREATE PROCEDURE BIG_LINE_ITEMS (IN i_rep_num CHAR(2),\n                                 IN i_min_total DECIMAL(7,2))\nBEGIN\n\n    -- The finished flag.\n    DECLARE v_done INT DEFAULT 0;\n\n    -- One variable per cursor column, in the same order.\n    DECLARE v_customer_name VARCHAR(35);\n    DECLARE v_invoice_num CHAR(5);\n    DECLARE v_description VARCHAR(30);\n    DECLARE v_line_total DECIMAL(9,2);\n\n    -- The cursor over a four-table join.\n    DECLARE line_cursor CURSOR FOR\n        SELECT C.CUSTOMER_NAME, I.INVOICE_NUM, T.DESCRIPTION,\n               L.NUM_ORDERED * L.QUOTED_PRICE\n        FROM CUSTOMER C\n        JOIN INVOICE I ON C.CUSTOMER_NUM = I.CUSTOMER_NUM\n        JOIN INVOICE_LINE L ON I.INVOICE_NUM = L.INVOICE_NUM\n        JOIN ITEM T ON L.ITEM_ID = T.ITEM_ID\n        WHERE C.REP_NUM = i_rep_num\n\n        -- The second parameter filters on the CALCULATION, not on a stored\n        --   column. Doing the filtering here rather than inside the loop means\n        --   fewer rows are ever fetched - the database is better at discarding\n        --   rows than your loop is.\n          AND L.NUM_ORDERED * L.QUOTED_PRICE >= i_min_total\n        ORDER BY I.INVOICE_NUM, T.DESCRIPTION;\n\n    -- The handler that ends the loop.\n    DECLARE CONTINUE HANDLER FOR NOT FOUND SET v_done = 1;\n\n    -- Run the query.\n    OPEN line_cursor;\n\n    -- Walk the rows.\n    line_loop: LOOP\n        FETCH line_cursor INTO v_customer_name, v_invoice_num,\n                               v_description, v_line_total;\n        IF v_done = 1 THEN\n            LEAVE line_loop;\n        END IF;\n\n        -- The only work per row: copy it into the log table. Because the cursor\n        --   already filtered, no IF is needed here.\n        INSERT INTO BIG_LINE_LOG\n               (CUSTOMER_NAME, INVOICE_NUM, DESCRIPTION, LINE_TOTAL)\n        VALUES (v_customer_name, v_invoice_num, v_description, v_line_total);\n    END LOOP line_loop;\n\n    -- Tidy up.\n    CLOSE line_cursor;\nEND //\n\nDELIMITER ;\n\n-- CALL: rep 65, lines worth 50.00 or more. Change either argument and the same\n--   procedure answers a different question.\nCALL BIG_LINE_ITEMS('65', 50.00);"
       },
       {
        "type": "p",
@@ -2737,7 +2737,7 @@
        "type": "sandbox",
        "seed": "kimtay_full",
        "starter": "-- The cursor query behind BIG_LINE_ITEMS('65', 50.00),\n-- with the parameters written out as literals.\nSELECT C.CUSTOMER_NAME, I.INVOICE_NUM, T.DESCRIPTION,\n       L.NUM_ORDERED * L.QUOTED_PRICE AS LINE_TOTAL\nFROM CUSTOMER C\nJOIN INVOICE I ON C.CUSTOMER_NUM = I.CUSTOMER_NUM\nJOIN INVOICE_LINE L ON I.INVOICE_NUM = L.INVOICE_NUM\nJOIN ITEM T ON L.ITEM_ID = T.ITEM_ID\nWHERE C.REP_NUM = '65'\n  AND L.NUM_ORDERED * L.QUOTED_PRICE >= 50\nORDER BY I.INVOICE_NUM, T.DESCRIPTION;",
-       "solution": "SELECT C.CUSTOMER_NAME, I.INVOICE_NUM, T.DESCRIPTION,\n       L.NUM_ORDERED * L.QUOTED_PRICE AS LINE_TOTAL\nFROM CUSTOMER C\nJOIN INVOICE I ON C.CUSTOMER_NUM = I.CUSTOMER_NUM\nJOIN INVOICE_LINE L ON I.INVOICE_NUM = L.INVOICE_NUM\nJOIN ITEM T ON L.ITEM_ID = T.ITEM_ID\nWHERE C.REP_NUM = '65'\n  AND L.NUM_ORDERED * L.QUOTED_PRICE >= 50\nORDER BY I.INVOICE_NUM, T.DESCRIPTION;",
+       "solution": "SELECT C.CUSTOMER_NAME, I.INVOICE_NUM, T.DESCRIPTION,\n       L.NUM_ORDERED * L.QUOTED_PRICE AS LINE_TOTAL\nFROM CUSTOMER C\nJOIN INVOICE I ON C.CUSTOMER_NUM = I.CUSTOMER_NUM\nJOIN INVOICE_LINE L ON I.INVOICE_NUM = L.INVOICE_NUM\nJOIN ITEM T ON L.ITEM_ID = T.ITEM_ID\nWHERE C.REP_NUM = '65'\n  -- The second filter tests the CALCULATION, not a stored column. Doing it here\n  -- rather than inside the loop means fewer rows are ever fetched - the database\n  -- discards rows far more cheaply than your loop can.\n  AND L.NUM_ORDERED * L.QUOTED_PRICE >= 50\nORDER BY I.INVOICE_NUM, T.DESCRIPTION;",
        "hint": "One row: invoice 50711, Grain-Free Dry Food 30lb, 2 at 42.50, a line total of 85.0. Change 50 to 10 and a second line appears, Small Animal Grooming Kit at 15.25."
       },
       {
@@ -2746,13 +2746,13 @@
       },
       {
        "type": "code",
-       "text": "DECLARE invoice_cursor CURSOR FOR\n    SELECT I.INVOICE_NUM, C.CUSTOMER_NAME,\n           SUM(L.NUM_ORDERED * L.QUOTED_PRICE)\n    FROM INVOICE I\n    JOIN CUSTOMER C ON I.CUSTOMER_NUM = C.CUSTOMER_NUM\n    JOIN INVOICE_LINE L ON I.INVOICE_NUM = L.INVOICE_NUM\n    GROUP BY I.INVOICE_NUM, C.CUSTOMER_NAME\n    ORDER BY I.INVOICE_NUM;"
+       "text": "-- DECLARE ... CURSOR FOR: a cursor over a GROUPED query. Each row the cursor\n--   hands back is a summary of several underlying rows, which is fine - the\n--   cursor neither knows nor cares how its query was built.\nDECLARE invoice_cursor CURSOR FOR\n\n    -- Two grouping columns and one aggregate.\n    SELECT I.INVOICE_NUM, C.CUSTOMER_NAME,\n           SUM(L.NUM_ORDERED * L.QUOTED_PRICE)\n    FROM INVOICE I\n\n    -- Hop 1 - invoice to customer, for the name.\n    JOIN CUSTOMER C ON I.CUSTOMER_NUM = C.CUSTOMER_NUM\n\n    -- Hop 2 - invoice to its line items, for the money.\n    JOIN INVOICE_LINE L ON I.INVOICE_NUM = L.INVOICE_NUM\n\n    -- GROUP BY: one row per invoice, so the cursor walks invoices rather than\n    --   lines. Every non-aggregated column in the SELECT list appears here.\n    GROUP BY I.INVOICE_NUM, C.CUSTOMER_NAME\n    ORDER BY I.INVOICE_NUM;"
       },
       {
        "type": "sandbox",
        "seed": "kimtay_full",
        "starter": "-- One row per invoice: this is what a cursor over a GROUP BY hands the loop.\nSELECT I.INVOICE_NUM, C.CUSTOMER_NAME,\n       SUM(L.NUM_ORDERED * L.QUOTED_PRICE) AS INVOICE_TOTAL\nFROM INVOICE I\nJOIN CUSTOMER C ON I.CUSTOMER_NUM = C.CUSTOMER_NUM\nJOIN INVOICE_LINE L ON I.INVOICE_NUM = L.INVOICE_NUM\nGROUP BY I.INVOICE_NUM, C.CUSTOMER_NAME\nORDER BY I.INVOICE_NUM;",
-       "solution": "SELECT I.INVOICE_NUM, C.CUSTOMER_NAME,\n       SUM(L.NUM_ORDERED * L.QUOTED_PRICE) AS INVOICE_TOTAL\nFROM INVOICE I\nJOIN CUSTOMER C ON I.CUSTOMER_NUM = C.CUSTOMER_NUM\nJOIN INVOICE_LINE L ON I.INVOICE_NUM = L.INVOICE_NUM\nGROUP BY I.INVOICE_NUM, C.CUSTOMER_NAME\nORDER BY I.INVOICE_NUM;",
+       "solution": "-- A cursor can walk a GROUPED query just as happily as a plain one: each row it\n-- hands back simply summarises several underlying rows.\nSELECT I.INVOICE_NUM, C.CUSTOMER_NAME,\n       SUM(L.NUM_ORDERED * L.QUOTED_PRICE) AS INVOICE_TOTAL\nFROM INVOICE I\n-- Hop 1: invoice to customer, for the name.\nJOIN CUSTOMER C ON I.CUSTOMER_NUM = C.CUSTOMER_NUM\n-- Hop 2: invoice to its line items, for the money.\nJOIN INVOICE_LINE L ON I.INVOICE_NUM = L.INVOICE_NUM\n-- One row per invoice, so the loop would walk invoices rather than lines.\nGROUP BY I.INVOICE_NUM, C.CUSTOMER_NAME\nORDER BY I.INVOICE_NUM;",
        "hint": "Three rows, one per invoice: 50710 at 151.48, 50711 at 100.25, 50712 at 120.49. A cursor over this query would loop three times."
       },
       {
@@ -2787,7 +2787,7 @@
        "type": "sandbox",
        "seed": "kimtay_full",
        "starter": "DROP TABLE IF EXISTS CUST_REVIEW;\n\nCREATE TABLE CUST_REVIEW\n    (CUSTOMER_NUM CHAR(4),\n     CUSTOMER_NAME VARCHAR(35),\n     AVAILABLE_CREDIT DECIMAL(9,2),\n     REVIEW_NOTE VARCHAR(10));\n\nINSERT INTO CUST_REVIEW\n       (CUSTOMER_NUM, CUSTOMER_NAME, AVAILABLE_CREDIT, REVIEW_NOTE)\nSELECT CUSTOMER_NUM, CUSTOMER_NAME, CREDIT_LIMIT - BALANCE, 'Call rep'\nFROM CUSTOMER\nWHERE REP_NUM = '20' AND CREDIT_LIMIT - BALANCE < 5000;\n\nINSERT INTO CUST_REVIEW\n       (CUSTOMER_NUM, CUSTOMER_NAME, AVAILABLE_CREDIT, REVIEW_NOTE)\nSELECT CUSTOMER_NUM, CUSTOMER_NAME, CREDIT_LIMIT - BALANCE, 'No action'\nFROM CUSTOMER\nWHERE REP_NUM = '20' AND CREDIT_LIMIT - BALANCE >= 5000;\n\nSELECT * FROM CUST_REVIEW ORDER BY CUSTOMER_NUM;",
-       "solution": "DROP TABLE IF EXISTS CUST_REVIEW;\n\nCREATE TABLE CUST_REVIEW\n    (CUSTOMER_NUM CHAR(4),\n     CUSTOMER_NAME VARCHAR(35),\n     AVAILABLE_CREDIT DECIMAL(9,2),\n     REVIEW_NOTE VARCHAR(10));\n\nINSERT INTO CUST_REVIEW\n       (CUSTOMER_NUM, CUSTOMER_NAME, AVAILABLE_CREDIT, REVIEW_NOTE)\nSELECT CUSTOMER_NUM, CUSTOMER_NAME, CREDIT_LIMIT - BALANCE, 'Call rep'\nFROM CUSTOMER\nWHERE REP_NUM = '20' AND CREDIT_LIMIT - BALANCE < 5000;\n\nINSERT INTO CUST_REVIEW\n       (CUSTOMER_NUM, CUSTOMER_NAME, AVAILABLE_CREDIT, REVIEW_NOTE)\nSELECT CUSTOMER_NUM, CUSTOMER_NAME, CREDIT_LIMIT - BALANCE, 'No action'\nFROM CUSTOMER\nWHERE REP_NUM = '20' AND CREDIT_LIMIT - BALANCE >= 5000;\n\nSELECT * FROM CUST_REVIEW ORDER BY CUSTOMER_NUM;",
+       "solution": "DROP TABLE IF EXISTS CUST_REVIEW;\n\n-- Somewhere for the results to go, exactly as the cursor version used.\nCREATE TABLE CUST_REVIEW\n    (CUSTOMER_NUM CHAR(4),\n     CUSTOMER_NAME VARCHAR(35),\n     AVAILABLE_CREDIT DECIMAL(9,2),\n     REVIEW_NOTE VARCHAR(10));\n\n-- The whole cursor loop, replaced by two set-based INSERTs. This one writes the\n-- rows that would have taken the IF branch...\nINSERT INTO CUST_REVIEW\n       (CUSTOMER_NUM, CUSTOMER_NAME, AVAILABLE_CREDIT, REVIEW_NOTE)\n-- The literal in the SELECT list supplies the same value on every row it writes.\nSELECT CUSTOMER_NUM, CUSTOMER_NAME, CREDIT_LIMIT - BALANCE, 'Call rep'\nFROM CUSTOMER\nWHERE REP_NUM = '20' AND CREDIT_LIMIT - BALANCE < 5000;\n\n-- ...and this one writes the rows that would have taken the ELSE branch. The\n-- two WHERE clauses are the IF, turned inside out.\nINSERT INTO CUST_REVIEW\n       (CUSTOMER_NUM, CUSTOMER_NAME, AVAILABLE_CREDIT, REVIEW_NOTE)\nSELECT CUSTOMER_NUM, CUSTOMER_NAME, CREDIT_LIMIT - BALANCE, 'No action'\nFROM CUSTOMER\nWHERE REP_NUM = '20' AND CREDIT_LIMIT - BALANCE >= 5000;\n\n-- Same result as the cursor, in two statements instead of thirty lines - and far\n-- faster, because the database does the looping internally.\nSELECT * FROM CUST_REVIEW ORDER BY CUSTOMER_NUM;",
        "hint": "You should get the same two rows the procedure produced: 1120 with 3987.5 and 'Call rep', 1310 with 10000 and 'No action'. The leading DROP TABLE IF EXISTS is what lets you press Run a second time without an error."
       },
       {
@@ -3193,7 +3193,7 @@
       },
       {
        "type": "code",
-       "text": "DELIMITER //\nCREATE PROCEDURE GET_CUSTOMER (IN I_CUSTOMER_NUM CHAR(4))\nBEGIN\n    DECLARE L_NAME    VARCHAR(35);\n    DECLARE L_BALANCE DECIMAL(9,2);\n\n    SELECT CUSTOMER_NAME, BALANCE\n    INTO   L_NAME, L_BALANCE\n    FROM   CUSTOMER\n    WHERE  CUSTOMER_NUM = I_CUSTOMER_NUM;\n\n    SELECT L_NAME AS CUSTOMER_NAME, L_BALANCE AS BALANCE;\nEND //\nDELIMITER ;"
+       "text": "-- MySQL, for comparison with the Oracle and SQL Server versions below.\nDELIMITER //\n\n-- CREATE PROCEDURE: MySQL puts the direction (IN) BEFORE the parameter name.\nCREATE PROCEDURE GET_CUSTOMER (IN I_CUSTOMER_NUM CHAR(4))\nBEGIN\n\n    -- DECLARE, with the type written out in full.\n    DECLARE L_NAME    VARCHAR(35);\n    DECLARE L_BALANCE DECIMAL(9,2);\n\n    -- SELECT ... INTO fills the two locals.\n    SELECT CUSTOMER_NAME, BALANCE\n    INTO   L_NAME, L_BALANCE\n    FROM   CUSTOMER\n    WHERE  CUSTOMER_NUM = I_CUSTOMER_NUM;\n\n    -- MySQL has no print statement, so output is produced by SELECTing the\n    --   variables - the result comes back as a one-row result set.\n    SELECT L_NAME AS CUSTOMER_NAME, L_BALANCE AS BALANCE;\nEND //\nDELIMITER ;"
       },
       {
        "type": "p",
@@ -3201,7 +3201,7 @@
       },
       {
        "type": "code",
-       "text": "CREATE OR REPLACE PROCEDURE GET_CUSTOMER (I_CUSTOMER_NUM IN CHAR) AS\n    L_NAME     CUSTOMER.CUSTOMER_NAME%TYPE;\n    L_BALANCE  CUSTOMER.BALANCE%TYPE;\nBEGIN\n    SELECT CUSTOMER_NAME, BALANCE\n    INTO   L_NAME, L_BALANCE\n    FROM   CUSTOMER\n    WHERE  CUSTOMER_NUM = I_CUSTOMER_NUM;\n\n    DBMS_OUTPUT.PUT_LINE(L_NAME || '  ' || TO_CHAR(L_BALANCE, '99999.99'));\nEXCEPTION\n    WHEN NO_DATA_FOUND THEN\n        DBMS_OUTPUT.PUT_LINE('No customer numbered ' || I_CUSTOMER_NUM);\n    WHEN TOO_MANY_ROWS THEN\n        DBMS_OUTPUT.PUT_LINE('That condition matched more than one customer.');\n    WHEN OTHERS THEN\n        DBMS_OUTPUT.PUT_LINE('Unexpected error: ' || SQLERRM);\nEND;\n/"
+       "text": "-- Oracle PL/SQL. CREATE OR REPLACE: no separate DROP is needed - this replaces\n--   any existing procedure of the same name in one statement.\nCREATE OR REPLACE PROCEDURE GET_CUSTOMER (I_CUSTOMER_NUM IN CHAR) AS\n\n    -- %TYPE: declare the variable as \"whatever type that column is\". If the\n    --   column is widened later, the variable follows automatically. Note there\n    --   is no DECLARE keyword here - in Oracle, declarations simply sit between\n    --   AS and BEGIN. Oracle also puts the direction AFTER the parameter name.\n    L_NAME     CUSTOMER.CUSTOMER_NAME%TYPE;\n    L_BALANCE  CUSTOMER.BALANCE%TYPE;\nBEGIN\n\n    -- SELECT ... INTO works the same way as in MySQL.\n    SELECT CUSTOMER_NAME, BALANCE\n    INTO   L_NAME, L_BALANCE\n    FROM   CUSTOMER\n    WHERE  CUSTOMER_NUM = I_CUSTOMER_NUM;\n\n    -- DBMS_OUTPUT.PUT_LINE: Oracle's print. || joins strings, and TO_CHAR formats\n    --   the number to a fixed picture so columns line up.\n    DBMS_OUTPUT.PUT_LINE(L_NAME || '  ' || TO_CHAR(L_BALANCE, '99999.99'));\n\n-- EXCEPTION: Oracle's error handling is a block at the END of the procedure,\n--   rather than handlers declared at the top as in MySQL.\nEXCEPTION\n\n    -- NO_DATA_FOUND: the named condition for a SELECT ... INTO that matched\n    --   nothing - Oracle's equivalent of MySQL's NOT FOUND.\n    WHEN NO_DATA_FOUND THEN\n        DBMS_OUTPUT.PUT_LINE('No customer numbered ' || I_CUSTOMER_NUM);\n\n    -- TOO_MANY_ROWS: the opposite failure - the INTO matched more than one row.\n    --   Oracle gives this its own name; MySQL lumps it under SQLEXCEPTION.\n    WHEN TOO_MANY_ROWS THEN\n        DBMS_OUTPUT.PUT_LINE('That condition matched more than one customer.');\n\n    -- WHEN OTHERS: the catch-all, and it must come last. SQLERRM holds the text\n    --   of whatever actually went wrong.\n    WHEN OTHERS THEN\n        DBMS_OUTPUT.PUT_LINE('Unexpected error: ' || SQLERRM);\nEND;\n\n-- The lone / on its own line is what tells SQL*Plus to send the block to the\n--   server - Oracle's equivalent of MySQL's DELIMITER dance.\n/"
       },
       {
        "type": "p",
@@ -3221,7 +3221,7 @@
        "type": "sandbox",
        "seed": "kimtay_full",
        "starter": "-- Case 1: exactly one row comes back. This is the case the procedure was written for.\nSELECT CUSTOMER_NAME, BALANCE\nFROM CUSTOMER\nWHERE CUSTOMER_NUM = '1225';\n\n-- Case 2: no row comes back. In PL/SQL this raises NO_DATA_FOUND.\nSELECT CUSTOMER_NAME, BALANCE\nFROM CUSTOMER\nWHERE CUSTOMER_NUM = '1999';\n\n-- Case 3: two rows come back. In PL/SQL this raises TOO_MANY_ROWS.\nSELECT CUSTOMER_NAME, BALANCE\nFROM CUSTOMER\nWHERE REP_NUM = '20';",
-       "solution": "-- Case 1: exactly one row comes back. This is the case the procedure was written for.\nSELECT CUSTOMER_NAME, BALANCE\nFROM CUSTOMER\nWHERE CUSTOMER_NUM = '1225';\n\n-- Case 2: no row comes back. In PL/SQL this raises NO_DATA_FOUND.\nSELECT CUSTOMER_NAME, BALANCE\nFROM CUSTOMER\nWHERE CUSTOMER_NUM = '1999';\n\n-- Case 3: two rows come back. In PL/SQL this raises TOO_MANY_ROWS.\nSELECT CUSTOMER_NAME, BALANCE\nFROM CUSTOMER\nWHERE REP_NUM = '20';",
+       "solution": "-- Case 1: exactly one row comes back. This is the case the procedure was written for.\n-- Filtering on the PRIMARY KEY is what guarantees at most one row.\nSELECT CUSTOMER_NAME, BALANCE\nFROM CUSTOMER\nWHERE CUSTOMER_NUM = '1225';\n\n-- Case 2: no row comes back. In PL/SQL this raises NO_DATA_FOUND.\n-- The key is valid in shape but matches nothing, and an empty result is not an\n-- error to SQL - only to a procedure that expected to fill a variable.\nSELECT CUSTOMER_NAME, BALANCE\nFROM CUSTOMER\nWHERE CUSTOMER_NUM = '1999';\n\n-- Case 3: two rows come back. In PL/SQL this raises TOO_MANY_ROWS.\n-- The difference is the column: REP_NUM is not a key, so it can match many rows,\n-- and SELECT ... INTO has no way to choose between them.\nSELECT CUSTOMER_NAME, BALANCE\nFROM CUSTOMER\nWHERE REP_NUM = '20';",
        "hint": "Three queries, three shapes of answer: one row, no rows, two rows. SQLite reports all three as ordinary results. Oracle gives the last two names and expects you to handle them. Case 2 shows an empty area rather than a table, because no row qualified."
       },
       {
@@ -3240,7 +3240,7 @@
       },
       {
        "type": "code",
-       "text": "CREATE OR REPLACE PROCEDURE ADD_TO_BALANCE (\n    I_CUSTOMER_NUM  IN CHAR,\n    I_AMOUNT        IN NUMBER) AS\n    OVER_LIMIT   EXCEPTION;\n    L_BALANCE    CUSTOMER.BALANCE%TYPE;\n    L_LIMIT      CUSTOMER.CREDIT_LIMIT%TYPE;\nBEGIN\n    UPDATE CUSTOMER\n    SET    BALANCE = BALANCE + I_AMOUNT\n    WHERE  CUSTOMER_NUM = I_CUSTOMER_NUM;\n\n    IF SQL%ROWCOUNT = 0 THEN\n        RAISE NO_DATA_FOUND;\n    END IF;\n\n    SELECT BALANCE, CREDIT_LIMIT\n    INTO   L_BALANCE, L_LIMIT\n    FROM   CUSTOMER\n    WHERE  CUSTOMER_NUM = I_CUSTOMER_NUM;\n\n    IF L_BALANCE > L_LIMIT THEN\n        RAISE OVER_LIMIT;\n    END IF;\n\n    COMMIT;\nEXCEPTION\n    WHEN NO_DATA_FOUND THEN\n        ROLLBACK;\n        RAISE_APPLICATION_ERROR(-20001,\n            'No customer numbered ' || I_CUSTOMER_NUM);\n    WHEN OVER_LIMIT THEN\n        ROLLBACK;\n        RAISE_APPLICATION_ERROR(-20002,\n            'That charge would push the balance past the credit limit.');\n    WHEN OTHERS THEN\n        ROLLBACK;\n        RAISE_APPLICATION_ERROR(-20003, 'Unexpected error: ' || SQLERRM);\nEND;\n/"
+       "text": "-- Oracle PL/SQL: a procedure that changes data and refuses to leave the database\n--   in a state it considers invalid.\nCREATE OR REPLACE PROCEDURE ADD_TO_BALANCE (\n    I_CUSTOMER_NUM  IN CHAR,\n    I_AMOUNT        IN NUMBER) AS\n\n    -- Declaring your OWN exception. It is not an error the database raises - it\n    --   is a name for a business rule you are about to enforce yourself.\n    OVER_LIMIT   EXCEPTION;\n\n    -- Two locals typed from the columns they will hold.\n    L_BALANCE    CUSTOMER.BALANCE%TYPE;\n    L_LIMIT      CUSTOMER.CREDIT_LIMIT%TYPE;\nBEGIN\n\n    -- The change is made first, then checked. Everything is inside a transaction\n    --   until COMMIT, so it can still be taken back.\n    UPDATE CUSTOMER\n    SET    BALANCE = BALANCE + I_AMOUNT\n    WHERE  CUSTOMER_NUM = I_CUSTOMER_NUM;\n\n    -- SQL%ROWCOUNT: how many rows the last statement affected. Zero means the\n    --   customer number was wrong - an UPDATE that matches nothing is not an\n    --   error, so you have to detect it yourself.\n    IF SQL%ROWCOUNT = 0 THEN\n\n        -- RAISE: trigger a condition deliberately, sending control to the\n        --   EXCEPTION block below.\n        RAISE NO_DATA_FOUND;\n    END IF;\n\n    -- Read the row back to see what the update actually produced.\n    SELECT BALANCE, CREDIT_LIMIT\n    INTO   L_BALANCE, L_LIMIT\n    FROM   CUSTOMER\n    WHERE  CUSTOMER_NUM = I_CUSTOMER_NUM;\n\n    -- The business rule. Nothing in the database forbids this, so the procedure\n    --   enforces it.\n    IF L_BALANCE > L_LIMIT THEN\n        RAISE OVER_LIMIT;\n    END IF;\n\n    -- COMMIT: reached only when both checks passed. Until this line, nothing is\n    --   permanent.\n    COMMIT;\nEXCEPTION\n\n    -- Every handler rolls back first, so a rejected change leaves no trace.\n    WHEN NO_DATA_FOUND THEN\n        ROLLBACK;\n\n        -- RAISE_APPLICATION_ERROR: hands a numbered error and a readable message\n        --   back to the calling program. Numbers from -20000 to -20999 are\n        --   reserved for your own application errors.\n        RAISE_APPLICATION_ERROR(-20001,\n            'No customer numbered ' || I_CUSTOMER_NUM);\n\n    -- The custom exception declared at the top is caught by name here.\n    WHEN OVER_LIMIT THEN\n        ROLLBACK;\n        RAISE_APPLICATION_ERROR(-20002,\n            'That charge would push the balance past the credit limit.');\n\n    -- The catch-all for anything unforeseen, still rolling back.\n    WHEN OTHERS THEN\n        ROLLBACK;\n        RAISE_APPLICATION_ERROR(-20003, 'Unexpected error: ' || SQLERRM);\nEND;\n/"
       },
       {
        "type": "p",
@@ -3268,12 +3268,12 @@
        "type": "sandbox",
        "seed": "kimtay_full",
        "starter": "SELECT CUSTOMER_NUM, CUSTOMER_NAME, BALANCE\nFROM CUSTOMER\nWHERE REP_NUM = '20'\nORDER BY CUSTOMER_NUM;",
-       "solution": "SELECT CUSTOMER_NUM, CUSTOMER_NAME, BALANCE\nFROM CUSTOMER\nWHERE REP_NUM = '20'\nORDER BY CUSTOMER_NUM;",
+       "solution": "-- The SELECT a stored procedure would wrap. Nothing about it changes because it\n-- lives inside a procedure - only where the text is kept changes.\nSELECT CUSTOMER_NUM, CUSTOMER_NAME, BALANCE\nFROM CUSTOMER\n-- In the procedure this literal is replaced by a parameter, which is the whole\n-- point: one stored query answering the question for any rep.\nWHERE REP_NUM = '20'\nORDER BY CUSTOMER_NUM;",
        "hint": "Two rows come back: 1120 Access Pet Center and 1310 Companion Care Clinic. A cursor does not change what this query returns. It changes who reads the rows and how many at a time. Try changing '20' to '65' to see a one-row list."
       },
       {
        "type": "code",
-       "text": "CREATE OR REPLACE PROCEDURE REP_CUSTOMER_LIST (I_REP_NUM IN CHAR) AS\n    CURSOR CUSTGROUP IS\n        SELECT CUSTOMER_NUM, CUSTOMER_NAME, BALANCE\n        FROM   CUSTOMER\n        WHERE  REP_NUM = I_REP_NUM\n        ORDER BY CUSTOMER_NUM;\n\n    L_CUSTOMER_NUM   CUSTOMER.CUSTOMER_NUM%TYPE;\n    L_CUSTOMER_NAME  CUSTOMER.CUSTOMER_NAME%TYPE;\n    L_BALANCE        CUSTOMER.BALANCE%TYPE;\nBEGIN\n    OPEN CUSTGROUP;\n    LOOP\n        FETCH CUSTGROUP INTO L_CUSTOMER_NUM, L_CUSTOMER_NAME, L_BALANCE;\n        EXIT WHEN CUSTGROUP%NOTFOUND;\n\n        DBMS_OUTPUT.PUT_LINE(L_CUSTOMER_NUM || '  ' || L_CUSTOMER_NAME ||\n                             '  ' || TO_CHAR(L_BALANCE, '99999.99'));\n    END LOOP;\n    CLOSE CUSTGROUP;\nEXCEPTION\n    WHEN OTHERS THEN\n        IF CUSTGROUP%ISOPEN THEN\n            CLOSE CUSTGROUP;\n        END IF;\n        RAISE_APPLICATION_ERROR(-20004, 'Listing failed: ' || SQLERRM);\nEND;\n/"
+       "text": "-- Oracle PL/SQL: the cursor loop, Oracle style.\nCREATE OR REPLACE PROCEDURE REP_CUSTOMER_LIST (I_REP_NUM IN CHAR) AS\n\n    -- CURSOR ... IS: Oracle's cursor declaration. Same idea as MySQL's\n    --   DECLARE ... CURSOR FOR, different wording.\n    CURSOR CUSTGROUP IS\n        SELECT CUSTOMER_NUM, CUSTOMER_NAME, BALANCE\n        FROM   CUSTOMER\n        WHERE  REP_NUM = I_REP_NUM\n        ORDER BY CUSTOMER_NUM;\n\n    -- One variable per cursor column, typed from the columns themselves.\n    L_CUSTOMER_NUM   CUSTOMER.CUSTOMER_NUM%TYPE;\n    L_CUSTOMER_NAME  CUSTOMER.CUSTOMER_NAME%TYPE;\n    L_BALANCE        CUSTOMER.BALANCE%TYPE;\nBEGIN\n\n    -- Run the query and position before the first row.\n    OPEN CUSTGROUP;\n\n    -- A plain LOOP, exited by the test inside.\n    LOOP\n\n        -- Read one row into the three variables.\n        FETCH CUSTGROUP INTO L_CUSTOMER_NUM, L_CUSTOMER_NAME, L_BALANCE;\n\n        -- EXIT WHEN with %NOTFOUND: Oracle asks the cursor directly whether the\n        --   last fetch got anything, so no flag variable and no handler are\n        --   needed - simpler than the MySQL equivalent.\n        EXIT WHEN CUSTGROUP%NOTFOUND;\n\n        -- The work for this row: print it.\n        DBMS_OUTPUT.PUT_LINE(L_CUSTOMER_NUM || '  ' || L_CUSTOMER_NAME ||\n                             '  ' || TO_CHAR(L_BALANCE, '99999.99'));\n    END LOOP;\n\n    -- Release the cursor on the normal path.\n    CLOSE CUSTGROUP;\nEXCEPTION\n    WHEN OTHERS THEN\n\n        -- %ISOPEN: if the failure happened mid-loop the cursor is still open, so\n        --   check before closing - closing a closed cursor is itself an error.\n        IF CUSTGROUP%ISOPEN THEN\n            CLOSE CUSTGROUP;\n        END IF;\n        RAISE_APPLICATION_ERROR(-20004, 'Listing failed: ' || SQLERRM);\nEND;\n/"
       },
       {
        "type": "steps",
@@ -3306,7 +3306,7 @@
       },
       {
        "type": "code",
-       "text": "CREATE OR REPLACE PROCEDURE REP_CUSTOMER_LIST (I_REP_NUM IN CHAR) AS\nBEGIN\n    FOR C IN (SELECT CUSTOMER_NUM, CUSTOMER_NAME, BALANCE\n              FROM   CUSTOMER\n              WHERE  REP_NUM = I_REP_NUM\n              ORDER BY CUSTOMER_NUM)\n    LOOP\n        DBMS_OUTPUT.PUT_LINE(C.CUSTOMER_NUM || '  ' || C.CUSTOMER_NAME);\n    END LOOP;\nEND;\n/"
+       "text": "-- Oracle PL/SQL: the same listing, written the way Oracle programmers actually\n--   write it.\nCREATE OR REPLACE PROCEDURE REP_CUSTOMER_LIST (I_REP_NUM IN CHAR) AS\nBEGIN\n\n    -- FOR ... IN (query) LOOP: a cursor FOR loop. Oracle declares the cursor,\n    --   opens it, declares a record to hold each row, fetches, tests for the end\n    --   and closes it - all implicitly. Compare it with the version above: the\n    --   same job, with every place a mistake could hide taken away.\n    FOR C IN (SELECT CUSTOMER_NUM, CUSTOMER_NAME, BALANCE\n              FROM   CUSTOMER\n              WHERE  REP_NUM = I_REP_NUM\n              ORDER BY CUSTOMER_NUM)\n    LOOP\n\n        -- C is the loop record, and its fields are named after the query's\n        --   columns. Nothing had to be declared for it.\n        DBMS_OUTPUT.PUT_LINE(C.CUSTOMER_NUM || '  ' || C.CUSTOMER_NAME);\n    END LOOP;\nEND;\n/"
       },
       {
        "type": "p",
@@ -3439,11 +3439,11 @@
       },
       {
        "type": "code",
-       "text": "CREATE PROCEDURE GET_CUSTOMER\n    @I_CUSTOMER_NUM CHAR(4)\nAS\nDECLARE @L_NAME    VARCHAR(35);\nDECLARE @L_BALANCE DECIMAL(9,2);\nDECLARE @L_ROWS    INT;\n\nSELECT @L_NAME    = CUSTOMER_NAME,\n       @L_BALANCE = BALANCE\nFROM   CUSTOMER\nWHERE  CUSTOMER_NUM = @I_CUSTOMER_NUM;\n\nSET @L_ROWS = @@ROWCOUNT;\n\nIF @L_ROWS = 0\n    PRINT 'No customer numbered ' + @I_CUSTOMER_NUM;\nELSE IF @L_ROWS > 1\n    PRINT 'That condition matched more than one customer.';\nELSE\n    PRINT @L_NAME + '  ' + CAST(@L_BALANCE AS VARCHAR(20));\nGO"
+       "text": "-- SQL Server T-SQL. CREATE PROCEDURE with no parentheses around the parameter\n--   list, and every parameter and variable name starting with @.\nCREATE PROCEDURE GET_CUSTOMER\n    @I_CUSTOMER_NUM CHAR(4)\n\n-- AS: opens the body. T-SQL does not require BEGIN ... END around it.\nAS\n\n-- DECLARE: the @ prefix is part of the name here, not a marker for something\n--   special as it is in MySQL.\nDECLARE @L_NAME    VARCHAR(35);\nDECLARE @L_BALANCE DECIMAL(9,2);\nDECLARE @L_ROWS    INT;\n\n-- SELECT @variable = column: T-SQL's way of loading variables from a query -\n--   assignments inside the SELECT list, with no INTO clause at all.\nSELECT @L_NAME    = CUSTOMER_NAME,\n       @L_BALANCE = BALANCE\nFROM   CUSTOMER\nWHERE  CUSTOMER_NUM = @I_CUSTOMER_NUM;\n\n-- @@ROWCOUNT: how many rows the previous statement touched. Capture it\n--   immediately - the very next statement overwrites it.\nSET @L_ROWS = @@ROWCOUNT;\n\n-- T-SQL raises nothing when this SELECT matches no row, so the procedure has to\n--   test the count itself. Zero rows means no such customer.\nIF @L_ROWS = 0\n\n    -- PRINT: T-SQL's print statement. + joins strings here, where Oracle used ||.\n    PRINT 'No customer numbered ' + @I_CUSTOMER_NUM;\n\n-- More than one row means the variables hold the LAST row read, silently.\nELSE IF @L_ROWS > 1\n    PRINT 'That condition matched more than one customer.';\n\n-- Exactly one row: the normal path.\nELSE\n\n    -- CAST is required, because T-SQL will not join a number to a string.\n    PRINT @L_NAME + '  ' + CAST(@L_BALANCE AS VARCHAR(20));\n\n-- GO: not SQL at all, but a batch separator the client uses to decide where one\n--   piece of work ends. It plays the same role as MySQL's DELIMITER and Oracle's /.\nGO"
       },
       {
        "type": "code",
-       "text": "EXEC GET_CUSTOMER '1420';"
+       "text": "-- EXEC: SQL Server's way of running a procedure - MySQL says CALL, Oracle uses\n--   the procedure name on its own. Arguments follow with no parentheses.\nEXEC GET_CUSTOMER '1420';"
       },
       {
        "type": "p",
@@ -3463,7 +3463,7 @@
        "type": "sandbox",
        "seed": "kimtay_full",
        "starter": "SELECT CUSTOMER_NAME, BALANCE\nFROM CUSTOMER\nWHERE CUSTOMER_NUM = '1420';",
-       "solution": "SELECT CUSTOMER_NAME, BALANCE\nFROM CUSTOMER\nWHERE CUSTOMER_NUM = '1420';",
+       "solution": "-- The single-row lookup a procedure would perform with SELECT ... INTO. Filtering\n-- on the primary key is what makes it safe: at most one row can ever come back.\nSELECT CUSTOMER_NAME, BALANCE\nFROM CUSTOMER\nWHERE CUSTOMER_NUM = '1420';",
        "hint": "This is the query the T-SQL procedure runs; the procedure adds a parameter and two variables around it. One row comes back: Whiskers & Wags Boutique with a balance of 4820.75. Change 1420 to 1999 and the box shows an empty result, which is the case the @@ROWCOUNT test is there to catch."
       },
       {
@@ -3476,11 +3476,11 @@
       },
       {
        "type": "code",
-       "text": "CREATE PROCEDURE ADD_TO_BALANCE\n    @I_CUSTOMER_NUM CHAR(4),\n    @I_AMOUNT       DECIMAL(9,2)\nAS\nBEGIN TRY\n    BEGIN TRANSACTION;\n\n    UPDATE CUSTOMER\n    SET    BALANCE = BALANCE + @I_AMOUNT\n    WHERE  CUSTOMER_NUM = @I_CUSTOMER_NUM;\n\n    IF @@ROWCOUNT = 0\n        THROW 50001, 'No customer with that number. Nothing was changed.', 1;\n\n    COMMIT TRANSACTION;\nEND TRY\nBEGIN CATCH\n    IF @@TRANCOUNT > 0\n        ROLLBACK TRANSACTION;\n\n    PRINT 'ADD_TO_BALANCE failed: ' + ERROR_MESSAGE();\nEND CATCH;\nGO"
+       "text": "-- SQL Server T-SQL: a data change wrapped in a transaction with structured\n--   error handling.\nCREATE PROCEDURE ADD_TO_BALANCE\n    @I_CUSTOMER_NUM CHAR(4),\n    @I_AMOUNT       DECIMAL(9,2)\nAS\n\n-- BEGIN TRY: everything up to END TRY is protected. If any statement inside\n--   fails, control jumps straight to the CATCH block.\nBEGIN TRY\n\n    -- Open the transaction so a failure can be undone.\n    BEGIN TRANSACTION;\n\n    -- The change itself.\n    UPDATE CUSTOMER\n    SET    BALANCE = BALANCE + @I_AMOUNT\n    WHERE  CUSTOMER_NUM = @I_CUSTOMER_NUM;\n\n    -- An UPDATE that matched nothing is not an error, so check the count and\n    --   turn it into one deliberately.\n    IF @@ROWCOUNT = 0\n\n        -- THROW: raise an error with your own number and message. Anything from\n        --   50000 up is yours to use. This sends control to CATCH.\n        THROW 50001, 'No customer with that number. Nothing was changed.', 1;\n\n    -- Reached only when the update touched a row.\n    COMMIT TRANSACTION;\nEND TRY\n\n-- BEGIN CATCH: runs only when something in the TRY block failed.\nBEGIN CATCH\n\n    -- @@TRANCOUNT: how many transactions are open. Test it before rolling back -\n    --   a ROLLBACK with no open transaction is itself an error.\n    IF @@TRANCOUNT > 0\n        ROLLBACK TRANSACTION;\n\n    -- ERROR_MESSAGE(): the text of whatever went wrong, available only inside a\n    --   CATCH block.\n    PRINT 'ADD_TO_BALANCE failed: ' + ERROR_MESSAGE();\nEND CATCH;\nGO"
       },
       {
        "type": "code",
-       "text": "EXEC ADD_TO_BALANCE '1225', 350.00;"
+       "text": "-- EXEC: two arguments, separated by a comma, in the order the procedure declares\n--   them. A customer that exists, so the update commits.\nEXEC ADD_TO_BALANCE '1225', 350.00;"
       },
       {
        "type": "p",
@@ -3490,7 +3490,7 @@
        "type": "sandbox",
        "seed": "kimtay_full",
        "starter": "-- Put the balance back to its seeded value so this box can be run again.\nUPDATE CUSTOMER\nSET BALANCE = 1200.00\nWHERE CUSTOMER_NUM = '1225';\n\n-- The one statement the stored procedure wraps.\nUPDATE CUSTOMER\nSET BALANCE = BALANCE + 350.00\nWHERE CUSTOMER_NUM = '1225';\n\nSELECT CUSTOMER_NUM, CUSTOMER_NAME, BALANCE, CREDIT_LIMIT\nFROM CUSTOMER\nWHERE CUSTOMER_NUM = '1225';",
-       "solution": "-- Put the balance back to its seeded value so this box can be run again.\nUPDATE CUSTOMER\nSET BALANCE = 1200.00\nWHERE CUSTOMER_NUM = '1225';\n\n-- The one statement the stored procedure wraps.\nUPDATE CUSTOMER\nSET BALANCE = BALANCE + 350.00\nWHERE CUSTOMER_NUM = '1225';\n\nSELECT CUSTOMER_NUM, CUSTOMER_NAME, BALANCE, CREDIT_LIMIT\nFROM CUSTOMER\nWHERE CUSTOMER_NUM = '1225';",
+       "solution": "-- Put the balance back to its seeded value so this box can be run again.\nUPDATE CUSTOMER\nSET BALANCE = 1200.00\nWHERE CUSTOMER_NUM = '1225';\n\n-- The one statement the stored procedure wraps.\n-- The new value is computed from the old one, so running it twice adds 700, not\n-- 350 - which is why the reset above matters.\nUPDATE CUSTOMER\nSET BALANCE = BALANCE + 350.00\nWHERE CUSTOMER_NUM = '1225';\n\n-- Read the row back with the limit alongside, so you can see whether the charge\n-- pushed the balance past it - the check the procedure performs for you.\nSELECT CUSTOMER_NUM, CUSTOMER_NAME, BALANCE, CREDIT_LIMIT\nFROM CUSTOMER\nWHERE CUSTOMER_NUM = '1225';",
        "hint": "Downtown Aquarium & Pets ends at 1550.00 against a credit limit of 5000.00. The first UPDATE exists so that pressing Run a second time gives the same answer rather than 1900.00. The stored procedure adds the parameter, the transaction, and the @@ROWCOUNT test around the middle statement."
       },
       {
@@ -3503,11 +3503,11 @@
       },
       {
        "type": "code",
-       "text": "CREATE PROCEDURE DELETE_ITEM\n    @I_ITEM_ID CHAR(4)\nAS\nBEGIN TRY\n    DELETE FROM ITEM\n    WHERE  ITEM_ID = @I_ITEM_ID;\n\n    IF @@ROWCOUNT = 0\n        PRINT 'No item numbered ' + @I_ITEM_ID + '. Nothing was deleted.';\n    ELSE\n        PRINT 'Item ' + @I_ITEM_ID + ' deleted.';\nEND TRY\nBEGIN CATCH\n    PRINT 'Could not delete ' + @I_ITEM_ID + ': ' + ERROR_MESSAGE();\nEND CATCH;\nGO"
+       "text": "-- SQL Server T-SQL: a delete that reports all three of its possible outcomes.\nCREATE PROCEDURE DELETE_ITEM\n    @I_ITEM_ID CHAR(4)\nAS\nBEGIN TRY\n\n    -- The delete, with its WHERE clause built into the procedure.\n    DELETE FROM ITEM\n    WHERE  ITEM_ID = @I_ITEM_ID;\n\n    -- Outcome 1: nothing matched. Not an error, so it is detected by the count.\n    IF @@ROWCOUNT = 0\n        PRINT 'No item numbered ' + @I_ITEM_ID + '. Nothing was deleted.';\n\n    -- Outcome 2: the row was removed.\n    ELSE\n        PRINT 'Item ' + @I_ITEM_ID + ' deleted.';\nEND TRY\nBEGIN CATCH\n\n    -- Outcome 3: the delete was refused - typically by a foreign key, because\n    --   invoice lines still point at the item. ERROR_MESSAGE() reports which.\n    PRINT 'Could not delete ' + @I_ITEM_ID + ': ' + ERROR_MESSAGE();\nEND CATCH;\nGO"
       },
       {
        "type": "code",
-       "text": "EXEC DELETE_ITEM 'DG04';"
+       "text": "-- EXEC: DG04 appears on an invoice line, so the foreign key refuses the delete\n--   and the CATCH block explains why. The item survives.\nEXEC DELETE_ITEM 'DG04';"
       },
       {
        "type": "p",
@@ -3519,13 +3519,13 @@
       },
       {
        "type": "code",
-       "text": "PRAGMA foreign_keys = ON;\n\nDELETE FROM ITEM\nWHERE ITEM_ID = 'DG04';"
+       "text": "-- PRAGMA foreign_keys = ON: SQLite does not enforce foreign keys unless you ask\n--   it to, and the setting lasts only for this connection.\nPRAGMA foreign_keys = ON;\n\n-- DELETE: the same attempt, in the sandbox on this page. INVOICE_LINE holds rows\n--   referring to DG04, so the delete is refused and you see the error the SQL\n--   Server CATCH block above was reporting.\nDELETE FROM ITEM\nWHERE ITEM_ID = 'DG04';"
       },
       {
        "type": "sandbox",
        "seed": "kimtay_full",
        "starter": "-- Step 1: find out what still points at DG04.\nSELECT INVOICE_NUM, ITEM_ID, NUM_ORDERED\nFROM INVOICE_LINE\nWHERE ITEM_ID = 'DG04';\n\n-- Step 2: delete it from a working copy, where no foreign key is watching.\nDROP TABLE IF EXISTS ITEM_WORK;\nCREATE TABLE ITEM_WORK AS SELECT * FROM ITEM;\n\nDELETE FROM ITEM_WORK\nWHERE ITEM_ID = 'DG04';\n\nSELECT ITEM_ID, DESCRIPTION, ON_HAND\nFROM ITEM_WORK\nORDER BY ITEM_ID;",
-       "solution": "-- Step 1: find out what still points at DG04.\nSELECT INVOICE_NUM, ITEM_ID, NUM_ORDERED\nFROM INVOICE_LINE\nWHERE ITEM_ID = 'DG04';\n\n-- Step 2: delete it from a working copy, where no foreign key is watching.\nDROP TABLE IF EXISTS ITEM_WORK;\nCREATE TABLE ITEM_WORK AS SELECT * FROM ITEM;\n\nDELETE FROM ITEM_WORK\nWHERE ITEM_ID = 'DG04';\n\nSELECT ITEM_ID, DESCRIPTION, ON_HAND\nFROM ITEM_WORK\nORDER BY ITEM_ID;",
+       "solution": "-- Step 1: find out what still points at DG04.\n-- This is the query behind the error message: these are the rows a foreign key\n-- would be protecting if the delete were attempted.\nSELECT INVOICE_NUM, ITEM_ID, NUM_ORDERED\nFROM INVOICE_LINE\nWHERE ITEM_ID = 'DG04';\n\n-- Step 2: delete it from a working copy, where no foreign key is watching.\nDROP TABLE IF EXISTS ITEM_WORK;\n-- CREATE TABLE ... AS copies the columns and rows but NOT the constraints, which\n-- is exactly why the delete below is allowed to succeed here.\nCREATE TABLE ITEM_WORK AS SELECT * FROM ITEM;\n\nDELETE FROM ITEM_WORK\nWHERE ITEM_ID = 'DG04';\n\n-- Four rows in the copy, five still in the real ITEM table.\nSELECT ITEM_ID, DESCRIPTION, ON_HAND\nFROM ITEM_WORK\nORDER BY ITEM_ID;",
        "hint": "The first result shows invoice 50710 ordering two of DG04, which is exactly why the real table refuses the delete. The second result has four rows instead of five: the working copy carried no foreign key over from ITEM, so nothing stopped the delete there. Checking before deleting is the habit worth keeping."
       },
       {
@@ -3538,7 +3538,7 @@
       },
       {
        "type": "code",
-       "text": "CREATE PROCEDURE REP_CUSTOMER_LIST\n    @I_REP_NUM CHAR(2)\nAS\nDECLARE @L_CUSTOMER_NUM  CHAR(4);\nDECLARE @L_CUSTOMER_NAME VARCHAR(35);\nDECLARE @L_BALANCE       DECIMAL(9,2);\n\nDECLARE CUSTGROUP CURSOR FOR\n    SELECT CUSTOMER_NUM, CUSTOMER_NAME, BALANCE\n    FROM   CUSTOMER\n    WHERE  REP_NUM = @I_REP_NUM\n    ORDER BY CUSTOMER_NUM;\n\nOPEN CUSTGROUP;\n\nFETCH NEXT FROM CUSTGROUP\n    INTO @L_CUSTOMER_NUM, @L_CUSTOMER_NAME, @L_BALANCE;\n\nWHILE @@FETCH_STATUS = 0\nBEGIN\n    PRINT @L_CUSTOMER_NUM + '  ' + @L_CUSTOMER_NAME + '  ' +\n          CAST(@L_BALANCE AS VARCHAR(20));\n\n    FETCH NEXT FROM CUSTGROUP\n        INTO @L_CUSTOMER_NUM, @L_CUSTOMER_NAME, @L_BALANCE;\nEND\n\nCLOSE CUSTGROUP;\nDEALLOCATE CUSTGROUP;\nGO"
+       "text": "-- SQL Server T-SQL: the cursor loop, third dialect.\nCREATE PROCEDURE REP_CUSTOMER_LIST\n    @I_REP_NUM CHAR(2)\nAS\n\n-- One variable per cursor column, all declared up front.\nDECLARE @L_CUSTOMER_NUM  CHAR(4);\nDECLARE @L_CUSTOMER_NAME VARCHAR(35);\nDECLARE @L_BALANCE       DECIMAL(9,2);\n\n-- DECLARE ... CURSOR FOR: the query to be walked.\nDECLARE CUSTGROUP CURSOR FOR\n    SELECT CUSTOMER_NUM, CUSTOMER_NAME, BALANCE\n    FROM   CUSTOMER\n    WHERE  REP_NUM = @I_REP_NUM\n    ORDER BY CUSTOMER_NUM;\n\n-- Run the query and get ready to read.\nOPEN CUSTGROUP;\n\n-- FETCH NEXT FROM ... INTO: T-SQL spells out the direction. The FIRST fetch\n--   happens BEFORE the loop - that is what makes a WHILE loop possible here.\nFETCH NEXT FROM CUSTGROUP\n    INTO @L_CUSTOMER_NUM, @L_CUSTOMER_NAME, @L_BALANCE;\n\n-- @@FETCH_STATUS: 0 means the last fetch worked. Testing it at the TOP of the\n--   loop replaces MySQL's flag-and-handler arrangement entirely.\nWHILE @@FETCH_STATUS = 0\nBEGIN\n\n    -- The work for this row.\n    PRINT @L_CUSTOMER_NUM + '  ' + @L_CUSTOMER_NAME + '  ' +\n          CAST(@L_BALANCE AS VARCHAR(20));\n\n    -- The SECOND fetch, at the bottom of the loop. Forget this line and the\n    --   loop repeats the same row forever - the classic T-SQL cursor bug.\n    FETCH NEXT FROM CUSTGROUP\n        INTO @L_CUSTOMER_NUM, @L_CUSTOMER_NAME, @L_BALANCE;\nEND\n\n-- CLOSE releases the rows...\nCLOSE CUSTGROUP;\n\n-- ...and DEALLOCATE releases the cursor's name. T-SQL needs both; MySQL and\n--   Oracle need only the close.\nDEALLOCATE CUSTGROUP;\nGO"
       },
       {
        "type": "steps",
@@ -3571,7 +3571,7 @@
        "type": "sandbox",
        "seed": "kimtay_full",
        "starter": "SELECT CUSTOMER_NUM, CUSTOMER_NAME, BALANCE\nFROM CUSTOMER\nWHERE REP_NUM = '20'\nORDER BY CUSTOMER_NUM;",
-       "solution": "SELECT CUSTOMER_NUM, CUSTOMER_NAME, BALANCE\nFROM CUSTOMER\nWHERE REP_NUM = '20'\nORDER BY CUSTOMER_NUM;",
+       "solution": "-- The SELECT a stored procedure would wrap. Nothing about it changes because it\n-- lives inside a procedure - only where the text is kept changes.\nSELECT CUSTOMER_NUM, CUSTOMER_NAME, BALANCE\nFROM CUSTOMER\n-- In the procedure this literal is replaced by a parameter, which is the whole\n-- point: one stored query answering the question for any rep.\nWHERE REP_NUM = '20'\nORDER BY CUSTOMER_NUM;",
        "hint": "Two rows, in the order the cursor would visit them: 1120 first, then 1310. The ORDER BY is what makes a cursor's visiting order predictable. Without it the engine may hand back rows in any order it likes, and a report built on that order becomes unreliable."
       },
       {
@@ -3584,7 +3584,7 @@
       },
       {
        "type": "code",
-       "text": "CREATE PROCEDURE REP_INVOICE_LINES\n    @I_REP_NUM CHAR(2)\nAS\nDECLARE @L_INVOICE_NUM   CHAR(5);\nDECLARE @L_CUSTOMER_NAME VARCHAR(35);\nDECLARE @L_DESCRIPTION   VARCHAR(30);\nDECLARE @L_LINE_TOTAL    DECIMAL(9,2);\nDECLARE @L_RUNNING_TOTAL DECIMAL(9,2) = 0;\n\nDECLARE LINEGROUP CURSOR FOR\n    SELECT I.INVOICE_NUM, C.CUSTOMER_NAME, IT.DESCRIPTION,\n           IL.NUM_ORDERED * IL.QUOTED_PRICE\n    FROM   CUSTOMER C\n           JOIN INVOICE I       ON C.CUSTOMER_NUM = I.CUSTOMER_NUM\n           JOIN INVOICE_LINE IL ON I.INVOICE_NUM  = IL.INVOICE_NUM\n           JOIN ITEM IT         ON IL.ITEM_ID     = IT.ITEM_ID\n    WHERE  C.REP_NUM = @I_REP_NUM\n    ORDER BY I.INVOICE_NUM, IT.DESCRIPTION;\n\nOPEN LINEGROUP;\n\nFETCH NEXT FROM LINEGROUP\n    INTO @L_INVOICE_NUM, @L_CUSTOMER_NAME, @L_DESCRIPTION, @L_LINE_TOTAL;\n\nWHILE @@FETCH_STATUS = 0\nBEGIN\n    SET @L_RUNNING_TOTAL = @L_RUNNING_TOTAL + @L_LINE_TOTAL;\n\n    PRINT @L_INVOICE_NUM + '  ' + @L_CUSTOMER_NAME + '  ' +\n          @L_DESCRIPTION + '  ' + CAST(@L_LINE_TOTAL AS VARCHAR(20));\n\n    FETCH NEXT FROM LINEGROUP\n        INTO @L_INVOICE_NUM, @L_CUSTOMER_NAME, @L_DESCRIPTION, @L_LINE_TOTAL;\nEND\n\nCLOSE LINEGROUP;\nDEALLOCATE LINEGROUP;\n\nPRINT 'Total for rep ' + @I_REP_NUM + ': ' +\n      CAST(@L_RUNNING_TOTAL AS VARCHAR(20));\nGO"
+       "text": "-- SQL Server T-SQL: a cursor over a four-table join, keeping a running total as\n--   it goes - something a single SELECT cannot do as it walks.\nCREATE PROCEDURE REP_INVOICE_LINES\n    @I_REP_NUM CHAR(2)\nAS\n\n-- One variable per cursor column.\nDECLARE @L_INVOICE_NUM   CHAR(5);\nDECLARE @L_CUSTOMER_NAME VARCHAR(35);\nDECLARE @L_DESCRIPTION   VARCHAR(30);\nDECLARE @L_LINE_TOTAL    DECIMAL(9,2);\n\n-- An accumulator, declared WITH a starting value. It must begin at 0 rather than\n--   NULL, because NULL + anything is NULL and the total would never build.\nDECLARE @L_RUNNING_TOTAL DECIMAL(9,2) = 0;\n\n-- The cursor: three stored columns and one calculated one, across four tables.\nDECLARE LINEGROUP CURSOR FOR\n    SELECT I.INVOICE_NUM, C.CUSTOMER_NAME, IT.DESCRIPTION,\n           IL.NUM_ORDERED * IL.QUOTED_PRICE\n    FROM   CUSTOMER C\n\n           -- Hop 1 - customer to invoice.\n           JOIN INVOICE I       ON C.CUSTOMER_NUM = I.CUSTOMER_NUM\n\n           -- Hop 2 - invoice to line item.\n           JOIN INVOICE_LINE IL ON I.INVOICE_NUM  = IL.INVOICE_NUM\n\n           -- Hop 3 - line item to item.\n           JOIN ITEM IT         ON IL.ITEM_ID     = IT.ITEM_ID\n    WHERE  C.REP_NUM = @I_REP_NUM\n    ORDER BY I.INVOICE_NUM, IT.DESCRIPTION;\n\nOPEN LINEGROUP;\n\n-- The priming fetch, before the loop.\nFETCH NEXT FROM LINEGROUP\n    INTO @L_INVOICE_NUM, @L_CUSTOMER_NAME, @L_DESCRIPTION, @L_LINE_TOTAL;\n\nWHILE @@FETCH_STATUS = 0\nBEGIN\n\n    -- Add this row's total to the accumulator. The variable survives from one\n    --   pass of the loop to the next, which is how the running total builds.\n    SET @L_RUNNING_TOTAL = @L_RUNNING_TOTAL + @L_LINE_TOTAL;\n\n    -- Print the detail line.\n    PRINT @L_INVOICE_NUM + '  ' + @L_CUSTOMER_NAME + '  ' +\n          @L_DESCRIPTION + '  ' + CAST(@L_LINE_TOTAL AS VARCHAR(20));\n\n    -- Advance to the next row.\n    FETCH NEXT FROM LINEGROUP\n        INTO @L_INVOICE_NUM, @L_CUSTOMER_NAME, @L_DESCRIPTION, @L_LINE_TOTAL;\nEND\n\nCLOSE LINEGROUP;\nDEALLOCATE LINEGROUP;\n\n-- The grand total, printed once after the loop - the accumulator's final value.\nPRINT 'Total for rep ' + @I_REP_NUM + ': ' +\n      CAST(@L_RUNNING_TOTAL AS VARCHAR(20));\nGO"
       },
       {
        "type": "p",
@@ -3594,7 +3594,7 @@
        "type": "sandbox",
        "seed": "kimtay_full",
        "starter": "SELECT I.INVOICE_NUM, C.CUSTOMER_NAME, IT.DESCRIPTION,\n       IL.NUM_ORDERED * IL.QUOTED_PRICE AS LINE_TOTAL\nFROM CUSTOMER C\n     JOIN INVOICE I       ON C.CUSTOMER_NUM = I.CUSTOMER_NUM\n     JOIN INVOICE_LINE IL ON I.INVOICE_NUM = IL.INVOICE_NUM\n     JOIN ITEM IT         ON IL.ITEM_ID = IT.ITEM_ID\nWHERE C.REP_NUM = '20'\nORDER BY I.INVOICE_NUM, IT.DESCRIPTION;\n\nSELECT SUM(IL.NUM_ORDERED * IL.QUOTED_PRICE) AS REP_TOTAL\nFROM CUSTOMER C\n     JOIN INVOICE I       ON C.CUSTOMER_NUM = I.CUSTOMER_NUM\n     JOIN INVOICE_LINE IL ON I.INVOICE_NUM = IL.INVOICE_NUM\nWHERE C.REP_NUM = '20';",
-       "solution": "SELECT I.INVOICE_NUM, C.CUSTOMER_NAME, IT.DESCRIPTION,\n       IL.NUM_ORDERED * IL.QUOTED_PRICE AS LINE_TOTAL\nFROM CUSTOMER C\n     JOIN INVOICE I       ON C.CUSTOMER_NUM = I.CUSTOMER_NUM\n     JOIN INVOICE_LINE IL ON I.INVOICE_NUM = IL.INVOICE_NUM\n     JOIN ITEM IT         ON IL.ITEM_ID = IT.ITEM_ID\nWHERE C.REP_NUM = '20'\nORDER BY I.INVOICE_NUM, IT.DESCRIPTION;\n\nSELECT SUM(IL.NUM_ORDERED * IL.QUOTED_PRICE) AS REP_TOTAL\nFROM CUSTOMER C\n     JOIN INVOICE I       ON C.CUSTOMER_NUM = I.CUSTOMER_NUM\n     JOIN INVOICE_LINE IL ON I.INVOICE_NUM = IL.INVOICE_NUM\nWHERE C.REP_NUM = '20';",
+       "solution": "-- The detail listing a cursor would print one line at a time.\nSELECT I.INVOICE_NUM, C.CUSTOMER_NAME, IT.DESCRIPTION,\n       IL.NUM_ORDERED * IL.QUOTED_PRICE AS LINE_TOTAL\nFROM CUSTOMER C\n     -- Three hops across four tables.\n     JOIN INVOICE I       ON C.CUSTOMER_NUM = I.CUSTOMER_NUM\n     JOIN INVOICE_LINE IL ON I.INVOICE_NUM = IL.INVOICE_NUM\n     JOIN ITEM IT         ON IL.ITEM_ID = IT.ITEM_ID\nWHERE C.REP_NUM = '20'\nORDER BY I.INVOICE_NUM, IT.DESCRIPTION;\n\n-- And the running total the loop would accumulate in a variable, obtained here\n-- in one statement. ITEM is not joined this time, because no description is\n-- displayed - a total needs fewer tables than a detail line.\nSELECT SUM(IL.NUM_ORDERED * IL.QUOTED_PRICE) AS REP_TOTAL\nFROM CUSTOMER C\n     JOIN INVOICE I       ON C.CUSTOMER_NUM = I.CUSTOMER_NUM\n     JOIN INVOICE_LINE IL ON I.INVOICE_NUM = IL.INVOICE_NUM\nWHERE C.REP_NUM = '20';",
        "hint": "Two lines on invoice 50710 for Access Pet Center: 127.50 and 23.98. The second query is the same total the cursor builds up in @L_RUNNING_TOTAL, done in one statement instead of a loop. When SUM can answer the question, SUM is the better answer. Companion Care Clinic has no invoice, so it contributes nothing."
       },
       {
@@ -3607,7 +3607,7 @@
       },
       {
        "type": "code",
-       "text": "DECLARE @L_ITEM_ID CHAR(4);\nDECLARE @L_ON_HAND SMALLINT;\n\nDECLARE ITEMGROUP CURSOR FOR\n    SELECT ITEM_ID, ON_HAND\n    FROM   ITEM\n    WHERE  CATEGORY = 'Habitat'\n    FOR UPDATE OF ON_HAND;\n\nOPEN ITEMGROUP;\nFETCH NEXT FROM ITEMGROUP INTO @L_ITEM_ID, @L_ON_HAND;\n\nWHILE @@FETCH_STATUS = 0\nBEGIN\n    UPDATE ITEM\n    SET    ON_HAND = ON_HAND + 10\n    WHERE  CURRENT OF ITEMGROUP;\n\n    FETCH NEXT FROM ITEMGROUP INTO @L_ITEM_ID, @L_ON_HAND;\nEND\n\nCLOSE ITEMGROUP;\nDEALLOCATE ITEMGROUP;"
+       "text": "-- SQL Server T-SQL: an UPDATABLE cursor - one that changes the rows it walks.\nDECLARE @L_ITEM_ID CHAR(4);\nDECLARE @L_ON_HAND SMALLINT;\n\nDECLARE ITEMGROUP CURSOR FOR\n    SELECT ITEM_ID, ON_HAND\n    FROM   ITEM\n    WHERE  CATEGORY = 'Habitat'\n\n-- FOR UPDATE OF: declares which column the loop intends to change, and tells the\n--   engine to hold the rows so they can be updated in place.\nFOR UPDATE OF ON_HAND;\n\nOPEN ITEMGROUP;\n\n-- The priming fetch.\nFETCH NEXT FROM ITEMGROUP INTO @L_ITEM_ID, @L_ON_HAND;\n\nWHILE @@FETCH_STATUS = 0\nBEGIN\n    UPDATE ITEM\n    SET    ON_HAND = ON_HAND + 10\n\n    -- WHERE CURRENT OF: \"the row this cursor is sitting on\" - no key comparison\n    --   is needed, because the cursor already knows which row that is. Worth\n    --   knowing, and worth avoiding: a single UPDATE ... WHERE CATEGORY =\n    --   'Habitat' does the same job in one statement and far more quickly.\n    WHERE  CURRENT OF ITEMGROUP;\n\n    FETCH NEXT FROM ITEMGROUP INTO @L_ITEM_ID, @L_ON_HAND;\nEND\n\nCLOSE ITEMGROUP;\nDEALLOCATE ITEMGROUP;"
       },
       {
        "type": "p",
@@ -3700,7 +3700,7 @@
        "type": "sandbox",
        "seed": "kimtay_full",
        "starter": "-- Housekeeping first, so this whole box can be run more than once.\nDROP TRIGGER IF EXISTS LOG_NEW_LINE;\nDROP TABLE IF EXISTS INVOICE_LINE_LOG;\nDELETE FROM INVOICE_LINE WHERE INVOICE_NUM = '50712' AND ITEM_ID = 'GR15';\n\n-- 1. The audit table. Nothing writes to it by hand, ever.\nCREATE TABLE INVOICE_LINE_LOG (\n    LOG_ID       INTEGER  PRIMARY KEY,\n    INVOICE_NUM  CHAR(5),\n    ITEM_ID      CHAR(4),\n    NUM_ORDERED  SMALLINT,\n    LOGGED_ON    DATE\n);\n\n-- 2. The trigger. It fires after each new INVOICE_LINE row lands.\nCREATE TRIGGER LOG_NEW_LINE\nAFTER INSERT ON INVOICE_LINE\nFOR EACH ROW\nBEGIN\n    INSERT INTO INVOICE_LINE_LOG (INVOICE_NUM, ITEM_ID, NUM_ORDERED, LOGGED_ON)\n    VALUES (NEW.INVOICE_NUM, NEW.ITEM_ID, NEW.NUM_ORDERED, DATE('now'));\nEND;\n\n-- 3. One ordinary INSERT. Nothing here mentions the log table.\nINSERT INTO INVOICE_LINE (INVOICE_NUM, ITEM_ID, NUM_ORDERED, QUOTED_PRICE)\nVALUES ('50712', 'GR15', 4, 15.25);\n\n-- 4. Proof the trigger ran.\nSELECT LOG_ID, INVOICE_NUM, ITEM_ID, NUM_ORDERED, LOGGED_ON\nFROM INVOICE_LINE_LOG;",
-       "solution": "-- Housekeeping first, so this whole box can be run more than once.\nDROP TRIGGER IF EXISTS LOG_NEW_LINE;\nDROP TABLE IF EXISTS INVOICE_LINE_LOG;\nDELETE FROM INVOICE_LINE WHERE INVOICE_NUM = '50712' AND ITEM_ID = 'GR15';\n\n-- 1. The audit table. Nothing writes to it by hand, ever.\nCREATE TABLE INVOICE_LINE_LOG (\n    LOG_ID       INTEGER  PRIMARY KEY,\n    INVOICE_NUM  CHAR(5),\n    ITEM_ID      CHAR(4),\n    NUM_ORDERED  SMALLINT,\n    LOGGED_ON    DATE\n);\n\n-- 2. The trigger. It fires after each new INVOICE_LINE row lands.\nCREATE TRIGGER LOG_NEW_LINE\nAFTER INSERT ON INVOICE_LINE\nFOR EACH ROW\nBEGIN\n    INSERT INTO INVOICE_LINE_LOG (INVOICE_NUM, ITEM_ID, NUM_ORDERED, LOGGED_ON)\n    VALUES (NEW.INVOICE_NUM, NEW.ITEM_ID, NEW.NUM_ORDERED, DATE('now'));\nEND;\n\n-- 3. One ordinary INSERT. Nothing here mentions the log table.\nINSERT INTO INVOICE_LINE (INVOICE_NUM, ITEM_ID, NUM_ORDERED, QUOTED_PRICE)\nVALUES ('50712', 'GR15', 4, 15.25);\n\n-- 4. Proof the trigger ran.\nSELECT LOG_ID, INVOICE_NUM, ITEM_ID, NUM_ORDERED, LOGGED_ON\nFROM INVOICE_LINE_LOG;",
+       "solution": "-- Housekeeping first, so this whole box can be run more than once.\nDROP TRIGGER IF EXISTS LOG_NEW_LINE;\nDROP TABLE IF EXISTS INVOICE_LINE_LOG;\nDELETE FROM INVOICE_LINE WHERE INVOICE_NUM = '50712' AND ITEM_ID = 'GR15';\n\n-- 1. The audit table. Nothing writes to it by hand, ever.\nCREATE TABLE INVOICE_LINE_LOG (\n    -- INTEGER PRIMARY KEY in SQLite numbers itself, so the trigger never supplies it.\n    LOG_ID       INTEGER  PRIMARY KEY,\n    INVOICE_NUM  CHAR(5),\n    ITEM_ID      CHAR(4),\n    NUM_ORDERED  SMALLINT,\n    LOGGED_ON    DATE\n);\n\n-- 2. The trigger. It fires after each new INVOICE_LINE row lands.\nCREATE TRIGGER LOG_NEW_LINE\n-- The event: after an insert on this table, and only after it succeeds.\nAFTER INSERT ON INVOICE_LINE\n-- FOR EACH ROW: run the body once per row inserted, not once per statement.\nFOR EACH ROW\nBEGIN\n    INSERT INTO INVOICE_LINE_LOG (INVOICE_NUM, ITEM_ID, NUM_ORDERED, LOGGED_ON)\n    -- NEW holds the row being inserted. On an INSERT there is no OLD, because\n    -- the row did not exist a moment ago.\n    VALUES (NEW.INVOICE_NUM, NEW.ITEM_ID, NEW.NUM_ORDERED, DATE('now'));\nEND;\n\n-- 3. One ordinary INSERT. Nothing here mentions the log table.\nINSERT INTO INVOICE_LINE (INVOICE_NUM, ITEM_ID, NUM_ORDERED, QUOTED_PRICE)\nVALUES ('50712', 'GR15', 4, 15.25);\n\n-- 4. Proof the trigger ran.\n-- Two statements were executed and two rows were written, in two tables.\nSELECT LOG_ID, INVOICE_NUM, ITEM_ID, NUM_ORDERED, LOGGED_ON\nFROM INVOICE_LINE_LOG;",
        "hint": "One row comes back: 50712, GR15, 4, and whatever date you pressed Run. Read statement 3 again and notice it says nothing about INVOICE_LINE_LOG. That is the whole point of a trigger, and also the whole danger. Delete statement 2, press Run again, and the log comes back empty."
       },
       {
@@ -3725,7 +3725,7 @@
        "type": "sandbox",
        "seed": "kimtay_full",
        "starter": "DROP TRIGGER IF EXISTS LOG_BALANCE_CHANGE;\nDROP TABLE IF EXISTS BALANCE_LOG;\nUPDATE CUSTOMER SET BALANCE = 3512.50 WHERE CUSTOMER_NUM = '1120';\n\nCREATE TABLE BALANCE_LOG (\n    LOG_ID        INTEGER  PRIMARY KEY,\n    CUSTOMER_NUM  CHAR(4),\n    OLD_BALANCE   DECIMAL(9,2),\n    NEW_BALANCE   DECIMAL(9,2)\n);\n\nCREATE TRIGGER LOG_BALANCE_CHANGE\nAFTER UPDATE OF BALANCE ON CUSTOMER\nFOR EACH ROW\nWHEN OLD.BALANCE <> NEW.BALANCE\nBEGIN\n    INSERT INTO BALANCE_LOG (CUSTOMER_NUM, OLD_BALANCE, NEW_BALANCE)\n    VALUES (OLD.CUSTOMER_NUM, OLD.BALANCE, NEW.BALANCE);\nEND;\n\n-- A real change. This one is logged.\nUPDATE CUSTOMER\nSET BALANCE = BALANCE + 250.00\nWHERE CUSTOMER_NUM = '1120';\n\n-- A change that changes nothing. The WHEN clause skips it.\nUPDATE CUSTOMER\nSET BALANCE = BALANCE\nWHERE CUSTOMER_NUM = '1120';\n\nSELECT LOG_ID, CUSTOMER_NUM, OLD_BALANCE, NEW_BALANCE\nFROM BALANCE_LOG;",
-       "solution": "DROP TRIGGER IF EXISTS LOG_BALANCE_CHANGE;\nDROP TABLE IF EXISTS BALANCE_LOG;\nUPDATE CUSTOMER SET BALANCE = 3512.50 WHERE CUSTOMER_NUM = '1120';\n\nCREATE TABLE BALANCE_LOG (\n    LOG_ID        INTEGER  PRIMARY KEY,\n    CUSTOMER_NUM  CHAR(4),\n    OLD_BALANCE   DECIMAL(9,2),\n    NEW_BALANCE   DECIMAL(9,2)\n);\n\nCREATE TRIGGER LOG_BALANCE_CHANGE\nAFTER UPDATE OF BALANCE ON CUSTOMER\nFOR EACH ROW\nWHEN OLD.BALANCE <> NEW.BALANCE\nBEGIN\n    INSERT INTO BALANCE_LOG (CUSTOMER_NUM, OLD_BALANCE, NEW_BALANCE)\n    VALUES (OLD.CUSTOMER_NUM, OLD.BALANCE, NEW.BALANCE);\nEND;\n\n-- A real change. This one is logged.\nUPDATE CUSTOMER\nSET BALANCE = BALANCE + 250.00\nWHERE CUSTOMER_NUM = '1120';\n\n-- A change that changes nothing. The WHEN clause skips it.\nUPDATE CUSTOMER\nSET BALANCE = BALANCE\nWHERE CUSTOMER_NUM = '1120';\n\nSELECT LOG_ID, CUSTOMER_NUM, OLD_BALANCE, NEW_BALANCE\nFROM BALANCE_LOG;",
+       "solution": "-- Housekeeping, including resetting the balance so the box can be re-run.\nDROP TRIGGER IF EXISTS LOG_BALANCE_CHANGE;\nDROP TABLE IF EXISTS BALANCE_LOG;\nUPDATE CUSTOMER SET BALANCE = 3512.50 WHERE CUSTOMER_NUM = '1120';\n\nCREATE TABLE BALANCE_LOG (\n    LOG_ID        INTEGER  PRIMARY KEY,\n    CUSTOMER_NUM  CHAR(4),\n    OLD_BALANCE   DECIMAL(9,2),\n    NEW_BALANCE   DECIMAL(9,2)\n);\n\nCREATE TRIGGER LOG_BALANCE_CHANGE\n-- OF BALANCE narrows the event: changing any other column does not fire this.\nAFTER UPDATE OF BALANCE ON CUSTOMER\nFOR EACH ROW\n-- WHEN adds a condition the row must meet before the body runs. Here it filters\n-- out updates that set the balance to the value it already had.\nWHEN OLD.BALANCE <> NEW.BALANCE\nBEGIN\n    INSERT INTO BALANCE_LOG (CUSTOMER_NUM, OLD_BALANCE, NEW_BALANCE)\n    -- On an UPDATE both OLD and NEW exist, which is what makes a before-and-after\n    -- audit possible.\n    VALUES (OLD.CUSTOMER_NUM, OLD.BALANCE, NEW.BALANCE);\nEND;\n\n-- A real change. This one is logged.\nUPDATE CUSTOMER\nSET BALANCE = BALANCE + 250.00\nWHERE CUSTOMER_NUM = '1120';\n\n-- A change that changes nothing. The WHEN clause skips it.\n-- The UPDATE still runs and still touches the row; only the trigger body is\n-- skipped, which keeps the audit free of no-op entries.\nUPDATE CUSTOMER\nSET BALANCE = BALANCE\nWHERE CUSTOMER_NUM = '1120';\n\n-- One row, not two.\nSELECT LOG_ID, CUSTOMER_NUM, OLD_BALANCE, NEW_BALANCE\nFROM BALANCE_LOG;",
        "hint": "Exactly one log row: 1120, 3512.5, 3762.5. Two UPDATE statements ran but only one was a real change, and the WHEN clause is what kept the second one out of the log. Delete the WHEN line and press Run again to see the noise it was filtering."
       },
       {
@@ -3761,7 +3761,7 @@
        "type": "sandbox",
        "seed": "kimtay_full",
        "starter": "DROP TRIGGER IF EXISTS CHECK_CREDIT_LIMIT;\nDELETE FROM CUSTOMER WHERE CUSTOMER_NUM = '1500';\n\nCREATE TRIGGER CHECK_CREDIT_LIMIT\nBEFORE INSERT ON CUSTOMER\nFOR EACH ROW\nWHEN NEW.CREDIT_LIMIT > 10000\nBEGIN\n    SELECT RAISE(ABORT, 'Credit limit over 10000 needs manager approval');\nEND;\n\n-- Within the ceiling, so this one is stored.\nINSERT INTO CUSTOMER (CUSTOMER_NUM, CUSTOMER_NAME, STREET, CITY, STATE, ZIP,\n                      BALANCE, CREDIT_LIMIT, REP_NUM)\nVALUES ('1500', 'Harbor Pet Supply', '12 Dock St.', 'Northfield', 'OH', '44067',\n        0.00, 9000.00, '35');\n\nSELECT CUSTOMER_NUM, CUSTOMER_NAME, CREDIT_LIMIT\nFROM CUSTOMER\nWHERE CUSTOMER_NUM = '1500';",
-       "solution": "DROP TRIGGER IF EXISTS CHECK_CREDIT_LIMIT;\nDELETE FROM CUSTOMER WHERE CUSTOMER_NUM = '1500';\n\nCREATE TRIGGER CHECK_CREDIT_LIMIT\nBEFORE INSERT ON CUSTOMER\nFOR EACH ROW\nWHEN NEW.CREDIT_LIMIT > 10000\nBEGIN\n    SELECT RAISE(ABORT, 'Credit limit over 10000 needs manager approval');\nEND;\n\n-- Within the ceiling, so this one is stored.\nINSERT INTO CUSTOMER (CUSTOMER_NUM, CUSTOMER_NAME, STREET, CITY, STATE, ZIP,\n                      BALANCE, CREDIT_LIMIT, REP_NUM)\nVALUES ('1500', 'Harbor Pet Supply', '12 Dock St.', 'Northfield', 'OH', '44067',\n        0.00, 9000.00, '35');\n\nSELECT CUSTOMER_NUM, CUSTOMER_NAME, CREDIT_LIMIT\nFROM CUSTOMER\nWHERE CUSTOMER_NUM = '1500';",
+       "solution": "DROP TRIGGER IF EXISTS CHECK_CREDIT_LIMIT;\nDELETE FROM CUSTOMER WHERE CUSTOMER_NUM = '1500';\n\nCREATE TRIGGER CHECK_CREDIT_LIMIT\n-- BEFORE, not AFTER: the trigger has to run while the insert can still be\n-- stopped. An AFTER trigger fires once the row is already in.\nBEFORE INSERT ON CUSTOMER\nFOR EACH ROW\n-- Only rows over the ceiling are worth checking, so WHEN filters the rest out.\nWHEN NEW.CREDIT_LIMIT > 10000\nBEGIN\n    -- RAISE(ABORT, message) cancels the statement and reports your own wording.\n    -- This is a business rule enforced in the database rather than in an\n    -- application, so it holds no matter which program does the inserting.\n    SELECT RAISE(ABORT, 'Credit limit over 10000 needs manager approval');\nEND;\n\n-- Within the ceiling, so this one is stored.\n-- The WHEN condition is false, the trigger body never runs, and the insert\n-- proceeds exactly as though no trigger existed.\nINSERT INTO CUSTOMER (CUSTOMER_NUM, CUSTOMER_NAME, STREET, CITY, STATE, ZIP,\n                      BALANCE, CREDIT_LIMIT, REP_NUM)\nVALUES ('1500', 'Harbor Pet Supply', '12 Dock St.', 'Northfield', 'OH', '44067',\n        0.00, 9000.00, '35');\n\nSELECT CUSTOMER_NUM, CUSTOMER_NAME, CREDIT_LIMIT\nFROM CUSTOMER\nWHERE CUSTOMER_NUM = '1500';",
        "hint": "As written the insert succeeds and Harbor Pet Supply appears with a credit limit of 9000. Now change 9000.00 to 15000.00 and press Run again: the WHEN clause turns true, RAISE(ABORT) cancels the statement, and the box reports the message instead of a table. Nothing was stored, which is what BEFORE buys you."
       },
       {
@@ -3776,7 +3776,7 @@
        "type": "sandbox",
        "seed": "kimtay_full",
        "starter": "DROP TRIGGER IF EXISTS REDUCE_ON_HAND;\nDELETE FROM INVOICE_LINE WHERE INVOICE_NUM = '50712' AND ITEM_ID = 'GR15';\nUPDATE ITEM SET ON_HAND = 22 WHERE ITEM_ID = 'GR15';\n\nCREATE TRIGGER REDUCE_ON_HAND\nAFTER INSERT ON INVOICE_LINE\nFOR EACH ROW\nBEGIN\n    UPDATE ITEM\n    SET ON_HAND = ON_HAND - NEW.NUM_ORDERED\n    WHERE ITEM_ID = NEW.ITEM_ID;\nEND;\n\nINSERT INTO INVOICE_LINE (INVOICE_NUM, ITEM_ID, NUM_ORDERED, QUOTED_PRICE)\nVALUES ('50712', 'GR15', 4, 15.25);\n\nSELECT ITEM_ID, DESCRIPTION, ON_HAND\nFROM ITEM\nWHERE ITEM_ID = 'GR15';",
-       "solution": "DROP TRIGGER IF EXISTS REDUCE_ON_HAND;\nDELETE FROM INVOICE_LINE WHERE INVOICE_NUM = '50712' AND ITEM_ID = 'GR15';\nUPDATE ITEM SET ON_HAND = 22 WHERE ITEM_ID = 'GR15';\n\nCREATE TRIGGER REDUCE_ON_HAND\nAFTER INSERT ON INVOICE_LINE\nFOR EACH ROW\nBEGIN\n    UPDATE ITEM\n    SET ON_HAND = ON_HAND - NEW.NUM_ORDERED\n    WHERE ITEM_ID = NEW.ITEM_ID;\nEND;\n\nINSERT INTO INVOICE_LINE (INVOICE_NUM, ITEM_ID, NUM_ORDERED, QUOTED_PRICE)\nVALUES ('50712', 'GR15', 4, 15.25);\n\nSELECT ITEM_ID, DESCRIPTION, ON_HAND\nFROM ITEM\nWHERE ITEM_ID = 'GR15';",
+       "solution": "-- Housekeeping: remove the line and put the stock back, so the box re-runs cleanly.\nDROP TRIGGER IF EXISTS REDUCE_ON_HAND;\nDELETE FROM INVOICE_LINE WHERE INVOICE_NUM = '50712' AND ITEM_ID = 'GR15';\nUPDATE ITEM SET ON_HAND = 22 WHERE ITEM_ID = 'GR15';\n\nCREATE TRIGGER REDUCE_ON_HAND\nAFTER INSERT ON INVOICE_LINE\nFOR EACH ROW\nBEGIN\n    -- A trigger that CHANGES another table rather than just recording something.\n    -- Selling an item automatically takes it out of stock.\n    UPDATE ITEM\n    SET ON_HAND = ON_HAND - NEW.NUM_ORDERED\n    -- NEW supplies both the quantity and which item to reduce.\n    WHERE ITEM_ID = NEW.ITEM_ID;\nEND;\n\n-- One INSERT into INVOICE_LINE...\nINSERT INTO INVOICE_LINE (INVOICE_NUM, ITEM_ID, NUM_ORDERED, QUOTED_PRICE)\nVALUES ('50712', 'GR15', 4, 15.25);\n\n-- ...and ITEM changed too, from 22 to 18, with nothing in the statement above\n-- mentioning ITEM at all. Powerful, and the reason triggers must be documented.\nSELECT ITEM_ID, DESCRIPTION, ON_HAND\nFROM ITEM\nWHERE ITEM_ID = 'GR15';",
        "hint": "The Small Animal Grooming Kit ends at 18, down from its seeded 22. The INSERT names INVOICE_LINE and only INVOICE_LINE, yet a row in ITEM changed. The UPDATE at the top resets ON_HAND to 22 so the box gives 18 every time rather than 14, then 10, then 6."
       },
       {
@@ -3801,7 +3801,7 @@
        "type": "sandbox",
        "seed": "kimtay_full",
        "starter": "-- Clear anything the earlier boxes on this page may have left behind,\n-- so the listing below is exactly what this box created.\nDROP TRIGGER IF EXISTS LOG_NEW_LINE;\nDROP TRIGGER IF EXISTS LOG_BALANCE_CHANGE;\nDROP TRIGGER IF EXISTS CHECK_CREDIT_LIMIT;\nDROP TRIGGER IF EXISTS REDUCE_ON_HAND;\n\nCREATE TRIGGER LOG_NEW_LINE\nAFTER INSERT ON INVOICE_LINE\nFOR EACH ROW\nBEGIN\n    UPDATE ITEM SET ON_HAND = ON_HAND WHERE ITEM_ID = NEW.ITEM_ID;\nEND;\n\n-- Every trigger this database holds, and the table each one guards.\nSELECT name, type, tbl_name\nFROM sqlite_master\nWHERE type = 'trigger';",
-       "solution": "-- Clear anything the earlier boxes on this page may have left behind,\n-- so the listing below is exactly what this box created.\nDROP TRIGGER IF EXISTS LOG_NEW_LINE;\nDROP TRIGGER IF EXISTS LOG_BALANCE_CHANGE;\nDROP TRIGGER IF EXISTS CHECK_CREDIT_LIMIT;\nDROP TRIGGER IF EXISTS REDUCE_ON_HAND;\n\nCREATE TRIGGER LOG_NEW_LINE\nAFTER INSERT ON INVOICE_LINE\nFOR EACH ROW\nBEGIN\n    UPDATE ITEM SET ON_HAND = ON_HAND WHERE ITEM_ID = NEW.ITEM_ID;\nEND;\n\n-- Every trigger this database holds, and the table each one guards.\nSELECT name, type, tbl_name\nFROM sqlite_master\nWHERE type = 'trigger';",
+       "solution": "-- Clear anything the earlier boxes on this page may have left behind,\n-- so the listing below is exactly what this box created.\nDROP TRIGGER IF EXISTS LOG_NEW_LINE;\nDROP TRIGGER IF EXISTS LOG_BALANCE_CHANGE;\nDROP TRIGGER IF EXISTS CHECK_CREDIT_LIMIT;\nDROP TRIGGER IF EXISTS REDUCE_ON_HAND;\n\n-- One harmless trigger, created only so the catalogue query below has something\n-- to find. Its body updates a column to the value it already holds.\nCREATE TRIGGER LOG_NEW_LINE\nAFTER INSERT ON INVOICE_LINE\nFOR EACH ROW\nBEGIN\n    UPDATE ITEM SET ON_HAND = ON_HAND WHERE ITEM_ID = NEW.ITEM_ID;\nEND;\n\n-- Every trigger this database holds, and the table each one guards.\n-- Triggers live in the same catalogue as tables, views and indexes. Running this\n-- is how you discover the automatic behaviour a database already has, which is\n-- the first thing to check when a table changes without an obvious cause.\nSELECT name, type, tbl_name\nFROM sqlite_master\nWHERE type = 'trigger';",
        "hint": "One row: LOG_NEW_LINE, trigger, INVOICE_LINE. That third column is the one that matters when you are trying to work out why a table keeps changing on its own. To watch the listing empty out, add DROP TRIGGER LOG_NEW_LINE; immediately ABOVE the SELECT and press Run again. Putting it after the SELECT changes nothing you can see, because the catalog is read before the drop happens."
       },
       {
@@ -4157,7 +4157,7 @@
        "type": "sandbox",
        "seed": "both_full",
        "starter": "-- Both databases are loaded. Paste a review answer here and press Run.\n-- Starter: the SELECT that a cursor over KimTay's customers would drive.\nSELECT CUSTOMER_NUM, CUSTOMER_NAME, BALANCE, CREDIT_LIMIT\nFROM CUSTOMER\nORDER BY CUSTOMER_NUM;",
-       "solution": "-- Both databases are loaded. Paste a review answer here and press Run.\n-- Starter: the SELECT that a cursor over KimTay's customers would drive.\nSELECT CUSTOMER_NUM, CUSTOMER_NAME, BALANCE, CREDIT_LIMIT\nFROM CUSTOMER\nORDER BY CUSTOMER_NUM;",
+       "solution": "-- Both databases are loaded. Paste a review answer here and press Run.\n-- Starter: the SELECT that a cursor over KimTay's customers would drive.\n-- Four columns, so a procedure walking this would declare four local variables\n-- of matching types to FETCH each row into.\nSELECT CUSTOMER_NUM, CUSTOMER_NAME, BALANCE, CREDIT_LIMIT\nFROM CUSTOMER\n-- ORDER BY fixes the sequence the rows would be handed over in.\nORDER BY CUSTOMER_NUM;",
        "hint": "Four customers come back, from 1120 to 1420. Every column of every row is filled in; nothing in the shipped data is missing. Companion Care Clinic sits at 1310 with a balance of 0 and no invoice anywhere in the database, which makes it the row to reach for whenever a question is about something that has no match. Replace the query with anything you want to check."
       },
       {
@@ -4188,7 +4188,7 @@
        "type": "sandbox",
        "seed": "both_full",
        "starter": "-- StayWell wants a permanent record of every payment as it arrives.\nDROP TRIGGER IF EXISTS LOG_PAYMENT;\nDROP TABLE IF EXISTS PAYMENT_LOG;\nDELETE FROM PAYMENT WHERE PAYMENT_ID = 99;\n\nCREATE TABLE PAYMENT_LOG (\n    LOG_ID     INTEGER  PRIMARY KEY,\n    LEASE_ID   CHAR(4),\n    AMOUNT     DECIMAL(7,2),\n    LOGGED_ON  DATE\n);\n\nCREATE TRIGGER LOG_PAYMENT\nAFTER INSERT ON PAYMENT\nFOR EACH ROW\nBEGIN\n    INSERT INTO PAYMENT_LOG (LEASE_ID, AMOUNT, LOGGED_ON)\n    VALUES (NEW.LEASE_ID, NEW.AMOUNT, DATE('now'));\nEND;\n\nINSERT INTO PAYMENT (PAYMENT_ID, LEASE_ID, PAYMENT_DATE, AMOUNT)\nVALUES (99, 'L004', '2026-09-01', 465.00);\n\nSELECT LOG_ID, LEASE_ID, AMOUNT\nFROM PAYMENT_LOG;",
-       "solution": "-- StayWell wants a permanent record of every payment as it arrives.\nDROP TRIGGER IF EXISTS LOG_PAYMENT;\nDROP TABLE IF EXISTS PAYMENT_LOG;\nDELETE FROM PAYMENT WHERE PAYMENT_ID = 99;\n\nCREATE TABLE PAYMENT_LOG (\n    LOG_ID     INTEGER  PRIMARY KEY,\n    LEASE_ID   CHAR(4),\n    AMOUNT     DECIMAL(7,2),\n    LOGGED_ON  DATE\n);\n\nCREATE TRIGGER LOG_PAYMENT\nAFTER INSERT ON PAYMENT\nFOR EACH ROW\nBEGIN\n    INSERT INTO PAYMENT_LOG (LEASE_ID, AMOUNT, LOGGED_ON)\n    VALUES (NEW.LEASE_ID, NEW.AMOUNT, DATE('now'));\nEND;\n\nINSERT INTO PAYMENT (PAYMENT_ID, LEASE_ID, PAYMENT_DATE, AMOUNT)\nVALUES (99, 'L004', '2026-09-01', 465.00);\n\nSELECT LOG_ID, LEASE_ID, AMOUNT\nFROM PAYMENT_LOG;",
+       "solution": "-- StayWell wants a permanent record of every payment as it arrives.\n-- Housekeeping, so the box can be run more than once.\nDROP TRIGGER IF EXISTS LOG_PAYMENT;\nDROP TABLE IF EXISTS PAYMENT_LOG;\nDELETE FROM PAYMENT WHERE PAYMENT_ID = 99;\n\n-- The audit table, with a key that numbers itself.\nCREATE TABLE PAYMENT_LOG (\n    LOG_ID     INTEGER  PRIMARY KEY,\n    LEASE_ID   CHAR(4),\n    AMOUNT     DECIMAL(7,2),\n    LOGGED_ON  DATE\n);\n\nCREATE TRIGGER LOG_PAYMENT\n-- The event: after a payment row is stored.\nAFTER INSERT ON PAYMENT\n-- Once per row inserted.\nFOR EACH ROW\nBEGIN\n    INSERT INTO PAYMENT_LOG (LEASE_ID, AMOUNT, LOGGED_ON)\n    -- NEW is the payment that just landed; DATE('now') stamps when it was seen.\n    VALUES (NEW.LEASE_ID, NEW.AMOUNT, DATE('now'));\nEND;\n\n-- One ordinary INSERT, with no mention of the log anywhere in it.\nINSERT INTO PAYMENT (PAYMENT_ID, LEASE_ID, PAYMENT_DATE, AMOUNT)\nVALUES (99, 'L004', '2026-09-01', 465.00);\n\n-- And the log has a row, written by the database on its own.\nSELECT LOG_ID, LEASE_ID, AMOUNT\nFROM PAYMENT_LOG;",
        "hint": "One log row: L004 for 465.00. The INSERT names only PAYMENT, and PAYMENT_LOG filled itself in. Try adding a second INSERT with PAYMENT_ID 98 for lease L003 at 725.00 and predict the result before you press Run. Remember to add a matching DELETE at the top if you want the box to stay re-runnable."
       },
       {

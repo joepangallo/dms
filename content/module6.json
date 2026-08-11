@@ -77,7 +77,7 @@
       },
       {
        "type": "code",
-       "text": "CREATE TABLE ITEM_COPY AS\nSELECT *\nFROM ITEM;"
+       "text": "-- CREATE TABLE ... AS: builds a brand new table and fills it in one statement.\n--   The column names and types are taken from whatever the SELECT below returns,\n--   so you never write a column list yourself.\nCREATE TABLE ITEM_COPY AS\n\n-- SELECT *: every column, so the copy has the same shape as the original.\nSELECT *\n\n-- FROM: the table being copied. The copy is a snapshot of the rows as they are\n--   right now - it is a separate table, and later changes to ITEM do not reach it.\nFROM ITEM;"
       },
       {
        "type": "p",
@@ -153,7 +153,7 @@
       },
       {
        "type": "code",
-       "text": "CREATE TABLE HABITAT_ITEM AS\nSELECT ITEM_ID, DESCRIPTION, ON_HAND, PRICE\nFROM ITEM\nWHERE CATEGORY = 'Habitat';"
+       "text": "-- CREATE TABLE ... AS: the new table's structure is decided entirely by the query.\nCREATE TABLE HABITAT_ITEM AS\n\n-- SELECT: naming four columns instead of * means the new table has four columns.\n--   The ones left out simply do not exist in it.\nSELECT ITEM_ID, DESCRIPTION, ON_HAND, PRICE\n\n-- FROM: the source table.\nFROM ITEM\n\n-- WHERE: the filter decides which ROWS are copied, just as the SELECT list decided\n--   which columns. Only the habitat items end up in the new table.\nWHERE CATEGORY = 'Habitat';"
       },
       {
        "type": "p",
@@ -191,7 +191,7 @@
       },
       {
        "type": "code",
-       "text": "CREATE TABLE ITEM_VALUE AS\nSELECT ITEM_ID, DESCRIPTION AS ITEM_NAME, ON_HAND * PRICE AS STOCK_VALUE\nFROM ITEM;"
+       "text": "-- CREATE TABLE ... AS: build and fill in one go.\nCREATE TABLE ITEM_VALUE AS\n\n-- SELECT: whatever a column is called in the result is what it is called in the\n--   new table, so the AS aliases here are doing double duty - they name the\n--   output columns AND the stored columns. A calculated column becomes a real,\n--   stored column in the new table, frozen at the value it had when this ran.\nSELECT ITEM_ID, DESCRIPTION AS ITEM_NAME, ON_HAND * PRICE AS STOCK_VALUE\n\n-- FROM: the source table.\nFROM ITEM;"
       },
       {
        "type": "p",
@@ -226,7 +226,7 @@
       },
       {
        "type": "code",
-       "text": "INSERT INTO ITEM_COPY\nVALUES ('AV07', 'Second Aviary Starter Cage', 'Habitat', 9, 64.99, 5);"
+       "text": "-- INSERT INTO: with no column list after the table name, you are promising to\n--   supply a value for EVERY column, in the table's own order. It is shorter to\n--   type and easy to get wrong; naming the columns is the safer habit.\nINSERT INTO ITEM_COPY\n\n-- VALUES: six values for six columns, in the order ITEM_COPY defines them. Note\n--   that ITEM_COPY was created by CREATE TABLE ... AS, which copies the columns\n--   but NOT the primary key, so a duplicate ITEM_ID is accepted here without\n--   complaint - a real difference between a copy and the original.\nVALUES ('AV07', 'Second Aviary Starter Cage', 'Habitat', 9, 64.99, 5);"
       },
       {
        "type": "p",
@@ -248,7 +248,7 @@
       },
       {
        "type": "code",
-       "text": "CREATE TABLE ITEM_ARCHIVE AS\nSELECT *\nFROM ITEM\nWHERE 1 = 0;"
+       "text": "-- CREATE TABLE ... AS: the trick for cloning a table's structure without its data.\nCREATE TABLE ITEM_ARCHIVE AS\n\n-- SELECT *: take the full set of columns, so the new table matches the original.\nSELECT *\n\n-- FROM: the table whose shape you want.\nFROM ITEM\n\n-- WHERE 1 = 0: a condition that is false for every row, so no row is copied. The\n--   column names and types still come across, which leaves you with an empty\n--   table of exactly the right shape - ready to receive archived rows later.\nWHERE 1 = 0;"
       },
       {
        "type": "p",
@@ -264,7 +264,7 @@
       },
       {
        "type": "code",
-       "text": "DROP TABLE ITEM_COPY;"
+       "text": "-- DROP TABLE: removes the table itself - its rows, its columns and its\n--   definition. This is not a DELETE; there is nothing left to select from\n--   afterwards, and outside a transaction there is no undo.\nDROP TABLE ITEM_COPY;"
       },
       {
        "type": "p",
@@ -272,7 +272,7 @@
       },
       {
        "type": "code",
-       "text": "DROP TABLE IF EXISTS ITEM_COPY;"
+       "text": "-- IF EXISTS: run the drop only if the table is there, and say nothing if it is\n--   not. Without it, dropping a table that has already gone is an error that\n--   stops a script part-way through - which is why setup scripts start with this.\nDROP TABLE IF EXISTS ITEM_COPY;"
       },
       {
        "type": "callout",
@@ -311,7 +311,7 @@
        "type": "sandbox",
        "seed": "kimtay_full",
        "starter": "-- 1. Build a working copy of ITEM called ITEM_COPY.\n-- 2. Insert a second row that reuses the item id AV07.\n-- 3. List ITEM_ID, DESCRIPTION and ON_HAND from the copy, ordered by id.\n-- The DROP line lets you run this whole script again from a clean copy.\n\nDROP TABLE IF EXISTS ITEM_COPY;\n\nCREATE TABLE ITEM_COPY AS\nSELECT *\nFROM ITEM;\n",
-       "solution": "DROP TABLE IF EXISTS ITEM_COPY;\n\nCREATE TABLE ITEM_COPY AS\nSELECT *\nFROM ITEM;\n\nINSERT INTO ITEM_COPY\nVALUES ('AV07', 'Second Aviary Starter Cage', 'Habitat', 9, 64.99, 5);\n\nSELECT ITEM_ID, DESCRIPTION, ON_HAND\nFROM ITEM_COPY\nORDER BY ITEM_ID, DESCRIPTION;",
+       "solution": "-- Housekeeping, so the whole box can be run more than once.\nDROP TABLE IF EXISTS ITEM_COPY;\n\n-- CREATE TABLE ... AS builds a new table AND fills it from a query. The column\n-- names and types come from the SELECT, so none are written by hand.\nCREATE TABLE ITEM_COPY AS\n-- SELECT * takes every column, so the copy has the same shape as the original.\nSELECT *\nFROM ITEM;\n\n-- A copy made this way carries the columns but NOT the primary key, which is why\n-- a second AV07 is accepted here without complaint.\nINSERT INTO ITEM_COPY\nVALUES ('AV07', 'Second Aviary Starter Cage', 'Habitat', 9, 64.99, 5);\n\n-- Six rows, with AV07 twice - proof the duplicate went in.\nSELECT ITEM_ID, DESCRIPTION, ON_HAND\nFROM ITEM_COPY\nORDER BY ITEM_ID, DESCRIPTION;",
        "hint": "`SELECT *` copies all six columns, so the `INSERT` needs six values in that same order: id, description, category, on hand, price, reorder level. Finish by selecting from `ITEM_COPY`, not from `ITEM`. You should get six rows back, with `AV07` appearing twice."
       },
       {
@@ -346,7 +346,7 @@
       },
       {
        "type": "code",
-       "text": "CREATE TABLE ITEM_COPY AS\nSELECT *\nFROM ITEM;\n\nUPDATE ITEM_COPY\nSET PRICE = 12.49\nWHERE ITEM_ID = 'DG04';"
+       "text": "-- CREATE TABLE ... AS: make a scratch copy first, so the practice UPDATE cannot\n--   damage the real ITEM table.\nCREATE TABLE ITEM_COPY AS\n\n-- SELECT *: same columns as the original.\nSELECT *\n\n-- FROM: the source table.\nFROM ITEM;\n\n-- UPDATE: names the table whose existing rows are about to be changed. Nothing is\n--   added and nothing is removed - values inside rows are rewritten.\nUPDATE ITEM_COPY\n\n-- SET: which column gets a new value, and what that value is.\nSET PRICE = 12.49\n\n-- WHERE: which rows. Filtering on the id restricts this to a single row. Leave\n--   this line off and every row in the table gets the new price.\nWHERE ITEM_ID = 'DG04';"
       },
       {
        "type": "p",
@@ -362,7 +362,7 @@
       },
       {
        "type": "code",
-       "text": "UPDATE ITEM_COPY\nSET PRICE = 12.49,\n    REORDER_LEVEL = 40\nWHERE ITEM_ID = 'DG04';"
+       "text": "-- UPDATE: the table being changed.\nUPDATE ITEM_COPY\n\n-- SET: one SET clause can change several columns at once - separate the\n--   assignments with commas, and write SET only once.\nSET PRICE = 12.49,\n\n--   The second assignment. Both are applied to the same row in one pass, which is\n--   faster and safer than running two separate UPDATE statements.\n    REORDER_LEVEL = 40\n\n-- WHERE: which rows are affected.\nWHERE ITEM_ID = 'DG04';"
       },
       {
        "type": "p",
@@ -420,7 +420,7 @@
       },
       {
        "type": "code",
-       "text": "UPDATE ITEM_COPY\nSET PRICE = ROUND(PRICE * 1.05, 2)\nWHERE CATEGORY = 'Habitat';"
+       "text": "-- UPDATE: the table being changed.\nUPDATE ITEM_COPY\n\n-- SET: the new value is calculated FROM THE OLD ONE. PRICE * 1.05 is a five per\n--   cent rise, and ROUND(..., 2) trims the result to two decimal places so the\n--   stored price stays sensible money. The right-hand PRICE is the value before\n--   the update; the left-hand one is where the answer goes.\nSET PRICE = ROUND(PRICE * 1.05, 2)\n\n-- WHERE: this time the filter is not on a key, so SEVERAL rows change at once -\n--   every habitat item gets the rise in a single statement.\nWHERE CATEGORY = 'Habitat';"
       },
       {
        "type": "p",
@@ -463,7 +463,7 @@
       },
       {
        "type": "code",
-       "text": "CREATE TABLE CUSTOMER_COPY AS\nSELECT *\nFROM CUSTOMER;\n\nUPDATE CUSTOMER_COPY\nSET CREDIT_LIMIT = CREDIT_LIMIT + 1000.00\nWHERE REP_NUM IN\n      (SELECT REP_NUM\n       FROM REP\n       WHERE CITY = 'Brookville');"
+       "text": "-- CREATE TABLE ... AS: another scratch copy, so the real CUSTOMER table is safe.\nCREATE TABLE CUSTOMER_COPY AS\nSELECT *\nFROM CUSTOMER;\n\n-- UPDATE: the copy is what changes.\nUPDATE CUSTOMER_COPY\n\n-- SET: raise the limit by a fixed amount, computed from the existing value.\nSET CREDIT_LIMIT = CREDIT_LIMIT + 1000.00\n\n-- WHERE: the rows to change are chosen by a SUBQUERY, exactly as in Module 5.\n--   Everything legal in a SELECT's WHERE clause is legal here too.\nWHERE REP_NUM IN\n\n--   The inner query runs first and returns the numbers of the Brookville reps.\n      (SELECT REP_NUM\n       FROM REP\n\n--   Note whose city is being tested: the REP's, not the customer's.\n       WHERE CITY = 'Brookville');"
       },
       {
        "type": "p",
@@ -479,7 +479,7 @@
       },
       {
        "type": "code",
-       "text": "UPDATE ITEM_COPY SET ON_HAND = 0;"
+       "text": "-- UPDATE with NO WHERE clause: perfectly legal, and it changes EVERY row in the\n--   table. Sometimes that is exactly what you want; far more often it is the\n--   accident that ruins an afternoon. Run a SELECT with the same WHERE clause\n--   first, so you know how many rows you are about to touch.\nUPDATE ITEM_COPY SET ON_HAND = 0;"
       },
       {
        "type": "p",
@@ -533,7 +533,7 @@
       },
       {
        "type": "code",
-       "text": "SELECT ITEM_ID, DESCRIPTION, PRICE, REORDER_LEVEL\nFROM ITEM_COPY\nWHERE ITEM_ID = 'DG04';"
+       "text": "-- SELECT: the check that should follow every change. Reading the row back is the\n--   only way to know an UPDATE did what you intended.\nSELECT ITEM_ID, DESCRIPTION, PRICE, REORDER_LEVEL\n\n-- FROM: the table that was just updated.\nFROM ITEM_COPY\n\n-- WHERE: the same condition the UPDATE used, so you are looking at the same row.\nWHERE ITEM_ID = 'DG04';"
       },
       {
        "type": "p",
@@ -580,7 +580,7 @@
        "type": "sandbox",
        "seed": "kimtay_full",
        "starter": "-- The Nylon Dog Leash 6ft (DG04) is being repriced to 12.49\n-- and its reorder level raised to 40. Do BOTH in one UPDATE.\n-- Work on a copy, then list the whole copy so you can check your work.\n-- The DROP line means you can rerun this script for a fresh copy.\n\nDROP TABLE IF EXISTS ITEM_COPY;\n\nCREATE TABLE ITEM_COPY AS\nSELECT *\nFROM ITEM;\n",
-       "solution": "DROP TABLE IF EXISTS ITEM_COPY;\n\nCREATE TABLE ITEM_COPY AS\nSELECT *\nFROM ITEM;\n\nUPDATE ITEM_COPY\nSET PRICE = 12.49,\n    REORDER_LEVEL = 40\nWHERE ITEM_ID = 'DG04';\n\nSELECT ITEM_ID, DESCRIPTION, PRICE, REORDER_LEVEL\nFROM ITEM_COPY\nORDER BY ITEM_ID;",
+       "solution": "DROP TABLE IF EXISTS ITEM_COPY;\n\n-- Work on a scratch copy so the practice UPDATE cannot damage the real table.\nCREATE TABLE ITEM_COPY AS\nSELECT *\nFROM ITEM;\n\n-- UPDATE changes values inside rows that already exist; nothing is added or removed.\nUPDATE ITEM_COPY\n-- One SET clause can change several columns at once - commas between them, SET once.\nSET PRICE = 12.49,\n    REORDER_LEVEL = 40\n-- The WHERE clause is the only thing limiting this to one row. Leave it off and\n-- every item in the table gets the new price.\nWHERE ITEM_ID = 'DG04';\n\n-- Always read the row back after a change.\nSELECT ITEM_ID, DESCRIPTION, PRICE, REORDER_LEVEL\nFROM ITEM_COPY\nORDER BY ITEM_ID;",
        "hint": "The word `SET` appears once. Put a comma between the two assignments, not the word `AND`. If your result shows all five items with a price of 12.49, you left off the `WHERE` clause: run the whole script again from the top, because the `DROP TABLE IF EXISTS` line rebuilds the copy from the untouched `ITEM` table."
       },
       {
@@ -624,7 +624,7 @@
       },
       {
        "type": "code",
-       "text": "CREATE TABLE PREMIUM_CUSTOMER\n    (CUSTOMER_NUM CHAR(4),\n     CUSTOMER_NAME CHAR(35),\n     BALANCE DECIMAL(9,2),\n     CREDIT_LIMIT DECIMAL(9,2));"
+       "text": "-- CREATE TABLE: the ordinary form, where you declare the columns yourself instead\n--   of letting a query decide them. The table is created empty.\nCREATE TABLE PREMIUM_CUSTOMER\n\n--   Each line is one column: a name, then the type that column will hold. The\n--   types are chosen to match the CUSTOMER columns these values will come from -\n--   if they did not match, the copy would fail or lose precision.\n    (CUSTOMER_NUM CHAR(4),\n     CUSTOMER_NAME CHAR(35),\n     BALANCE DECIMAL(9,2),\n\n--   The last column takes no comma, and the closing parenthesis ends the list.\n     CREDIT_LIMIT DECIMAL(9,2));"
       },
       {
        "type": "p",
@@ -632,7 +632,7 @@
       },
       {
        "type": "code",
-       "text": "INSERT INTO PREMIUM_CUSTOMER\nSELECT CUSTOMER_NUM, CUSTOMER_NAME, BALANCE, CREDIT_LIMIT\nFROM CUSTOMER\nWHERE CREDIT_LIMIT >= 7500.00;"
+       "text": "-- INSERT INTO ... SELECT: an INSERT whose values come from a query rather than\n--   from a typed VALUES list. The table must already exist; this only adds rows.\nINSERT INTO PREMIUM_CUSTOMER\n\n-- SELECT: the four columns being copied. Their number, order and types have to\n--   line up with the target table's columns - the NAMES do not have to match.\nSELECT CUSTOMER_NUM, CUSTOMER_NAME, BALANCE, CREDIT_LIMIT\n\n-- FROM: the source table.\nFROM CUSTOMER\n\n-- WHERE: decides which rows get copied. One statement can move many rows, which\n--   is what makes this the standard way to load a summary or archive table.\nWHERE CREDIT_LIMIT >= 7500.00;"
       },
       {
        "type": "p",
@@ -676,7 +676,7 @@
       },
       {
        "type": "code",
-       "text": "INSERT INTO PREMIUM_CUSTOMER\nSELECT CUSTOMER_NUM, CUSTOMER_NAME\nFROM CUSTOMER;"
+       "text": "-- GOAL: a deliberate error - the mismatch you will hit sooner or later.\n-- INSERT INTO: the target table has FOUR columns.\nINSERT INTO PREMIUM_CUSTOMER\n\n-- SELECT: BROKEN. It supplies only TWO. The engine has no way to decide which two\n--   of the four columns you meant, so it refuses the statement before inserting\n--   anything. Count the columns on both sides whenever this error appears.\nSELECT CUSTOMER_NUM, CUSTOMER_NAME\n\n-- FROM: the source table.\nFROM CUSTOMER;"
       },
       {
        "type": "p",
@@ -690,7 +690,7 @@
       },
       {
        "type": "code",
-       "text": "CREATE TABLE REP_NAME\n    (REP_NUM CHAR(2),\n     FULL_NAME CHAR(32));\n\nINSERT INTO REP_NAME (REP_NUM, FULL_NAME)\nSELECT REP_NUM, FIRST_NAME || ' ' || LAST_NAME\nFROM REP\nWHERE RATE > 0.05;"
+       "text": "-- CREATE TABLE: two columns declared by hand.\nCREATE TABLE REP_NAME\n    (REP_NUM CHAR(2),\n\n--   FULL_NAME is wide enough to hold a first and last name joined together.\n     FULL_NAME CHAR(32));\n\n-- INSERT INTO ... SELECT: naming the target columns explicitly is the safer form -\n--   it keeps working even if the table later gains a column.\nINSERT INTO REP_NAME (REP_NUM, FULL_NAME)\n\n-- SELECT: the second value is CALCULATED, not stored anywhere. || is the standard\n--   SQL concatenation operator, used here to glue first name, a space, and last\n--   name into one string. SQLite and Oracle both accept ||; MySQL does not.\nSELECT REP_NUM, FIRST_NAME || ' ' || LAST_NAME\n\n-- FROM: the source table.\nFROM REP\n\n-- WHERE: only the reps on the higher commission rate are copied.\nWHERE RATE > 0.05;"
       },
       {
        "type": "p",
@@ -704,7 +704,7 @@
       },
       {
        "type": "code",
-       "text": "INSERT INTO REP_NAME (REP_NUM, FULL_NAME)\nSELECT REP_NUM, CONCAT(FIRST_NAME, ' ', LAST_NAME)\nFROM REP\nWHERE RATE > 0.05;"
+       "text": "-- INSERT INTO ... SELECT: the same load, written for MySQL.\nINSERT INTO REP_NAME (REP_NUM, FULL_NAME)\n\n-- SELECT: CONCAT() is MySQL's way of joining strings, taking the pieces as\n--   arguments rather than between || operators. Same result, different spelling -\n--   string handling is one of the least portable corners of SQL.\nSELECT REP_NUM, CONCAT(FIRST_NAME, ' ', LAST_NAME)\n\n-- FROM: the source table.\nFROM REP\n\n-- WHERE: the same filter as the previous version.\nWHERE RATE > 0.05;"
       },
       {
        "type": "h4",
@@ -716,7 +716,7 @@
       },
       {
        "type": "code",
-       "text": "CREATE TABLE REP_TOTAL\n    (REP_NUM CHAR(2),\n     CUST_COUNT SMALLINT,\n     TOTAL_BALANCE DECIMAL(9,2));\n\nINSERT INTO REP_TOTAL\nSELECT REP_NUM, COUNT(*), SUM(BALANCE)\nFROM CUSTOMER\nGROUP BY REP_NUM;"
+       "text": "-- CREATE TABLE: three columns declared by hand, sized for what will go in them.\nCREATE TABLE REP_TOTAL\n    (REP_NUM CHAR(2),\n\n--   A count is a whole number, so SMALLINT is plenty.\n     CUST_COUNT SMALLINT,\n\n--   A total of money keeps the same exact DECIMAL type as the column it sums.\n     TOTAL_BALANCE DECIMAL(9,2));\n\n-- INSERT INTO ... SELECT: load the table from a query.\nINSERT INTO REP_TOTAL\n\n-- SELECT: the query being loaded is a GROUPED one, so the rows going in are\n--   summary rows rather than copies. This is how a reporting table gets built.\nSELECT REP_NUM, COUNT(*), SUM(BALANCE)\n\n-- FROM: the source table.\nFROM CUSTOMER\n\n-- GROUP BY: one row per rep, which is one row inserted per rep.\nGROUP BY REP_NUM;"
       },
       {
        "type": "p",
@@ -764,7 +764,7 @@
       },
       {
        "type": "code",
-       "text": "CREATE TABLE BUDGET_ITEM AS\nSELECT *\nFROM ITEM\nWHERE 1 = 0;"
+       "text": "-- CREATE TABLE ... AS with a false condition: the empty-clone trick again, this\n--   time to make a staging table you will fill yourself.\nCREATE TABLE BUDGET_ITEM AS\nSELECT *\nFROM ITEM\n\n-- 1 = 0 is never true, so the structure is copied and none of the rows are.\nWHERE 1 = 0;"
       },
       {
        "type": "p",
@@ -801,7 +801,7 @@
        "type": "sandbox",
        "seed": "kimtay_full",
        "starter": "-- KimTay wants a BUDGET_ITEM table holding every item under $20,\n-- plus one brand-new item that is not in ITEM yet:\n--   TY01, Rope Chew Toy, Accessory, 60 on hand, 7.25, reorder at 20.\n-- Build the empty table first, then use BOTH forms of INSERT.\n-- The DROP line lets you rerun this script from scratch.\n\nDROP TABLE IF EXISTS BUDGET_ITEM;\n\nCREATE TABLE BUDGET_ITEM AS\nSELECT *\nFROM ITEM\nWHERE 1 = 0;\n",
-       "solution": "DROP TABLE IF EXISTS BUDGET_ITEM;\n\nCREATE TABLE BUDGET_ITEM AS\nSELECT *\nFROM ITEM\nWHERE 1 = 0;\n\nINSERT INTO BUDGET_ITEM\nSELECT ITEM_ID, DESCRIPTION, CATEGORY, ON_HAND, PRICE, REORDER_LEVEL\nFROM ITEM\nWHERE PRICE < 20.00;\n\nINSERT INTO BUDGET_ITEM\nVALUES ('TY01', 'Rope Chew Toy', 'Accessory', 60, 7.25, 20);\n\nSELECT ITEM_ID, DESCRIPTION, CATEGORY, PRICE\nFROM BUDGET_ITEM\nORDER BY ITEM_ID;",
+       "solution": "DROP TABLE IF EXISTS BUDGET_ITEM;\n\n-- The empty-clone trick: copy a table's structure without any of its rows.\nCREATE TABLE BUDGET_ITEM AS\nSELECT *\nFROM ITEM\n-- 1 = 0 is false for every row, so the columns come across and the data does not.\nWHERE 1 = 0;\n\n-- INSERT ... SELECT: the values come from a query rather than a typed VALUES list.\n-- The column count, order and types must line up with the target table.\nINSERT INTO BUDGET_ITEM\nSELECT ITEM_ID, DESCRIPTION, CATEGORY, ON_HAND, PRICE, REORDER_LEVEL\nFROM ITEM\n-- One statement can move many rows; the WHERE decides which.\nWHERE PRICE < 20.00;\n\n-- INSERT ... VALUES for a single hand-typed row. Both forms fill the same table.\nINSERT INTO BUDGET_ITEM\nVALUES ('TY01', 'Rope Chew Toy', 'Accessory', 60, 7.25, 20);\n\nSELECT ITEM_ID, DESCRIPTION, CATEGORY, PRICE\nFROM BUDGET_ITEM\nORDER BY ITEM_ID;",
        "hint": "`BUDGET_ITEM` has all six of ITEM's columns, so both inserts have to supply six values. The bulk load uses `SELECT` and no `VALUES` keyword; the single new item uses `VALUES` and no `SELECT`. You should finish with three rows: DG04, GR15, and TY01."
       },
       {
@@ -1253,8 +1253,8 @@
        "type": "sandbox",
        "seed": "kimtay_full",
        "starter": "-- Autocommit is ON. There is no BEGIN and no COMMIT anywhere below.\nSELECT CUSTOMER_NAME, BALANCE AS BALANCE_BEFORE\nFROM CUSTOMER\nWHERE CUSTOMER_NUM = '1420';\n\n-- Write the UPDATE here: take 200.00 off customer 1420's balance.\n\nSELECT CUSTOMER_NAME, BALANCE AS BALANCE_AFTER\nFROM CUSTOMER\nWHERE CUSTOMER_NUM = '1420';",
-       "solution": "-- Autocommit is ON. There is no BEGIN and no COMMIT anywhere below.\nSELECT CUSTOMER_NAME, BALANCE AS BALANCE_BEFORE\nFROM CUSTOMER\nWHERE CUSTOMER_NUM = '1420';\n\nUPDATE CUSTOMER\nSET BALANCE = BALANCE - 200.00\nWHERE CUSTOMER_NUM = '1420';\n\nSELECT CUSTOMER_NAME, BALANCE AS BALANCE_AFTER\nFROM CUSTOMER\nWHERE CUSTOMER_NUM = '1420';",
-       "hint": "Until you write the `UPDATE`, both result sets read 4820.75. With the `UPDATE` in, `BALANCE_BEFORE` comes back 4820.75 and `BALANCE_AFTER` comes back 4620.75. There is no `ROLLBACK` here to protect you, so each Run subtracts another 200.00 \u2014 press Reset before you run it a second time."
+       "solution": "-- Autocommit is ON. There is no BEGIN and no COMMIT anywhere below.\n-- Read the balance first, so there is something to compare against.\nSELECT CUSTOMER_NAME, BALANCE AS BALANCE_BEFORE\nFROM CUSTOMER\nWHERE CUSTOMER_NUM = '1420';\n\n-- With autocommit on, this statement is permanent the instant it finishes. There\n-- is no open transaction, so there is nothing left to roll back.\nUPDATE CUSTOMER\nSET BALANCE = BALANCE - 200.00\nWHERE CUSTOMER_NUM = '1420';\n\n-- The new figure. Compare it with BALANCE_BEFORE above.\nSELECT CUSTOMER_NAME, BALANCE AS BALANCE_AFTER\nFROM CUSTOMER\nWHERE CUSTOMER_NUM = '1420';",
+       "hint": "Until you write the `UPDATE`, both result sets read 4820.75. With the `UPDATE` in, `BALANCE_BEFORE` comes back 4820.75 and `BALANCE_AFTER` comes back 4620.75. There is no `ROLLBACK` here to protect you, so each Run subtracts another 200.00 — press Reset before you run it a second time."
       },
       {
        "type": "p",
@@ -1262,7 +1262,7 @@
       },
       {
        "type": "code",
-       "text": "ROLLBACK;"
+       "text": "-- ROLLBACK: undoes everything done since the transaction began, returning the\n--   database to the state it was in at BEGIN. Nothing is written; it is as though\n--   the statements in between never ran.\nROLLBACK;"
       },
       {
        "type": "callout",
@@ -1310,7 +1310,7 @@
       },
       {
        "type": "code",
-       "text": "BEGIN;\n\nUPDATE CUSTOMER\nSET BALANCE = BALANCE - 200.00\nWHERE CUSTOMER_NUM = '1420';\n\nSELECT BALANCE AS INSIDE_TRANSACTION\nFROM CUSTOMER\nWHERE CUSTOMER_NUM = '1420';\n\nROLLBACK;\n\nSELECT BALANCE AS AFTER_ROLLBACK\nFROM CUSTOMER\nWHERE CUSTOMER_NUM = '1420';"
+       "text": "-- BEGIN: opens a transaction. From here on, changes are provisional - visible to\n--   you, but not yet permanent, and undoable in a single word.\nBEGIN;\n\n-- UPDATE: a change inside the transaction. It happens immediately as far as this\n--   session can tell.\nUPDATE CUSTOMER\nSET BALANCE = BALANCE - 200.00\nWHERE CUSTOMER_NUM = '1420';\n\n-- SELECT: proof that the change IS in effect inside the transaction - the new\n--   balance is what comes back.\nSELECT BALANCE AS INSIDE_TRANSACTION\nFROM CUSTOMER\nWHERE CUSTOMER_NUM = '1420';\n\n-- ROLLBACK: throw the change away. The transaction ends here.\nROLLBACK;\n\n-- SELECT: the same query again, now returning the ORIGINAL balance. That contrast\n--   between the two SELECTs is the whole idea of a transaction.\nSELECT BALANCE AS AFTER_ROLLBACK\nFROM CUSTOMER\nWHERE CUSTOMER_NUM = '1420';"
       },
       {
        "type": "p",
@@ -1357,7 +1357,7 @@
       },
       {
        "type": "code",
-       "text": "SET autocommit = 0;\n\nUPDATE CUSTOMER\nSET BALANCE = BALANCE - 200.00\nWHERE CUSTOMER_NUM = '1420';\n\nROLLBACK;\n\nSELECT CUSTOMER_NUM, BALANCE\nFROM CUSTOMER\nWHERE CUSTOMER_NUM = '1420';"
+       "text": "-- SET autocommit = 0: MySQL's way in. By default MySQL commits every statement\n--   the moment it finishes, which leaves nothing to roll back; turning autocommit\n--   off makes each statement provisional until you say COMMIT or ROLLBACK.\nSET autocommit = 0;\n\n-- UPDATE: a provisional change, now that autocommit is off.\nUPDATE CUSTOMER\nSET BALANCE = BALANCE - 200.00\nWHERE CUSTOMER_NUM = '1420';\n\n-- ROLLBACK: discard it.\nROLLBACK;\n\n-- SELECT: the balance is back to what it was. Had autocommit still been on, the\n--   UPDATE would already be permanent and this would show the reduced figure.\nSELECT CUSTOMER_NUM, BALANCE\nFROM CUSTOMER\nWHERE CUSTOMER_NUM = '1420';"
       },
       {
        "type": "p",
@@ -1365,13 +1365,13 @@
       },
       {
        "type": "code",
-       "text": "SET AUTOCOMMIT ON;"
+       "text": "-- SET AUTOCOMMIT ON: the Oracle spelling, and the opposite default. Oracle does\n--   NOT commit automatically, so a transaction is already open the moment you\n--   change anything; this command switches that behaviour off. Same idea as\n--   MySQL's autocommit setting, different name and different starting point.\nSET AUTOCOMMIT ON;"
       },
       {
        "type": "callout",
        "variant": "note",
        "label": "What this sandbox supports",
-       "text": "`BEGIN`, `COMMIT`, and `ROLLBACK` all run here. `SET autocommit = 0;` and `SET AUTOCOMMIT ON;` do not exist in SQLite, so the sandbox rejects both \u2014 that is why they appear as plain code blocks above. In SQLite the only way to suspend autocommit is to open a transaction with `BEGIN`, which is why every runnable example on this page that needs a transaction starts with that word. The very first sandbox on this page has no `BEGIN` on purpose: it is showing you what autocommit does when you leave it alone."
+       "text": "`BEGIN`, `COMMIT`, and `ROLLBACK` all run here. `SET autocommit = 0;` and `SET AUTOCOMMIT ON;` do not exist in SQLite, so the sandbox rejects both — that is why they appear as plain code blocks above. In SQLite the only way to suspend autocommit is to open a transaction with `BEGIN`, which is why every runnable example on this page that needs a transaction starts with that word. The very first sandbox on this page has no `BEGIN` on purpose: it is showing you what autocommit does when you leave it alone."
       },
       {
        "type": "callout",
@@ -1490,7 +1490,7 @@
        "type": "sandbox",
        "seed": "kimtay_full",
        "starter": "-- The 200.00 charge belongs on Access Pet Center (1120), not on Whiskers & Wags (1420).\nSELECT SUM(BALANCE) AS TOTAL_OWED_BEFORE FROM CUSTOMER;\n\nBEGIN;\n\n-- Statement 1: take 200.00 off customer 1420.\n\n-- Statement 2: put 200.00 onto customer 1120.\n\n-- The proof: this total must still read 9533.25.\nSELECT SUM(BALANCE) AS TOTAL_OWED_INSIDE FROM CUSTOMER;\n\nCOMMIT;\n\nSELECT CUSTOMER_NUM, CUSTOMER_NAME, BALANCE\nFROM CUSTOMER\nORDER BY CUSTOMER_NUM;",
-       "solution": "-- The 200.00 charge belongs on Access Pet Center (1120), not on Whiskers & Wags (1420).\nSELECT SUM(BALANCE) AS TOTAL_OWED_BEFORE FROM CUSTOMER;\n\nBEGIN;\n\nUPDATE CUSTOMER\nSET BALANCE = BALANCE - 200.00\nWHERE CUSTOMER_NUM = '1420';\n\nUPDATE CUSTOMER\nSET BALANCE = BALANCE + 200.00\nWHERE CUSTOMER_NUM = '1120';\n\n-- The proof: this total must still read 9533.25.\nSELECT SUM(BALANCE) AS TOTAL_OWED_INSIDE FROM CUSTOMER;\n\nCOMMIT;\n\nSELECT CUSTOMER_NUM, CUSTOMER_NAME, BALANCE\nFROM CUSTOMER\nORDER BY CUSTOMER_NUM;",
+       "solution": "-- The 200.00 charge belongs on Access Pet Center (1120), not on Whiskers & Wags (1420).\n-- The invariant, measured before anything changes: the books must still balance.\nSELECT SUM(BALANCE) AS TOTAL_OWED_BEFORE FROM CUSTOMER;\n\n-- BEGIN opens a transaction. From here changes are provisional - visible to you,\n-- not yet permanent, and undoable in one word.\nBEGIN;\n\n-- Half one of the transfer: take the charge off the wrong customer.\nUPDATE CUSTOMER\nSET BALANCE = BALANCE - 200.00\nWHERE CUSTOMER_NUM = '1420';\n\n-- Half two: put it on the right one. Both halves must happen or neither should.\nUPDATE CUSTOMER\nSET BALANCE = BALANCE + 200.00\nWHERE CUSTOMER_NUM = '1120';\n\n-- The proof: this total must still read 9533.25.\nSELECT SUM(BALANCE) AS TOTAL_OWED_INSIDE FROM CUSTOMER;\n\n-- COMMIT makes both changes permanent together, at the same instant, and closes\n-- the transaction. Check the invariant BEFORE you commit, not after.\nCOMMIT;\n\nSELECT CUSTOMER_NUM, CUSTOMER_NAME, BALANCE\nFROM CUSTOMER\nORDER BY CUSTOMER_NUM;",
        "hint": "Both totals read 9533.25, and the final list shows 1120 at 3712.5 and 1420 at 4620.75. SQLite drops trailing zeros when it displays a number, so 3712.50 appears as 3712.5. This script ends in `COMMIT`, so press Reset before running it again or you will move another 200.00."
       },
       {
@@ -1503,7 +1503,7 @@
       },
       {
        "type": "code",
-       "text": "BEGIN;\n\nUPDATE CUSTOMER\nSET BALANCE = BALANCE - 200.00\nWHERE CUSTOMER_NUM = '1420';\n\nUPDATE CUSTOMER\nSET BALANCE = BALANCE + 200.00\nWHERE CUSTOMER_NUM = '9999';\n\nSELECT SUM(BALANCE) AS TOTAL_OWED FROM CUSTOMER;\n\nROLLBACK;\n\nSELECT SUM(BALANCE) AS TOTAL_OWED FROM CUSTOMER;"
+       "text": "-- BEGIN: open a transaction around two changes that must both succeed or both\n--   fail - the classic reason transactions exist.\nBEGIN;\n\n-- UPDATE: take 200 off one customer's balance.\nUPDATE CUSTOMER\nSET BALANCE = BALANCE - 200.00\nWHERE CUSTOMER_NUM = '1420';\n\n-- UPDATE: the matching half - except customer 9999 does not exist, so this\n--   statement changes ZERO rows. It is not an error; SQL simply reports that\n--   nothing matched, and the money has now vanished from the books.\nUPDATE CUSTOMER\nSET BALANCE = BALANCE + 200.00\nWHERE CUSTOMER_NUM = '9999';\n\n-- SELECT: the evidence. The total across all customers is 200 short of what it\n--   was, which is the inconsistency the transaction is protecting you from.\nSELECT SUM(BALANCE) AS TOTAL_OWED FROM CUSTOMER;\n\n-- ROLLBACK: undo BOTH statements together. Half-finished work never reaches disk.\nROLLBACK;\n\n-- SELECT: the total is back where it started.\nSELECT SUM(BALANCE) AS TOTAL_OWED FROM CUSTOMER;"
       },
       {
        "type": "callout",
@@ -1538,7 +1538,7 @@
       },
       {
        "type": "code",
-       "text": "START TRANSACTION;\n\nUPDATE CUSTOMER\nSET BALANCE = BALANCE - 200.00\nWHERE CUSTOMER_NUM = '1420';\n\nUPDATE CUSTOMER\nSET BALANCE = BALANCE + 200.00\nWHERE CUSTOMER_NUM = '1120';\n\nCOMMIT;"
+       "text": "-- START TRANSACTION: the standard spelling of BEGIN, and the one MySQL prefers.\n--   Both do the same job.\nSTART TRANSACTION;\n\n-- UPDATE: the first half of the transfer.\nUPDATE CUSTOMER\nSET BALANCE = BALANCE - 200.00\nWHERE CUSTOMER_NUM = '1420';\n\n-- UPDATE: the second half, this time aimed at a customer that really exists, so\n--   both statements change exactly one row each.\nUPDATE CUSTOMER\nSET BALANCE = BALANCE + 200.00\nWHERE CUSTOMER_NUM = '1120';\n\n-- COMMIT: make both changes permanent, together and at the same instant. After\n--   this the transaction is closed and there is nothing left to roll back.\nCOMMIT;"
       },
       {
        "type": "callout",
@@ -1552,7 +1552,7 @@
       },
       {
        "type": "code",
-       "text": "BEGIN;\n\nCREATE TABLE BALANCE_AUDIT (\n    CUSTOMER_NUM  CHAR(4),\n    OLD_BALANCE   DECIMAL(9,2)\n);\n\nSELECT COUNT(*) AS AUDIT_TABLE_COUNT\nFROM sqlite_master\nWHERE name = 'BALANCE_AUDIT';\n\nROLLBACK;\n\nSELECT COUNT(*) AS AUDIT_TABLE_COUNT\nFROM sqlite_master\nWHERE name = 'BALANCE_AUDIT';"
+       "text": "-- BEGIN: open a transaction - this time around a structure change rather than a\n--   data change.\nBEGIN;\n\n-- CREATE TABLE: a DDL statement. In SQLite and PostgreSQL it is transactional\n--   like any other statement, which is what the rest of this example proves.\nCREATE TABLE BALANCE_AUDIT (\n    CUSTOMER_NUM  CHAR(4),\n    OLD_BALANCE   DECIMAL(9,2)\n);\n\n-- SELECT: sqlite_master is SQLite's internal catalogue - the table that lists the\n--   tables. Counting rows in it is how you ask \"does this table exist?\". It\n--   answers 1: the new table is there.\nSELECT COUNT(*) AS AUDIT_TABLE_COUNT\nFROM sqlite_master\nWHERE name = 'BALANCE_AUDIT';\n\n-- ROLLBACK: undo the transaction, and with it the CREATE TABLE.\nROLLBACK;\n\n-- SELECT: the same catalogue question now answers 0 - the table is gone. In MySQL\n--   and Oracle this would NOT happen: a DDL statement there commits the\n--   transaction automatically and cannot be rolled back.\nSELECT COUNT(*) AS AUDIT_TABLE_COUNT\nFROM sqlite_master\nWHERE name = 'BALANCE_AUDIT';"
       },
       {
        "type": "checklist",
@@ -1585,7 +1585,7 @@
       },
       {
        "type": "code",
-       "text": "-- Step 1: how many rows will this touch? Ask before you change anything.\nSELECT COUNT(*) AS ROWS_I_AM_ABOUT_TO_CHANGE\nFROM CUSTOMER\nWHERE CUSTOMER_NUM = '1310';\n\nBEGIN;\n\nUPDATE CUSTOMER\nSET CREDIT_LIMIT = 12000.00\nWHERE CUSTOMER_NUM = '1310';\n\nSELECT CUSTOMER_NUM, CUSTOMER_NAME, CREDIT_LIMIT\nFROM CUSTOMER\nWHERE CUSTOMER_NUM = '1310';\n\nCOMMIT;"
+       "text": "-- Step 1: how many rows will this touch? Ask before you change anything.\n-- SELECT COUNT(*): the same WHERE clause the UPDATE is about to use. If this\n--   answers 400 when you expected 1, you have found the mistake for free.\nSELECT COUNT(*) AS ROWS_I_AM_ABOUT_TO_CHANGE\nFROM CUSTOMER\nWHERE CUSTOMER_NUM = '1310';\n\n-- Step 2: BEGIN opens the safety net before the change is made.\nBEGIN;\n\n-- Step 3: the change itself, now provisional.\nUPDATE CUSTOMER\nSET CREDIT_LIMIT = 12000.00\nWHERE CUSTOMER_NUM = '1310';\n\n-- Step 4: read the row back and confirm it looks right. This is the moment to\n--   decide - ROLLBACK if anything is wrong, COMMIT if it is not.\nSELECT CUSTOMER_NUM, CUSTOMER_NAME, CREDIT_LIMIT\nFROM CUSTOMER\nWHERE CUSTOMER_NUM = '1310';\n\n-- Step 5: COMMIT makes it permanent. The safety net is gone from here on.\nCOMMIT;"
       },
       {
        "type": "p",
@@ -1607,7 +1607,7 @@
        "type": "sandbox",
        "seed": "kimtay_full",
        "starter": "-- The ten percent increase was meant for the two Habitat items only.\n-- Step 1: look at the real prices first.\nSELECT ITEM_ID, DESCRIPTION, CATEGORY, PRICE FROM ITEM ORDER BY ITEM_ID;\n\n-- Step 2: open a transaction, then make the mistake on purpose. No WHERE.\nBEGIN;\n\nUPDATE ITEM\nSET PRICE = ROUND(PRICE * 1.10, 2);\n\n-- Step 3: check the damage. All five prices moved, not just the two Habitat rows.\nSELECT ITEM_ID, CATEGORY, PRICE AS PRICE_AFTER_MISTAKE FROM ITEM ORDER BY ITEM_ID;\n\n-- Step 4: take all of it back.\nROLLBACK;\n\n-- Step 5: now do it properly. Write the UPDATE that raises ONLY the Habitat prices.\nBEGIN;\n\n-- Your UPDATE here:\n\nSELECT ITEM_ID, CATEGORY, PRICE AS PRICE_AFTER_FIX FROM ITEM ORDER BY ITEM_ID;\n\n-- Step 6: roll this one back too, so the sandbox is left exactly as you found it.\nROLLBACK;\n\nSELECT ITEM_ID, PRICE AS PRICE_RESTORED FROM ITEM ORDER BY ITEM_ID;",
-       "solution": "-- The ten percent increase was meant for the two Habitat items only.\n-- Step 1: look at the real prices first.\nSELECT ITEM_ID, DESCRIPTION, CATEGORY, PRICE FROM ITEM ORDER BY ITEM_ID;\n\n-- Step 2: open a transaction, then make the mistake on purpose. No WHERE.\nBEGIN;\n\nUPDATE ITEM\nSET PRICE = ROUND(PRICE * 1.10, 2);\n\n-- Step 3: check the damage. All five prices moved, not just the two Habitat rows.\nSELECT ITEM_ID, CATEGORY, PRICE AS PRICE_AFTER_MISTAKE FROM ITEM ORDER BY ITEM_ID;\n\n-- Step 4: take all of it back.\nROLLBACK;\n\n-- Step 5: now do it properly. Write the UPDATE that raises ONLY the Habitat prices.\nBEGIN;\n\nUPDATE ITEM\nSET PRICE = ROUND(PRICE * 1.10, 2)\nWHERE CATEGORY = 'Habitat';\n\nSELECT ITEM_ID, CATEGORY, PRICE AS PRICE_AFTER_FIX FROM ITEM ORDER BY ITEM_ID;\n\n-- Step 6: roll this one back too, so the sandbox is left exactly as you found it.\nROLLBACK;\n\nSELECT ITEM_ID, PRICE AS PRICE_RESTORED FROM ITEM ORDER BY ITEM_ID;",
+       "solution": "-- The ten percent increase was meant for the two Habitat items only.\n-- Step 1: look at the real prices first.\nSELECT ITEM_ID, DESCRIPTION, CATEGORY, PRICE FROM ITEM ORDER BY ITEM_ID;\n\n-- Step 2: open a transaction, then make the mistake on purpose. No WHERE.\n-- The safety net has to exist BEFORE the dangerous statement runs, not after.\nBEGIN;\n\n-- No WHERE clause, so every row changes. Perfectly legal SQL, and the classic accident.\nUPDATE ITEM\nSET PRICE = ROUND(PRICE * 1.10, 2);\n\n-- Step 3: check the damage. All five prices moved, not just the two Habitat rows.\nSELECT ITEM_ID, CATEGORY, PRICE AS PRICE_AFTER_MISTAKE FROM ITEM ORDER BY ITEM_ID;\n\n-- Step 4: take all of it back.\n-- ROLLBACK returns the database to its state at BEGIN, as though nothing ran.\nROLLBACK;\n\n-- Step 5: now do it properly. Write the UPDATE that raises ONLY the Habitat prices.\nBEGIN;\n\nUPDATE ITEM\n-- The new value is computed from the old one, and ROUND keeps it to two decimals.\nSET PRICE = ROUND(PRICE * 1.10, 2)\n-- The one line that was missing. It is not on a key, so several rows change at once.\nWHERE CATEGORY = 'Habitat';\n\nSELECT ITEM_ID, CATEGORY, PRICE AS PRICE_AFTER_FIX FROM ITEM ORDER BY ITEM_ID;\n\n-- Step 6: roll this one back too, so the sandbox is left exactly as you found it.\nROLLBACK;\n\nSELECT ITEM_ID, PRICE AS PRICE_RESTORED FROM ITEM ORDER BY ITEM_ID;",
        "hint": "Four result sets come back every time. Before you write anything they read: the real prices; then 71.49, 46.75, 13.19, 30.53 and 16.78; then the real prices again, because your `UPDATE` is still missing; then the real prices once more. With `WHERE CATEGORY = 'Habitat'` in place, the third set reads AV07 71.49 and FT88 30.53 while CF21 42.5, DG04 11.99 and GR15 15.25 stay exactly where they were. SQLite drops trailing zeros when it displays a number, so 42.50 appears as 42.5. Both transactions end in `ROLLBACK`, so you can run this as many times as you like without changing anything."
       },
       {
@@ -1620,7 +1620,7 @@
       },
       {
        "type": "code",
-       "text": "BEGIN;\n\nDELETE FROM INVOICE_LINE;\n\nSELECT COUNT(*) AS LINES_LEFT FROM INVOICE_LINE;\n\nROLLBACK;\n\nSELECT COUNT(*) AS LINES_BACK FROM INVOICE_LINE;"
+       "text": "-- BEGIN: open the transaction FIRST. The safety net has to exist before the\n--   dangerous statement runs, not after.\nBEGIN;\n\n-- DELETE with no WHERE: removes every row in the table. The table itself survives\n--   - this is emptying it, not dropping it.\nDELETE FROM INVOICE_LINE;\n\n-- SELECT: confirms the damage. Zero rows left.\nSELECT COUNT(*) AS LINES_LEFT FROM INVOICE_LINE;\n\n-- ROLLBACK: puts all six rows back, exactly as they were.\nROLLBACK;\n\n-- SELECT: the count is back to six. Outside a transaction, that DELETE would have\n--   been permanent and no amount of typing would have brought the rows back.\nSELECT COUNT(*) AS LINES_BACK FROM INVOICE_LINE;"
       },
       {
        "type": "p",
@@ -1663,7 +1663,7 @@
       },
       {
        "type": "code",
-       "text": "BEGIN;\n\nUPDATE CUSTOMER\nSET BALANCE = 0\nWHERE CUSTOMER_NUM = '1420';\n\nCOMMIT;\n\n-- This line fails. The transaction closed when COMMIT ran.\nROLLBACK;"
+       "text": "-- BEGIN: open a transaction.\nBEGIN;\n\n-- UPDATE: a provisional change.\nUPDATE CUSTOMER\nSET BALANCE = 0\nWHERE CUSTOMER_NUM = '1420';\n\n-- COMMIT: makes the change permanent AND ends the transaction. Those are two\n--   separate consequences, and the second one is what people forget.\nCOMMIT;\n\n-- This line fails. The transaction closed when COMMIT ran.\n-- ROLLBACK: there is no open transaction left to undo, so this is an error rather\n--   than a way back. Once you commit, the change is yours to keep.\nROLLBACK;"
       },
       {
        "type": "p",
@@ -1706,7 +1706,7 @@
       },
       {
        "type": "code",
-       "text": "BEGIN;\n\nDELETE FROM CUSTOMER\nWHERE CUSTOMER_NUM = '1310';\n\nSELECT COUNT(*) AS CUSTOMERS_LEFT FROM CUSTOMER;\n\nROLLBACK;\n\nSELECT COUNT(*) AS CUSTOMERS_LEFT FROM CUSTOMER;"
+       "text": "-- BEGIN: open the transaction before the delete, as always.\nBEGIN;\n\n-- DELETE ... WHERE: a targeted delete - one customer, chosen by primary key.\nDELETE FROM CUSTOMER\nWHERE CUSTOMER_NUM = '1310';\n\n-- SELECT: three customers left, so the delete did what it said.\nSELECT COUNT(*) AS CUSTOMERS_LEFT FROM CUSTOMER;\n\n-- ROLLBACK: undo it.\nROLLBACK;\n\n-- SELECT: four again. Run the same experiment without the BEGIN and the customer\n--   is simply gone.\nSELECT COUNT(*) AS CUSTOMERS_LEFT FROM CUSTOMER;"
       },
       {
        "type": "p",
@@ -2066,7 +2066,7 @@
     },
     {
      "sql": "-- The ten percent increase was meant for the two Habitat items only.\n-- Step 1: look at the real prices first.\nSELECT ITEM_ID, DESCRIPTION, CATEGORY, PRICE FROM ITEM ORDER BY ITEM_ID;\n\n-- Step 2: open a transaction, then make the mistake on purpose. No WHERE.\nBEGIN;\n\nUPDATE ITEM\nSET PRICE = ROUND(PRICE * 1.10, 2);\n\n-- Step 3: check the damage. All five prices moved, not just the two Habitat rows.\nSELECT ITEM_ID, CATEGORY, PRICE AS PRICE_AFTER_MISTAKE FROM ITEM ORDER BY ITEM_ID;\n\n-- Step 4: take all of it back.\nROLLBACK;\n\n-- Step 5: now do it properly. Write the UPDATE that raises ONLY the Habitat prices.\nBEGIN;\n\nUPDATE ITEM\nSET PRICE = ROUND(PRICE * 1.10, 2)\nWHERE CATEGORY = 'Habitat';\n\nSELECT ITEM_ID, CATEGORY, PRICE AS PRICE_AFTER_FIX FROM ITEM ORDER BY ITEM_ID;\n\n-- Step 6: roll this one back too, so the sandbox is left exactly as you found it.\nROLLBACK;\n\nSELECT ITEM_ID, PRICE AS PRICE_RESTORED FROM ITEM ORDER BY ITEM_ID;",
-     "expect": "Four result sets of five rows each. Set 2 (PRICE_AFTER_MISTAKE): 71.49, 46.75, 13.19, 30.53, 16.78. Set 3 (PRICE_AFTER_FIX): AV07 71.49, CF21 42.5, DG04 11.99, FT88 30.53, GR15 15.25 \u2014 only the two Habitat rows moved. Set 4 (PRICE_RESTORED) equals the shipped prices: 64.99, 42.5, 11.99, 27.75, 15.25. Ends with no open transaction, so it is safe to rerun. This is the m6-6 sandbox solution.",
+     "expect": "Four result sets of five rows each. Set 2 (PRICE_AFTER_MISTAKE): 71.49, 46.75, 13.19, 30.53, 16.78. Set 3 (PRICE_AFTER_FIX): AV07 71.49, CF21 42.5, DG04 11.99, FT88 30.53, GR15 15.25 — only the two Habitat rows moved. Set 4 (PRICE_RESTORED) equals the shipped prices: 64.99, 42.5, 11.99, 27.75, 15.25. Ends with no open transaction, so it is safe to rerun. This is the m6-6 sandbox solution.",
      "engine": "sandbox"
     },
     {
@@ -2081,7 +2081,7 @@
     },
     {
      "sql": "BEGIN;\n\nUPDATE CUSTOMER\nSET BALANCE = 0\nWHERE CUSTOMER_NUM = '1420';\n\nCOMMIT;\n\n-- This line fails. The transaction closed when COMMIT ran.\nROLLBACK;",
-     "expect": "The UPDATE and COMMIT succeed (customer 1420 balance becomes 0), then the final line raises: cannot rollback - no transaction is active. Because the script errors, the sandbox shows only the error message, but the zero balance is already permanent \u2014 the lesson tells the student to press Reset.",
+     "expect": "The UPDATE and COMMIT succeed (customer 1420 balance becomes 0), then the final line raises: cannot rollback - no transaction is active. Because the script errors, the sandbox shows only the error message, but the zero balance is already permanent — the lesson tells the student to press Reset.",
      "engine": "sandbox"
     },
     {
@@ -2163,7 +2163,7 @@
       },
       {
        "type": "code",
-       "text": "UPDATE CUSTOMER\nSET BALANCE = NULL\nWHERE CUSTOMER_NUM = '1310';"
+       "text": "-- UPDATE: the table being changed.\nUPDATE CUSTOMER\n\n-- SET: storing a null is how you record \"this value is not known\", as opposed to\n--   storing 0, which claims the customer owes nothing. The two are very different\n--   statements about the world, and only one of them is honest here.\nSET BALANCE = NULL\n\n-- WHERE: the single row being cleared.\nWHERE CUSTOMER_NUM = '1310';"
       },
       {
        "type": "callout",
@@ -2179,7 +2179,7 @@
        "type": "sandbox",
        "seed": "kimtay_full",
        "starter": "-- Step 1: how the four customers look right now.\nSELECT COUNT(*)       AS customer_count,\n       COUNT(BALANCE) AS balances_known,\n       AVG(BALANCE)   AS average_balance\nFROM CUSTOMER;\n\n-- Step 2: set Companion Care Clinic (1310) to a null balance,\n-- then run those same three numbers again and compare.",
-       "solution": "SELECT COUNT(*)       AS customer_count,\n       COUNT(BALANCE) AS balances_known,\n       AVG(BALANCE)   AS average_balance\nFROM CUSTOMER;\n\nUPDATE CUSTOMER\nSET BALANCE = NULL\nWHERE CUSTOMER_NUM = '1310';\n\nSELECT COUNT(*)       AS customer_count,\n       COUNT(BALANCE) AS balances_known,\n       AVG(BALANCE)   AS average_balance\nFROM CUSTOMER;",
+       "solution": "-- The three numbers before any null exists. COUNT(*) counts rows, COUNT(column)\n-- counts values, and AVG divides the total by the count of VALUES.\nSELECT COUNT(*)       AS customer_count,\n       COUNT(BALANCE) AS balances_known,\n       AVG(BALANCE)   AS average_balance\nFROM CUSTOMER;\n\n-- Clear one balance. NULL records that the amount is not known - very different\n-- from storing 0, which would claim the customer owes nothing.\nUPDATE CUSTOMER\nSET BALANCE = NULL\nWHERE CUSTOMER_NUM = '1310';\n\n-- The same three numbers again. The row count is unchanged, but the value count\n-- drops by one and the average silently changes - it is now the average of the\n-- customers who HAVE a balance, which is a different question.\nSELECT COUNT(*)       AS customer_count,\n       COUNT(BALANCE) AS balances_known,\n       AVG(BALANCE)   AS average_balance\nFROM CUSTOMER;",
        "hint": "`COUNT(*)` counts rows. `COUNT(BALANCE)` counts only the rows where `BALANCE` holds a value. Watch which of the three numbers moves."
       },
       {
@@ -2224,7 +2224,7 @@
        "type": "sandbox",
        "seed": "kimtay_full",
        "starter": "DROP TABLE IF EXISTS CONTACT_LOG;\n\nCREATE TABLE CONTACT_LOG (\n  CUSTOMER_NUM  CHAR(4)     NOT NULL,\n  CONTACT_NAME  VARCHAR(25) NOT NULL,\n  CONTACT_PHONE CHAR(12)\n);\n\nINSERT INTO CONTACT_LOG VALUES ('1120', 'Dana Reyes', '555-880-1200');\nINSERT INTO CONTACT_LOG VALUES ('1310', 'Owen Blake', '555-880-4417');\n\n-- Owen Blake's number is disconnected and nobody has the new one:\n-- set his phone to null. Then set Dana's phone to an empty string.\n-- Finish with a SELECT that shows CONTACT_PHONE and LENGTH(CONTACT_PHONE).",
-       "solution": "DROP TABLE IF EXISTS CONTACT_LOG;\n\nCREATE TABLE CONTACT_LOG (\n  CUSTOMER_NUM  CHAR(4)     NOT NULL,\n  CONTACT_NAME  VARCHAR(25) NOT NULL,\n  CONTACT_PHONE CHAR(12)\n);\n\nINSERT INTO CONTACT_LOG VALUES ('1120', 'Dana Reyes', '555-880-1200');\nINSERT INTO CONTACT_LOG VALUES ('1310', 'Owen Blake', '555-880-4417');\n\nUPDATE CONTACT_LOG\nSET CONTACT_PHONE = NULL\nWHERE CUSTOMER_NUM = '1310';\n\nUPDATE CONTACT_LOG\nSET CONTACT_PHONE = ''\nWHERE CUSTOMER_NUM = '1120';\n\nSELECT CUSTOMER_NUM,\n       CONTACT_PHONE,\n       LENGTH(CONTACT_PHONE) AS phone_length\nFROM CONTACT_LOG\nORDER BY CUSTOMER_NUM;",
+       "solution": "DROP TABLE IF EXISTS CONTACT_LOG;\n\nCREATE TABLE CONTACT_LOG (\n  CUSTOMER_NUM  CHAR(4)     NOT NULL,\n  CONTACT_NAME  VARCHAR(25) NOT NULL,\n  -- Left nullable on purpose: a phone number may genuinely be unknown.\n  CONTACT_PHONE CHAR(12)\n);\n\nINSERT INTO CONTACT_LOG VALUES ('1120', 'Dana Reyes', '555-880-1200');\nINSERT INTO CONTACT_LOG VALUES ('1310', 'Owen Blake', '555-880-4417');\n\n-- Store a NULL: no value recorded at all.\nUPDATE CONTACT_LOG\nSET CONTACT_PHONE = NULL\nWHERE CUSTOMER_NUM = '1310';\n\n-- Store an EMPTY STRING: a value that happens to be zero characters long. It\n-- looks identical on screen and is a completely different thing.\nUPDATE CONTACT_LOG\nSET CONTACT_PHONE = ''\nWHERE CUSTOMER_NUM = '1120';\n\n-- LENGTH tells the two apart: the empty string measures 0, while the null\n-- measures null, because any function of an unknown is itself unknown.\nSELECT CUSTOMER_NUM,\n       CONTACT_PHONE,\n       LENGTH(CONTACT_PHONE) AS phone_length\nFROM CONTACT_LOG\nORDER BY CUSTOMER_NUM;",
        "hint": "`LENGTH('')` is `0`. `LENGTH(NULL)` is null, because the length of something unknown is also unknown. Dana Reyes and Owen Blake are invented contacts for this table, not people in the shipped data."
       },
       {
@@ -2241,7 +2241,7 @@
       },
       {
        "type": "code",
-       "text": "-- This one fails on purpose. CONTACT_NAME was declared NOT NULL.\nUPDATE CONTACT_LOG\nSET CONTACT_NAME = NULL\nWHERE CUSTOMER_NUM = '1120';\n\n-- SQLite reports: NOT NULL constraint failed: CONTACT_LOG.CONTACT_NAME\n-- MySQL reports:  ERROR 1048 (23000): Column 'CONTACT_NAME' cannot be null"
+       "text": "-- This one fails on purpose. CONTACT_NAME was declared NOT NULL.\n-- UPDATE: the table being changed.\nUPDATE CONTACT_LOG\n\n-- SET: BROKEN. NOT NULL is a promise made when the table was created, and the\n--   engine enforces it on every statement afterwards - an UPDATE is checked just\n--   as strictly as an INSERT. The change is refused and the row is left alone.\nSET CONTACT_NAME = NULL\n\n-- WHERE: which row would have been changed, had the constraint allowed it.\nWHERE CUSTOMER_NUM = '1120';\n\n-- SQLite reports: NOT NULL constraint failed: CONTACT_LOG.CONTACT_NAME\n-- MySQL reports:  ERROR 1048 (23000): Column 'CONTACT_NAME' cannot be null"
       },
       {
        "type": "callout",
@@ -2261,7 +2261,7 @@
        "type": "sandbox",
        "seed": "kimtay_full",
        "starter": "UPDATE CUSTOMER\nSET BALANCE = NULL\nWHERE CUSTOMER_NUM = '1310';\n\n-- One of these finds Companion Care Clinic and one finds nothing.\n-- Run them and decide which is which before you read on.\nSELECT CUSTOMER_NUM, CUSTOMER_NAME FROM CUSTOMER WHERE BALANCE = NULL;\n\nSELECT CUSTOMER_NUM, CUSTOMER_NAME FROM CUSTOMER WHERE BALANCE IS NULL;",
-       "solution": "UPDATE CUSTOMER\nSET BALANCE = NULL\nWHERE CUSTOMER_NUM = '1310';\n\n-- Returns no rows: nothing is ever equal to null, not even null.\nSELECT CUSTOMER_NUM, CUSTOMER_NAME FROM CUSTOMER WHERE BALANCE = NULL;\n\n-- Returns customer 1310, Companion Care Clinic.\nSELECT CUSTOMER_NUM, CUSTOMER_NAME FROM CUSTOMER WHERE BALANCE IS NULL;",
+       "solution": "-- Create a null to hunt for.\nUPDATE CUSTOMER\nSET BALANCE = NULL\nWHERE CUSTOMER_NUM = '1310';\n\n-- Returns no rows: nothing is ever equal to null, not even null.\n-- The comparison answers unknown, WHERE keeps only what is true, so every row goes.\nSELECT CUSTOMER_NUM, CUSTOMER_NAME FROM CUSTOMER WHERE BALANCE = NULL;\n\n-- Returns customer 1310, Companion Care Clinic.\n-- IS NULL asks about the presence of a value instead of comparing values, which\n-- is why it is the only test that works. There is no = anywhere in it.\nSELECT CUSTOMER_NUM, CUSTOMER_NAME FROM CUSTOMER WHERE BALANCE IS NULL;",
        "hint": "Read `IS NULL` as a single operator, like `BETWEEN`. It is not the `=` sign with a different word after it."
       },
       {
@@ -2302,7 +2302,7 @@
       },
       {
        "type": "code",
-       "text": "ALTER TABLE CUSTOMER\nADD COLUMN EMAIL VARCHAR(40);"
+       "text": "-- ALTER TABLE: changes the STRUCTURE of an existing table rather than its data.\n--   The table keeps its rows throughout.\nALTER TABLE CUSTOMER\n\n-- ADD COLUMN: appends a new column at the end. Every existing row immediately has\n--   this column, holding null, because no value was supplied for rows that were\n--   already there. The word COLUMN is optional in MySQL and required in SQLite.\nADD COLUMN EMAIL VARCHAR(40);"
       },
       {
        "type": "p",
@@ -2312,7 +2312,7 @@
        "type": "sandbox",
        "seed": "kimtay_full",
        "starter": "-- Give CUSTOMER an EMAIL column, then record the address for\n-- Access Pet Center (1120) and list all four customers with it.\n",
-       "solution": "ALTER TABLE CUSTOMER\nADD COLUMN EMAIL VARCHAR(40);\n\nUPDATE CUSTOMER\nSET EMAIL = 'orders@accesspet.example'\nWHERE CUSTOMER_NUM = '1120';\n\nSELECT CUSTOMER_NUM, CUSTOMER_NAME, EMAIL\nFROM CUSTOMER\nORDER BY CUSTOMER_NUM;",
+       "solution": "-- ALTER TABLE changes a table's STRUCTURE; the rows stay where they are.\nALTER TABLE CUSTOMER\n-- ADD COLUMN appends a column. Every existing row immediately has it, holding\n-- null, because no value was supplied for rows that were already there.\nADD COLUMN EMAIL VARCHAR(40);\n\n-- Fill the new column in for one customer, leaving the rest null.\nUPDATE CUSTOMER\nSET EMAIL = 'orders@accesspet.example'\nWHERE CUSTOMER_NUM = '1120';\n\nSELECT CUSTOMER_NUM, CUSTOMER_NAME, EMAIL\nFROM CUSTOMER\nORDER BY CUSTOMER_NUM;",
        "hint": "Two statements: one `ALTER TABLE` to create the column, one `UPDATE` to put a value in a single row."
       },
       {
@@ -2327,7 +2327,7 @@
       },
       {
        "type": "code",
-       "text": "-- Rejected: the engine would have to put null in five existing rows.\nALTER TABLE ITEM ADD COLUMN SUPPLIER VARCHAR(15) NOT NULL;\n\n-- SQLite reports: Cannot add a NOT NULL column with default value NULL\n-- Oracle reports ORA-01758: table must be empty to add mandatory (NOT NULL) column"
+       "text": "-- Rejected: the engine would have to put null in five existing rows.\n-- ALTER TABLE ... ADD COLUMN ... NOT NULL: BROKEN on a table that already holds\n--   rows. The new column has no value for them, so the only thing the engine\n--   could store is null - which is exactly what NOT NULL forbids. The fix is to\n--   add the column nullable, UPDATE every row with a real value, then tighten the\n--   constraint; or to supply a DEFAULT the engine can use for the existing rows.\nALTER TABLE ITEM ADD COLUMN SUPPLIER VARCHAR(15) NOT NULL;\n\n-- SQLite reports: Cannot add a NOT NULL column with default value NULL\n-- Oracle reports ORA-01758: table must be empty to add mandatory (NOT NULL) column"
       },
       {
        "type": "p",
@@ -2337,7 +2337,7 @@
        "type": "sandbox",
        "seed": "kimtay_full",
        "starter": "-- Add a SUPPLIER column to ITEM that is required from now on.\n-- Existing items have no supplier on file, so default them to 'UNKNOWN'.\n",
-       "solution": "ALTER TABLE ITEM\nADD COLUMN SUPPLIER VARCHAR(15) NOT NULL DEFAULT 'UNKNOWN';\n\nSELECT ITEM_ID, DESCRIPTION, SUPPLIER\nFROM ITEM\nORDER BY ITEM_ID;",
+       "solution": "ALTER TABLE ITEM\n-- NOT NULL on a table that already holds rows is normally refused - the engine\n-- would have to store a null in every existing row. DEFAULT is what makes it\n-- legal: it gives the engine a real value to write into those rows instead.\nADD COLUMN SUPPLIER VARCHAR(15) NOT NULL DEFAULT 'UNKNOWN';\n\n-- All five rows come back reading UNKNOWN, which is the default doing its work.\nSELECT ITEM_ID, DESCRIPTION, SUPPLIER\nFROM ITEM\nORDER BY ITEM_ID;",
        "hint": "The clause order is type, then `NOT NULL`, then `DEFAULT`. All five items come back reading `UNKNOWN`."
       },
       {
@@ -2381,7 +2381,7 @@
       },
       {
        "type": "code",
-       "text": "-- MySQL only. Neither of these runs in the sandbox on this page:\n-- SQLite answers 'near \"MODIFY\": syntax error'.\nALTER TABLE CUSTOMER MODIFY CUSTOMER_NAME VARCHAR(50);\n\n-- CHANGE takes the old name, the new name, and the full type.\nALTER TABLE CUSTOMER CHANGE CUSTOMER_NAME CUSTOMER_TITLE VARCHAR(50);"
+       "text": "-- MySQL only. Neither of these runs in the sandbox on this page:\n-- SQLite answers 'near \"MODIFY\": syntax error'.\n-- MODIFY: changes an existing column's TYPE, leaving its name alone. You restate\n--   the full new type, not just the part that is changing.\nALTER TABLE CUSTOMER MODIFY CUSTOMER_NAME VARCHAR(50);\n\n-- CHANGE takes the old name, the new name, and the full type.\n-- CHANGE: renames a column and restates its type at the same time. Widening a\n--   column is usually safe; narrowing one can truncate stored data, so check the\n--   longest value in the column before you shrink it.\nALTER TABLE CUSTOMER CHANGE CUSTOMER_NAME CUSTOMER_TITLE VARCHAR(50);"
       },
       {
        "type": "callout",
@@ -2399,13 +2399,13 @@
       },
       {
        "type": "code",
-       "text": "ALTER TABLE CUSTOMER\nDROP COLUMN EMAIL;"
+       "text": "-- ALTER TABLE: the table whose structure is changing.\nALTER TABLE CUSTOMER\n\n-- DROP COLUMN: removes the column and every value stored in it, from every row.\n--   There is no undo outside a transaction, and no warning about the data going\n--   with it - so confirm nothing depends on the column first.\nDROP COLUMN EMAIL;"
       },
       {
        "type": "sandbox",
        "seed": "kimtay_full",
        "starter": "-- Add EMAIL to CUSTOMER, look at the table, then take the column\n-- back off and confirm CUSTOMER is shaped the way it started.\n",
-       "solution": "ALTER TABLE CUSTOMER\nADD COLUMN EMAIL VARCHAR(40);\n\nSELECT CUSTOMER_NUM, CUSTOMER_NAME, EMAIL\nFROM CUSTOMER\nORDER BY CUSTOMER_NUM;\n\nALTER TABLE CUSTOMER\nDROP COLUMN EMAIL;\n\nSELECT *\nFROM CUSTOMER\nWHERE CUSTOMER_NUM = '1120';",
+       "solution": "-- Add a column...\nALTER TABLE CUSTOMER\nADD COLUMN EMAIL VARCHAR(40);\n\n-- ...confirm it exists, holding null on every row.\nSELECT CUSTOMER_NUM, CUSTOMER_NAME, EMAIL\nFROM CUSTOMER\nORDER BY CUSTOMER_NUM;\n\nALTER TABLE CUSTOMER\n-- DROP COLUMN removes the column and every value in it, from every row. Outside\n-- a transaction there is no undo and no warning about the data going with it.\nDROP COLUMN EMAIL;\n\n-- SELECT * proves the column is gone from the table's shape entirely.\nSELECT *\nFROM CUSTOMER\nWHERE CUSTOMER_NUM = '1120';",
        "hint": "The last `SELECT *` should come back with the original nine columns and no `EMAIL`."
       },
       {
@@ -2451,7 +2451,7 @@
        "type": "sandbox",
        "seed": "kimtay_full",
        "starter": "-- Rebuild ITEM so DESCRIPTION holds 40 characters, ON_HAND is an\n-- INTEGER, and a SUPPLIER column exists. Leave CATEGORY, PRICE and\n-- REORDER_LEVEL exactly as they are. Keep all five rows.\n-- Use the four steps: create, copy, drop, rename.\n",
-       "solution": "DROP TABLE IF EXISTS ITEM_NEW;\n\nBEGIN;\n\nCREATE TABLE ITEM_NEW (\n  ITEM_ID       CHAR(4)      PRIMARY KEY,\n  DESCRIPTION   VARCHAR(40)  NOT NULL,\n  CATEGORY      VARCHAR(15),\n  ON_HAND       INTEGER,\n  PRICE         DECIMAL(7,2),\n  REORDER_LEVEL SMALLINT,\n  SUPPLIER      VARCHAR(15)\n);\n\nINSERT INTO ITEM_NEW (ITEM_ID, DESCRIPTION, CATEGORY, ON_HAND, PRICE, REORDER_LEVEL)\nSELECT ITEM_ID, DESCRIPTION, CATEGORY, ON_HAND, PRICE, REORDER_LEVEL\nFROM ITEM;\n\nDROP TABLE ITEM;\n\nALTER TABLE ITEM_NEW RENAME TO ITEM;\n\nCOMMIT;\n\nSELECT ITEM_ID, DESCRIPTION, ON_HAND, SUPPLIER\nFROM ITEM\nORDER BY ITEM_ID;",
+       "solution": "DROP TABLE IF EXISTS ITEM_NEW;\n\n-- The whole rebuild runs inside ONE transaction, so the table is never missing:\n-- either every step below succeeds or none of them do.\nBEGIN;\n\n-- Step 1: build the table you actually want, with the wider DESCRIPTION and the\n-- extra SUPPLIER column. SQLite cannot change a column's type in place, which is\n-- why the four-step dance exists.\nCREATE TABLE ITEM_NEW (\n  ITEM_ID       CHAR(4)      PRIMARY KEY,\n  DESCRIPTION   VARCHAR(40)  NOT NULL,\n  CATEGORY      VARCHAR(15),\n  ON_HAND       INTEGER,\n  PRICE         DECIMAL(7,2),\n  REORDER_LEVEL SMALLINT,\n  SUPPLIER      VARCHAR(15)\n);\n\n-- Step 2: copy the data across. SUPPLIER is left out of both lists, so it comes\n-- out null on every row - the new column has no data to inherit.\nINSERT INTO ITEM_NEW (ITEM_ID, DESCRIPTION, CATEGORY, ON_HAND, PRICE, REORDER_LEVEL)\nSELECT ITEM_ID, DESCRIPTION, CATEGORY, ON_HAND, PRICE, REORDER_LEVEL\nFROM ITEM;\n\n-- Step 3: remove the old table.\nDROP TABLE ITEM;\n\n-- Step 4: rename the new one into its place. To everything else, ITEM simply\n-- gained a column.\nALTER TABLE ITEM_NEW RENAME TO ITEM;\n\n-- Only now does any of it become permanent.\nCOMMIT;\n\nSELECT ITEM_ID, DESCRIPTION, ON_HAND, SUPPLIER\nFROM ITEM\nORDER BY ITEM_ID;",
        "hint": "`SUPPLIER` is left out of the `INSERT` column list on purpose, so all five rows get a null there. Copying `CATEGORY` as `VARCHAR(15)` and `PRICE` as `DECIMAL(7,2)` keeps them unchanged; a rebuild is a chance to change things by accident as well as on purpose."
       },
       {
@@ -2488,7 +2488,7 @@
       },
       {
        "type": "code",
-       "text": "DROP TABLE ITEM_ARCHIVE;"
+       "text": "-- DROP TABLE: removes the whole table - definition, columns and rows together.\n--   Compare it with DELETE FROM ITEM_ARCHIVE;, which empties the table but leaves\n--   it in place, ready to be filled again.\nDROP TABLE ITEM_ARCHIVE;"
       },
       {
        "type": "p",
@@ -2502,7 +2502,7 @@
        "type": "sandbox",
        "seed": "kimtay_full",
        "starter": "-- Build a scratch table holding the two Habitat items, list it,\n-- confirm the database now has six tables, then drop it and\n-- confirm the database is back to five.\n",
-       "solution": "DROP TABLE IF EXISTS ITEM_ARCHIVE;\n\nCREATE TABLE ITEM_ARCHIVE AS\nSELECT ITEM_ID, DESCRIPTION, CATEGORY, PRICE\nFROM ITEM\nWHERE CATEGORY = 'Habitat';\n\nSELECT * FROM ITEM_ARCHIVE ORDER BY ITEM_ID;\n\nSELECT name FROM sqlite_master WHERE type = 'table' ORDER BY name;\n\nDROP TABLE ITEM_ARCHIVE;\n\nSELECT name FROM sqlite_master WHERE type = 'table' ORDER BY name;",
+       "solution": "DROP TABLE IF EXISTS ITEM_ARCHIVE;\n\n-- Build and fill in one statement, taking four of the six columns and only the\n-- habitat rows - the SELECT list decides the columns, the WHERE decides the rows.\nCREATE TABLE ITEM_ARCHIVE AS\nSELECT ITEM_ID, DESCRIPTION, CATEGORY, PRICE\nFROM ITEM\nWHERE CATEGORY = 'Habitat';\n\nSELECT * FROM ITEM_ARCHIVE ORDER BY ITEM_ID;\n\n-- sqlite_master is the catalogue: ask it what tables exist right now.\nSELECT name FROM sqlite_master WHERE type = 'table' ORDER BY name;\n\n-- DROP TABLE removes the table itself - definition, columns and rows together.\n-- Compare with DELETE FROM ITEM_ARCHIVE, which would empty it but leave it there.\nDROP TABLE ITEM_ARCHIVE;\n\n-- The same catalogue question, now one table shorter.\nSELECT name FROM sqlite_master WHERE type = 'table' ORDER BY name;",
        "hint": "The archive should hold two rows, `AV07` and `FT88`. The first catalog list has six names; the second has five."
       },
       {
@@ -2521,7 +2521,7 @@
       },
       {
        "type": "code",
-       "text": "DROP TABLE IF EXISTS ITEM_ARCHIVE;"
+       "text": "-- DROP TABLE IF EXISTS: the same removal, but silent when the table is already\n--   gone. This is what makes a setup script safe to re-run from the top: the\n--   drops succeed whether or not the tables happen to exist yet.\nDROP TABLE IF EXISTS ITEM_ARCHIVE;"
       },
       {
        "type": "callout",
@@ -2543,7 +2543,7 @@
       },
       {
        "type": "code",
-       "text": "-- SQLite, with enforcement switched on for the session:\nPRAGMA foreign_keys = ON;\nDROP TABLE ITEM;\n-- Error: FOREIGN KEY constraint failed\n\n-- MySQL says the same thing at more length:\n-- ERROR 3730 (HY000): Cannot drop table 'ITEM' referenced by a\n-- foreign key constraint on table 'invoice_line'."
+       "text": "-- SQLite, with enforcement switched on for the session:\n-- PRAGMA foreign_keys = ON: SQLite ships with foreign key checking OFF, and this\n--   turns it on for the current connection. It has to be set before you rely on\n--   any of the protection below.\nPRAGMA foreign_keys = ON;\n\n-- DROP TABLE: refused. INVOICE_LINE holds rows whose ITEM_ID points at this\n--   table, and dropping it would leave those rows referring to nothing. The\n--   database is protecting its own integrity - drop the child table first, or\n--   remove the rows that depend on this one.\nDROP TABLE ITEM;\n\n-- Error: FOREIGN KEY constraint failed\n\n-- MySQL says the same thing at more length:\n-- ERROR 3730 (HY000): Cannot drop table 'ITEM' referenced by a\n-- foreign key constraint on table 'invoice_line'."
       },
       {
        "type": "p",
@@ -2578,7 +2578,7 @@
        "type": "sandbox",
        "seed": "kimtay_full",
        "starter": "-- Drop ITEM, then list INVOICE_LINE. The six lines are all still\n-- there. Try to describe what invoice 50712 actually ordered.\n",
-       "solution": "DROP TABLE ITEM;\n\nSELECT INVOICE_NUM, ITEM_ID, NUM_ORDERED, QUOTED_PRICE\nFROM INVOICE_LINE\nORDER BY INVOICE_NUM, ITEM_ID;",
+       "solution": "-- Dropping a parent table when foreign key enforcement is OFF: SQLite allows it,\n-- and the child rows are left pointing at nothing.\nDROP TABLE ITEM;\n\n-- The line items survive, still carrying ITEM_ID values whose items no longer\n-- exist. Nothing warns you - which is the argument for turning enforcement on.\nSELECT INVOICE_NUM, ITEM_ID, NUM_ORDERED, QUOTED_PRICE\nFROM INVOICE_LINE\nORDER BY INVOICE_NUM, ITEM_ID;",
        "hint": "Every line survives with its `ITEM_ID`, but `AV07` and `FT88` are now codes with nothing to look them up in."
       },
       {
@@ -2673,7 +2673,7 @@
        "type": "sandbox",
        "seed": "kimtay_full",
        "starter": "-- One pass through the whole module. Give REP a TERRITORY column,\n-- set every rep to 'North', then set rep 65 back to null because\n-- that territory has not been assigned yet. List the reps,\n-- then take the column off again.\n",
-       "solution": "ALTER TABLE REP\nADD COLUMN TERRITORY VARCHAR(15);\n\nUPDATE REP\nSET TERRITORY = 'North';\n\nUPDATE REP\nSET TERRITORY = NULL\nWHERE REP_NUM = '65';\n\nSELECT REP_NUM, LAST_NAME, TERRITORY\nFROM REP\nORDER BY REP_NUM;\n\nSELECT COUNT(*) AS reps, COUNT(TERRITORY) AS territory_known\nFROM REP;\n\nALTER TABLE REP\nDROP COLUMN TERRITORY;",
+       "solution": "ALTER TABLE REP\n-- A new column arrives null on every existing row.\nADD COLUMN TERRITORY VARCHAR(15);\n\n-- No WHERE clause, so this sets every rep to North in one statement.\nUPDATE REP\nSET TERRITORY = 'North';\n\n-- Then clear one back to null, to make the counts below interesting.\nUPDATE REP\nSET TERRITORY = NULL\nWHERE REP_NUM = '65';\n\nSELECT REP_NUM, LAST_NAME, TERRITORY\nFROM REP\nORDER BY REP_NUM;\n\n-- COUNT(*) counts rows and COUNT(column) counts values, so the gap between the\n-- two numbers is exactly how many reps have no territory recorded.\nSELECT COUNT(*) AS reps, COUNT(TERRITORY) AS territory_known\nFROM REP;\n\nALTER TABLE REP\n-- Tidy up: the column and everything stored in it goes.\nDROP COLUMN TERRITORY;",
        "hint": "The second `UPDATE` is the only one with a `WHERE` clause, and that is deliberate: the first is meant to touch all three rows."
       },
       {
@@ -2803,7 +2803,7 @@
        "type": "sandbox",
        "seed": "kimtay_full",
        "starter": "-- Ask the engine directly: which of these three things is null?\nSELECT NULL IS NULL AS null_is_null,\n       0    IS NULL AS zero_is_null,\n       ''   IS NULL AS empty_string_is_null;",
-       "solution": "SELECT NULL IS NULL AS null_is_null,\n       0    IS NULL AS zero_is_null,\n       ''   IS NULL AS empty_string_is_null;",
+       "solution": "-- Three tests with no table involved at all, to settle what a null actually is.\n-- IS NULL on a null answers 1 (true).\nSELECT NULL IS NULL AS null_is_null,\n       -- Zero is a real value, so this answers 0 (false). A null is not zero.\n       0    IS NULL AS zero_is_null,\n       -- The empty string is also a real value, just a short one. Also false.\n       ''   IS NULL AS empty_string_is_null;",
        "hint": "You should get `1`, `0`, `0`. Only the null is null; zero and the empty string are values."
       }
      ]
@@ -2831,7 +2831,7 @@
        "type": "sandbox",
        "seed": "kimtay_full",
        "starter": "-- Add a LAST_INVOICED column to CUSTOMER. Set it to '2026-06-14'\n-- for exactly the customers who have an invoice on that date, and\n-- leave the rest null. Then list all four customers.\n",
-       "solution": "ALTER TABLE CUSTOMER\nADD COLUMN LAST_INVOICED DATE;\n\nUPDATE CUSTOMER\nSET LAST_INVOICED = '2026-06-14'\nWHERE CUSTOMER_NUM IN\n      (SELECT CUSTOMER_NUM\n       FROM INVOICE\n       WHERE INVOICE_DATE = '2026-06-14');\n\nSELECT CUSTOMER_NUM, CUSTOMER_NAME, LAST_INVOICED\nFROM CUSTOMER\nORDER BY CUSTOMER_NUM;\n\nSELECT COUNT(*) AS customers, COUNT(LAST_INVOICED) AS invoiced_that_day\nFROM CUSTOMER;",
+       "solution": "ALTER TABLE CUSTOMER\n-- DATE stores a real date, so it can be compared and sorted properly.\nADD COLUMN LAST_INVOICED DATE;\n\nUPDATE CUSTOMER\nSET LAST_INVOICED = '2026-06-14'\n-- The rows to change are chosen by a SUBQUERY. Anything legal in a SELECT's\n-- WHERE clause is legal in an UPDATE's WHERE clause too.\nWHERE CUSTOMER_NUM IN\n      -- The inner query runs first: the customers invoiced on that date.\n      (SELECT CUSTOMER_NUM\n       FROM INVOICE\n       WHERE INVOICE_DATE = '2026-06-14');\n\n-- The customers not invoiced that day keep a null, which is the honest record:\n-- not zero, not a blank date, simply nothing to report.\nSELECT CUSTOMER_NUM, CUSTOMER_NAME, LAST_INVOICED\nFROM CUSTOMER\nORDER BY CUSTOMER_NUM;\n\n-- The two counts differ by exactly the number of customers left null.\nSELECT COUNT(*) AS customers, COUNT(LAST_INVOICED) AS invoiced_that_day\nFROM CUSTOMER;",
        "hint": "The `IN` subquery returns `1120` and `1420`. The other two customers keep the null the `ADD COLUMN` gave them, which is exactly the right answer for them."
       },
       {
@@ -2878,7 +2878,7 @@
        "type": "sandbox",
        "seed": "staywell_full",
        "starter": "-- Add WEBSITE to PROPERTY, record the address for P100 only,\n-- then list PROPERTY_ID, PROPERTY_NAME, and WEBSITE for both rows.\n",
-       "solution": "ALTER TABLE PROPERTY\nADD COLUMN WEBSITE VARCHAR(40);\n\nUPDATE PROPERTY\nSET WEBSITE = 'millbrookcommons.example'\nWHERE PROPERTY_ID = 'P100';\n\nSELECT PROPERTY_ID, PROPERTY_NAME, WEBSITE\nFROM PROPERTY\nORDER BY PROPERTY_ID;",
+       "solution": "ALTER TABLE PROPERTY\n-- The new column exists on every row immediately, holding null.\nADD COLUMN WEBSITE VARCHAR(40);\n\n-- Fill it in for one property; the other keeps its null.\nUPDATE PROPERTY\nSET WEBSITE = 'millbrookcommons.example'\nWHERE PROPERTY_ID = 'P100';\n\nSELECT PROPERTY_ID, PROPERTY_NAME, WEBSITE\nFROM PROPERTY\nORDER BY PROPERTY_ID;",
        "hint": "You do not need a second `UPDATE` for Sycamore Court. `ADD COLUMN` already left it null, which is the correct value for a page that does not exist yet."
       },
       {
@@ -2893,7 +2893,7 @@
        "type": "sandbox",
        "seed": "staywell_full",
        "starter": "-- Null out MAX_OCCUPANTS for property P200 room 201, list the rooms\n-- with an unknown capacity, then count rows, count capacities,\n-- and sum the capacities.\n",
-       "solution": "UPDATE ROOM\nSET MAX_OCCUPANTS = NULL\nWHERE PROPERTY_ID = 'P200'\n  AND ROOM_NUM = '201';\n\nSELECT PROPERTY_ID, ROOM_NUM, ROOM_TYPE, MAX_OCCUPANTS\nFROM ROOM\nWHERE MAX_OCCUPANTS IS NULL;\n\nSELECT COUNT(*)             AS rooms,\n       COUNT(MAX_OCCUPANTS) AS capacity_known,\n       SUM(MAX_OCCUPANTS)   AS total_occupants\nFROM ROOM;",
+       "solution": "UPDATE ROOM\n-- Clear the capacity: null records that it is not known, where 0 would claim the\n-- room holds nobody.\nSET MAX_OCCUPANTS = NULL\n-- Two conditions, because ROOM's primary key is made of two columns and both are\n-- needed to identify a single room.\nWHERE PROPERTY_ID = 'P200'\n  AND ROOM_NUM = '201';\n\n-- IS NULL is the only test that finds it.\nSELECT PROPERTY_ID, ROOM_NUM, ROOM_TYPE, MAX_OCCUPANTS\nFROM ROOM\nWHERE MAX_OCCUPANTS IS NULL;\n\n-- COUNT(*) counts rows, COUNT(column) counts values, and SUM quietly skips the\n-- null - so the total describes the rooms whose capacity is known, not all rooms.\nSELECT COUNT(*)             AS rooms,\n       COUNT(MAX_OCCUPANTS) AS capacity_known,\n       SUM(MAX_OCCUPANTS)   AS total_occupants\nFROM ROOM;",
        "hint": "`ROOM` has a two-column primary key, so the `WHERE` clause needs both `PROPERTY_ID` and `ROOM_NUM` to reach exactly one row."
       },
       {
@@ -2912,7 +2912,7 @@
        "type": "sandbox",
        "seed": "staywell_full",
        "starter": "-- Clear HOME_STATE for student S003, then prove to yourself which\n-- comparison finds the row and which returns nothing.\n",
-       "solution": "UPDATE STUDENT\nSET HOME_STATE = NULL\nWHERE STUDENT_ID = 'S003';\n\n-- Returns no rows.\nSELECT STUDENT_ID, FIRST_NAME, LAST_NAME, HOME_STATE\nFROM STUDENT\nWHERE HOME_STATE = NULL;\n\n-- Returns S003, Layla Ibrahim.\nSELECT STUDENT_ID, FIRST_NAME, LAST_NAME, HOME_STATE\nFROM STUDENT\nWHERE HOME_STATE IS NULL;\n\nSELECT COUNT(*) AS students, COUNT(HOME_STATE) AS home_state_known\nFROM STUDENT;",
+       "solution": "-- Clear one home state so there is a null to study.\nUPDATE STUDENT\nSET HOME_STATE = NULL\nWHERE STUDENT_ID = 'S003';\n\n-- Returns no rows.\n-- Comparing a value against an unknown gives unknown, and WHERE keeps only what\n-- is definitely true - so the very row you are hunting for is discarded too.\nSELECT STUDENT_ID, FIRST_NAME, LAST_NAME, HOME_STATE\nFROM STUDENT\nWHERE HOME_STATE = NULL;\n\n-- Returns S003, Layla Ibrahim.\n-- IS NULL asks whether a value is present rather than what it equals.\nSELECT STUDENT_ID, FIRST_NAME, LAST_NAME, HOME_STATE\nFROM STUDENT\nWHERE HOME_STATE IS NULL;\n\n-- The gap between the two counts is the number of unknown home states.\nSELECT COUNT(*) AS students, COUNT(HOME_STATE) AS home_state_known\nFROM STUDENT;",
        "hint": "If the `= NULL` query had worked, `IS NULL` would not need to exist. The counts come back `4` and `3`."
       },
       {
@@ -2927,7 +2927,7 @@
        "type": "sandbox",
        "seed": "staywell_full",
        "starter": "-- Rebuild ROOM: ROOM_TYPE VARCHAR(20), MONTHLY_RENT DECIMAL(9,2),\n-- a new NOTES VARCHAR(60), primary key on (PROPERTY_ID, ROOM_NUM).\n-- Create, copy, drop, rename. All five rooms must survive.\n",
-       "solution": "DROP TABLE IF EXISTS ROOM_NEW;\n\nBEGIN;\n\nCREATE TABLE ROOM_NEW (\n  PROPERTY_ID   CHAR(4),\n  ROOM_NUM      CHAR(3),\n  ROOM_TYPE     VARCHAR(20),\n  MONTHLY_RENT  DECIMAL(9,2),\n  MAX_OCCUPANTS SMALLINT,\n  NOTES         VARCHAR(60),\n  PRIMARY KEY (PROPERTY_ID, ROOM_NUM)\n);\n\nINSERT INTO ROOM_NEW (PROPERTY_ID, ROOM_NUM, ROOM_TYPE, MONTHLY_RENT, MAX_OCCUPANTS)\nSELECT PROPERTY_ID, ROOM_NUM, ROOM_TYPE, MONTHLY_RENT, MAX_OCCUPANTS\nFROM ROOM;\n\nDROP TABLE ROOM;\n\nALTER TABLE ROOM_NEW RENAME TO ROOM;\n\nCOMMIT;\n\nSELECT PROPERTY_ID, ROOM_NUM, ROOM_TYPE, MONTHLY_RENT, NOTES\nFROM ROOM\nORDER BY PROPERTY_ID, ROOM_NUM;",
+       "solution": "DROP TABLE IF EXISTS ROOM_NEW;\n\n-- The whole rebuild inside one transaction, so ROOM is never missing.\nBEGIN;\n\n-- Step 1: the table you want - a wider ROOM_TYPE and a new NOTES column.\nCREATE TABLE ROOM_NEW (\n  PROPERTY_ID   CHAR(4),\n  ROOM_NUM      CHAR(3),\n  ROOM_TYPE     VARCHAR(20),\n  MONTHLY_RENT  DECIMAL(9,2),\n  MAX_OCCUPANTS SMALLINT,\n  NOTES         VARCHAR(60),\n  -- The composite key is re-declared here; a rebuild has to restate every rule.\n  PRIMARY KEY (PROPERTY_ID, ROOM_NUM)\n);\n\n-- Step 2: copy the data. NOTES is in neither list, so it arrives null everywhere.\nINSERT INTO ROOM_NEW (PROPERTY_ID, ROOM_NUM, ROOM_TYPE, MONTHLY_RENT, MAX_OCCUPANTS)\nSELECT PROPERTY_ID, ROOM_NUM, ROOM_TYPE, MONTHLY_RENT, MAX_OCCUPANTS\nFROM ROOM;\n\n-- Step 3: remove the old table.\nDROP TABLE ROOM;\n\n-- Step 4: rename the replacement into its place.\nALTER TABLE ROOM_NEW RENAME TO ROOM;\n\nCOMMIT;\n\nSELECT PROPERTY_ID, ROOM_NUM, ROOM_TYPE, MONTHLY_RENT, NOTES\nFROM ROOM\nORDER BY PROPERTY_ID, ROOM_NUM;",
        "hint": "Leave `NOTES` out of the `INSERT` column list so all five rows get a null there. `LEASE` has a foreign key pointing at `ROOM`, so on an engine enforcing them you would have to drop that constraint first; the sandbox does not enforce them, and after the rename the lease-to-room join still returns its four rows."
       },
       {
@@ -2942,7 +2942,7 @@
        "type": "sandbox",
        "seed": "kimtay_full",
        "starter": "-- Create LINE_REVIEW from the INVOICE_LINE rows whose invoice is\n-- dated 2026-06-14, list it, drop it, then list the tables that\n-- remain in the database.\n",
-       "solution": "DROP TABLE IF EXISTS LINE_REVIEW;\n\nCREATE TABLE LINE_REVIEW AS\nSELECT L.INVOICE_NUM, L.ITEM_ID, L.NUM_ORDERED, L.QUOTED_PRICE\nFROM INVOICE_LINE L\nINNER JOIN INVOICE I ON L.INVOICE_NUM = I.INVOICE_NUM\nWHERE I.INVOICE_DATE = '2026-06-14';\n\nSELECT * FROM LINE_REVIEW ORDER BY INVOICE_NUM, ITEM_ID;\n\nDROP TABLE LINE_REVIEW;\n\nSELECT name FROM sqlite_master WHERE type = 'table' ORDER BY name;",
+       "solution": "DROP TABLE IF EXISTS LINE_REVIEW;\n\n-- CREATE TABLE ... AS can be built from a JOIN, not just a single table. The new\n-- table's columns come from whatever the SELECT list returns.\nCREATE TABLE LINE_REVIEW AS\nSELECT L.INVOICE_NUM, L.ITEM_ID, L.NUM_ORDERED, L.QUOTED_PRICE\nFROM INVOICE_LINE L\n-- The join is only here to reach INVOICE_DATE for the filter - none of INVOICE's\n-- columns appear in the result.\nINNER JOIN INVOICE I ON L.INVOICE_NUM = I.INVOICE_NUM\nWHERE I.INVOICE_DATE = '2026-06-14';\n\nSELECT * FROM LINE_REVIEW ORDER BY INVOICE_NUM, ITEM_ID;\n\n-- A working table like this is disposable: it was a snapshot, not a source.\nDROP TABLE LINE_REVIEW;\n\nSELECT name FROM sqlite_master WHERE type = 'table' ORDER BY name;",
        "hint": "Four lines belong to invoices `50710` and `50711`. The two lines on `50712` are dated the fifteenth and should not appear."
       },
       {
@@ -2957,7 +2957,7 @@
        "type": "sandbox",
        "seed": "kimtay_full",
        "starter": "-- Remove INVOICE_LINE, INVOICE, and ITEM in an order that would\n-- satisfy an engine enforcing foreign keys. Then list what remains.\n",
-       "solution": "DROP TABLE IF EXISTS INVOICE_LINE;\n\nDROP TABLE IF EXISTS INVOICE;\n\nDROP TABLE IF EXISTS ITEM;\n\nSELECT name AS remaining_tables\nFROM sqlite_master\nWHERE type = 'table'\nORDER BY name;",
+       "solution": "-- Drop order matters: children before parents. INVOICE_LINE points at both of\n-- the tables below it, so it has to go first.\nDROP TABLE IF EXISTS INVOICE_LINE;\n\n-- Now INVOICE, which nothing references any more.\nDROP TABLE IF EXISTS INVOICE;\n\n-- And ITEM last. Reverse the order and, with enforcement on, the drops fail.\nDROP TABLE IF EXISTS ITEM;\n\n-- What is left. IF EXISTS on every line is what lets the script be re-run safely.\nSELECT name AS remaining_tables\nFROM sqlite_master\nWHERE type = 'table'\nORDER BY name;",
        "hint": "`INVOICE_LINE` points at both of the others, so it has to go first. `INVOICE` and `ITEM` can then go in either order."
       },
       {
@@ -3472,7 +3472,7 @@
     },
     {
      "sql": "SELECT MAX(LENGTH(ROOM_TYPE)) FROM ROOM;",
-     "expect": "6 ('Single'/'Studio'/'Double'), against a shipped VARCHAR(10) \u2014 which is why 'Accessible Studio' (17) needs the widening in Exercise 4.",
+     "expect": "6 ('Single'/'Studio'/'Double'), against a shipped VARCHAR(10) — which is why 'Accessible Studio' (17) needs the widening in Exercise 4.",
      "engine": "sandbox"
     },
     {

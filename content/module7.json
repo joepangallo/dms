@@ -83,7 +83,7 @@
       },
       {
        "type": "code",
-       "text": "CREATE VIEW view_name AS\nSELECT column_list\nFROM   table_list\nWHERE  condition;"
+       "text": "-- CREATE VIEW: gives a name to a query. Nothing is copied and no rows are stored -\n--   the view is the SELECT statement below, saved under a name you can use as\n--   though it were a table.\nCREATE VIEW view_name AS\n\n-- SELECT: the columns the view will appear to have. Whatever this list returns is\n--   the shape of the view.\nSELECT column_list\n\n-- FROM: the real table or tables the data actually lives in. These are called the\n--   base tables, and they are where every value really comes from.\nFROM   table_list\n\n-- WHERE: the rows the view will appear to contain. Anyone querying the view sees\n--   only these, which is what makes a view useful for hiding rows as well as\n--   columns. The whole statement is stored; it is re-run every time the view is\n--   used, so the view is always current.\nWHERE  condition;"
       },
       {
        "type": "p",
@@ -93,7 +93,7 @@
        "type": "sandbox",
        "seed": "kimtay_full",
        "starter": "DROP VIEW IF EXISTS HABITAT;\n\nCREATE VIEW HABITAT AS\nSELECT ITEM_ID, DESCRIPTION, ON_HAND, PRICE\nFROM   ITEM\nWHERE  CATEGORY = 'Habitat';\n\nSELECT * FROM HABITAT;",
-       "solution": "DROP VIEW IF EXISTS HABITAT;\n\nCREATE VIEW HABITAT AS\nSELECT ITEM_ID, DESCRIPTION, ON_HAND, PRICE\nFROM   ITEM\nWHERE  CATEGORY = 'Habitat';\n\nSELECT * FROM HABITAT;\n\nSELECT ITEM_ID, PRICE\nFROM   HABITAT\nWHERE  PRICE < 50.00;",
+       "solution": "-- Housekeeping, so the box can be run twice.\nDROP VIEW IF EXISTS HABITAT;\n\n-- CREATE VIEW gives a name to a query. Nothing is copied and no rows are stored -\n-- the view IS the SELECT below, re-run every time the view is used.\nCREATE VIEW HABITAT AS\n-- Four of ITEM's six columns, so the other two are invisible through the view.\nSELECT ITEM_ID, DESCRIPTION, ON_HAND, PRICE\nFROM   ITEM\n-- And only the habitat rows, so a view hides rows as well as columns.\nWHERE  CATEGORY = 'Habitat';\n\n-- Query the view exactly as though it were a table.\nSELECT * FROM HABITAT;\n\n-- You can add your own WHERE on top. The engine combines it with the view's own\n-- condition, so this really means habitat items under 50.\nSELECT ITEM_ID, PRICE\nFROM   HABITAT\nWHERE  PRICE < 50.00;",
        "hint": "The view returns AV07 and FT88. Notice the second query in the solution: once `HABITAT` exists you can put a `WHERE` clause on it exactly as if it were a table. That second query returns FT88 alone."
       },
       {
@@ -125,7 +125,7 @@
        "type": "sandbox",
        "seed": "kimtay_full",
        "starter": "-- The DELETE clears anything a previous Run added, so this page can be run twice.\nDROP VIEW IF EXISTS HABITAT;\nDELETE FROM ITEM WHERE ITEM_ID IN ('TR55','CH12');\n\nCREATE VIEW HABITAT AS\nSELECT ITEM_ID, DESCRIPTION, ON_HAND, PRICE\nFROM   ITEM\nWHERE  CATEGORY = 'Habitat';\n\nSELECT * FROM HABITAT ORDER BY ITEM_ID;\n\nINSERT INTO ITEM VALUES ('TR55','Reptile Terrarium 20gal','Habitat',9,89.95,4);\nINSERT INTO ITEM VALUES ('CH12','Chew Rope Toy','Accessory',60,7.45,20);\n\nSELECT * FROM HABITAT ORDER BY ITEM_ID;",
-       "solution": "-- The DELETE clears anything a previous Run added, so this page can be run twice.\nDROP VIEW IF EXISTS HABITAT;\nDELETE FROM ITEM WHERE ITEM_ID IN ('TR55','CH12');\n\nCREATE VIEW HABITAT AS\nSELECT ITEM_ID, DESCRIPTION, ON_HAND, PRICE\nFROM   ITEM\nWHERE  CATEGORY = 'Habitat';\n\nSELECT * FROM HABITAT ORDER BY ITEM_ID;\n\nINSERT INTO ITEM VALUES ('TR55','Reptile Terrarium 20gal','Habitat',9,89.95,4);\nINSERT INTO ITEM VALUES ('CH12','Chew Rope Toy','Accessory',60,7.45,20);\n\nSELECT * FROM HABITAT ORDER BY ITEM_ID;",
+       "solution": "-- The DELETE clears anything a previous Run added, so this page can be run twice.\nDROP VIEW IF EXISTS HABITAT;\nDELETE FROM ITEM WHERE ITEM_ID IN ('TR55','CH12');\n\nCREATE VIEW HABITAT AS\nSELECT ITEM_ID, DESCRIPTION, ON_HAND, PRICE\nFROM   ITEM\nWHERE  CATEGORY = 'Habitat';\n\n-- The view as it stands now: two rows.\nSELECT * FROM HABITAT ORDER BY ITEM_ID;\n\n-- Add a new HABITAT item to the base table. The view is not touched at all.\nINSERT INTO ITEM VALUES ('TR55','Reptile Terrarium 20gal','Habitat',9,89.95,4);\n-- And a new ACCESSORY item, which the view's WHERE clause will exclude.\nINSERT INTO ITEM VALUES ('CH12','Chew Rope Toy','Accessory',60,7.45,20);\n\n-- Three rows now, not two, and the accessory is absent. The view was never\n-- updated - it is a stored query, so it re-runs and sees the current data.\nSELECT * FROM HABITAT ORDER BY ITEM_ID;",
        "hint": "Two items were inserted but the second `SELECT` from the view grows by only one row, from two to three. TR55 is a habitat item so it qualifies; CH12 is an accessory so the defining query's `WHERE` clause leaves it out. The view was never touched by the `INSERT` statements. It simply asked the question again."
       },
       {
@@ -146,7 +146,7 @@
        "type": "sandbox",
        "seed": "kimtay_full",
        "starter": "DROP VIEW IF EXISTS HABITAT_LIST;\n\nCREATE VIEW HABITAT_LIST (ID, ITEM_NAME, UNITS, UNIT_PRICE) AS\nSELECT ITEM_ID, DESCRIPTION, ON_HAND, PRICE\nFROM   ITEM\nWHERE  CATEGORY = 'Habitat';\n\nSELECT * FROM HABITAT_LIST ORDER BY UNIT_PRICE;",
-       "solution": "DROP VIEW IF EXISTS HABITAT_LIST;\n\nCREATE VIEW HABITAT_LIST (ID, ITEM_NAME, UNITS, UNIT_PRICE) AS\nSELECT ITEM_ID, DESCRIPTION, ON_HAND, PRICE\nFROM   ITEM\nWHERE  CATEGORY = 'Habitat';\n\nSELECT * FROM HABITAT_LIST ORDER BY UNIT_PRICE;",
+       "solution": "DROP VIEW IF EXISTS HABITAT_LIST;\n\n-- A column list in parentheses RENAMES the view's columns. The names must be\n-- given in order and there must be exactly as many as the SELECT returns.\nCREATE VIEW HABITAT_LIST (ID, ITEM_NAME, UNITS, UNIT_PRICE) AS\n-- The SELECT still uses the base table's own column names.\nSELECT ITEM_ID, DESCRIPTION, ON_HAND, PRICE\nFROM   ITEM\nWHERE  CATEGORY = 'Habitat';\n\n-- From here on the new names are the only ones that work: ORDER BY PRICE would\n-- fail, because through this view the column is called UNIT_PRICE.\nSELECT * FROM HABITAT_LIST ORDER BY UNIT_PRICE;",
        "hint": "The column headings come back as ID, ITEM_NAME, UNITS and UNIT_PRICE, with FT88 first and AV07 second. From here on, `ORDER BY PRICE` against this view fails with `no such column: PRICE`: outside the view those columns no longer answer to their old names."
       },
       {
@@ -161,7 +161,7 @@
        "type": "sandbox",
        "seed": "kimtay_full",
        "starter": "DROP VIEW IF EXISTS INVOICE_DETAIL;\n\nCREATE VIEW INVOICE_DETAIL AS\nSELECT I.INVOICE_NUM, I.INVOICE_DATE, C.CUSTOMER_NAME,\n       T.DESCRIPTION, L.NUM_ORDERED, L.QUOTED_PRICE,\n       ROUND(L.NUM_ORDERED * L.QUOTED_PRICE, 2) AS LINE_TOTAL\nFROM   INVOICE I\n       INNER JOIN CUSTOMER C ON I.CUSTOMER_NUM = C.CUSTOMER_NUM\n       INNER JOIN INVOICE_LINE L ON I.INVOICE_NUM = L.INVOICE_NUM\n       INNER JOIN ITEM T ON L.ITEM_ID = T.ITEM_ID;\n\nSELECT INVOICE_NUM, CUSTOMER_NAME, DESCRIPTION, LINE_TOTAL\nFROM   INVOICE_DETAIL\nWHERE  LINE_TOTAL > 50.00\nORDER BY INVOICE_NUM, DESCRIPTION;",
-       "solution": "DROP VIEW IF EXISTS INVOICE_DETAIL;\n\nCREATE VIEW INVOICE_DETAIL AS\nSELECT I.INVOICE_NUM, I.INVOICE_DATE, C.CUSTOMER_NAME,\n       T.DESCRIPTION, L.NUM_ORDERED, L.QUOTED_PRICE,\n       ROUND(L.NUM_ORDERED * L.QUOTED_PRICE, 2) AS LINE_TOTAL\nFROM   INVOICE I\n       INNER JOIN CUSTOMER C ON I.CUSTOMER_NUM = C.CUSTOMER_NUM\n       INNER JOIN INVOICE_LINE L ON I.INVOICE_NUM = L.INVOICE_NUM\n       INNER JOIN ITEM T ON L.ITEM_ID = T.ITEM_ID;\n\nSELECT INVOICE_NUM, CUSTOMER_NAME, DESCRIPTION, LINE_TOTAL\nFROM   INVOICE_DETAIL\nWHERE  LINE_TOTAL > 50.00\nORDER BY INVOICE_NUM, DESCRIPTION;\n\nSELECT CUSTOMER_NAME, ROUND(SUM(LINE_TOTAL), 2) AS SPENT\nFROM   INVOICE_DETAIL\nGROUP BY CUSTOMER_NAME\nORDER BY SPENT DESC;",
+       "solution": "DROP VIEW IF EXISTS INVOICE_DETAIL;\n\n-- A view over a four-table join - where views earn their keep. The join is\n-- written once here, and everyone else just selects from INVOICE_DETAIL.\nCREATE VIEW INVOICE_DETAIL AS\nSELECT I.INVOICE_NUM, I.INVOICE_DATE, C.CUSTOMER_NAME,\n       T.DESCRIPTION, L.NUM_ORDERED, L.QUOTED_PRICE,\n       -- A calculated column becomes an ordinary column of the view.\n       ROUND(L.NUM_ORDERED * L.QUOTED_PRICE, 2) AS LINE_TOTAL\nFROM   INVOICE I\n       -- Link 1: invoice to customer, for the name.\n       INNER JOIN CUSTOMER C ON I.CUSTOMER_NUM = C.CUSTOMER_NUM\n       -- Link 2: invoice to its line items.\n       INNER JOIN INVOICE_LINE L ON I.INVOICE_NUM = L.INVOICE_NUM\n       -- Link 3: line item to the item it names.\n       INNER JOIN ITEM T ON L.ITEM_ID = T.ITEM_ID;\n\n-- Filtering on LINE_TOTAL works even though no table stores it - the view's\n-- calculated column behaves like any other column.\nSELECT INVOICE_NUM, CUSTOMER_NAME, DESCRIPTION, LINE_TOTAL\nFROM   INVOICE_DETAIL\nWHERE  LINE_TOTAL > 50.00\nORDER BY INVOICE_NUM, DESCRIPTION;\n\n-- And you can group a view, which is the real payoff: a four-table question\n-- answered without writing the four-table join again.\nSELECT CUSTOMER_NAME, ROUND(SUM(LINE_TOTAL), 2) AS SPENT\nFROM   INVOICE_DETAIL\nGROUP BY CUSTOMER_NAME\nORDER BY SPENT DESC;",
        "hint": "The first query returns four lines over fifty dollars: 127.5, 85, 64.99 and 55.5. The solution adds a second, completely different question answered from the same view, with no join written a second time. That reuse is the whole point."
       },
       {
@@ -180,7 +180,7 @@
        "type": "sandbox",
        "seed": "kimtay_full",
        "starter": "DROP VIEW IF EXISTS INVOICE_TOTAL;\n\nCREATE VIEW INVOICE_TOTAL AS\nSELECT INVOICE_NUM,\n       COUNT(*) AS NUM_LINES,\n       ROUND(SUM(NUM_ORDERED * QUOTED_PRICE), 2) AS TOTAL\nFROM   INVOICE_LINE\nGROUP BY INVOICE_NUM;\n\nSELECT * FROM INVOICE_TOTAL ORDER BY INVOICE_NUM;",
-       "solution": "DROP VIEW IF EXISTS INVOICE_TOTAL;\n\nCREATE VIEW INVOICE_TOTAL AS\nSELECT INVOICE_NUM,\n       COUNT(*) AS NUM_LINES,\n       ROUND(SUM(NUM_ORDERED * QUOTED_PRICE), 2) AS TOTAL\nFROM   INVOICE_LINE\nGROUP BY INVOICE_NUM;\n\nSELECT * FROM INVOICE_TOTAL ORDER BY INVOICE_NUM;\n\nSELECT INVOICE_NUM, TOTAL\nFROM   INVOICE_TOTAL\nWHERE  TOTAL > 120.00\nORDER BY TOTAL DESC;",
+       "solution": "DROP VIEW IF EXISTS INVOICE_TOTAL;\n\n-- A view over a GROUPED query, so each of its rows summarises several base rows.\nCREATE VIEW INVOICE_TOTAL AS\nSELECT INVOICE_NUM,\n       COUNT(*) AS NUM_LINES,\n       -- ROUND keeps the money to two decimal places.\n       ROUND(SUM(NUM_ORDERED * QUOTED_PRICE), 2) AS TOTAL\nFROM   INVOICE_LINE\n-- One view row per invoice. Everything in the view is computed, which is what\n-- makes a grouped view read-only in every engine.\nGROUP BY INVOICE_NUM;\n\nSELECT * FROM INVOICE_TOTAL ORDER BY INVOICE_NUM;\n\n-- Filtering a grouped view from outside is much easier to read than the HAVING\n-- clause it replaces - and it is exactly the same work underneath.\nSELECT INVOICE_NUM, TOTAL\nFROM   INVOICE_TOTAL\nWHERE  TOTAL > 120.00\nORDER BY TOTAL DESC;",
        "hint": "Invoice 50710 comes to 151.48, invoice 50711 to 100.25 and invoice 50712 to 120.49. The second query filters on `TOTAL`, which in a direct query would have needed `HAVING`. Through the view it is an ordinary column, so a plain `WHERE` works. Remember the shape of this view: section 7-2c explains why a view built this way can never be written to."
       },
       {
@@ -201,7 +201,7 @@
        "type": "sandbox",
        "seed": "kimtay_full",
        "starter": "-- Fill in the two blanks, then press Run.\nDROP VIEW IF EXISTS PREMIUM_ITEM;\n\nCREATE VIEW PREMIUM_ITEM AS\nSELECT ITEM_ID, DESCRIPTION, CATEGORY, PRICE\nFROM   ITEM\nWHERE  ____;\n\nSELECT * FROM ____ ORDER BY PRICE DESC;",
-       "solution": "DROP VIEW IF EXISTS PREMIUM_ITEM;\n\nCREATE VIEW PREMIUM_ITEM AS\nSELECT ITEM_ID, DESCRIPTION, CATEGORY, PRICE\nFROM   ITEM\nWHERE  PRICE > 20.00;\n\nSELECT * FROM PREMIUM_ITEM ORDER BY PRICE DESC;",
+       "solution": "DROP VIEW IF EXISTS PREMIUM_ITEM;\n\n-- A single-table view restricted by a value rather than a category.\nCREATE VIEW PREMIUM_ITEM AS\nSELECT ITEM_ID, DESCRIPTION, CATEGORY, PRICE\nFROM   ITEM\n-- Anyone querying this view can never see an item priced at 20 or less.\nWHERE  PRICE > 20.00;\n\nSELECT * FROM PREMIUM_ITEM ORDER BY PRICE DESC;",
        "hint": "The condition goes in the defining query, not in the final `SELECT`. Three rows come back: AV07 at 64.99, CF21 at 42.5 and FT88 at 27.75."
       },
       {
@@ -252,7 +252,7 @@
       },
       {
        "type": "code",
-       "text": "CREATE VIEW KAISER_CUST AS\nSELECT CUSTOMER_NUM, CUSTOMER_NAME, BALANCE, CREDIT_LIMIT\nFROM   CUSTOMER\nWHERE  REP_NUM = '20';"
+       "text": "-- CREATE VIEW: define a named query called KAISER_CUST.\nCREATE VIEW KAISER_CUST AS\n\n-- SELECT: four of CUSTOMER's nine columns. The five left out are invisible to\n--   anyone using this view - a simple and effective way to hide data.\nSELECT CUSTOMER_NUM, CUSTOMER_NAME, BALANCE, CREDIT_LIMIT\n\n-- FROM: the base table the view reads from.\nFROM   CUSTOMER\n\n-- WHERE: restricts the view to one rep's customers. Someone querying KAISER_CUST\n--   cannot see the others at all, no matter what they write.\nWHERE  REP_NUM = '20';"
       },
       {
        "type": "p",
@@ -260,7 +260,7 @@
       },
       {
        "type": "code",
-       "text": "-- MySQL. Not runnable in the sandbox on this page.\nUPDATE KAISER_CUST\nSET    CREDIT_LIMIT = 12000.00\nWHERE  CUSTOMER_NUM = '1310';"
+       "text": "-- MySQL. Not runnable in the sandbox on this page.\n-- UPDATE: a view can be updated when it is simple enough - one base table, no\n--   grouping, no aggregates and the key present. This one qualifies.\nUPDATE KAISER_CUST\n\n-- SET: the new value. It is written through the view and lands in CUSTOMER, the\n--   real table; the view stores nothing of its own.\nSET    CREDIT_LIMIT = 12000.00\n\n-- WHERE: the row being changed, which must be a row the view can see.\nWHERE  CUSTOMER_NUM = '1310';"
       },
       {
        "type": "p",
@@ -276,7 +276,7 @@
       },
       {
        "type": "code",
-       "text": "-- MySQL. Not runnable in the sandbox on this page.\nINSERT INTO KAISER_CUST (CUSTOMER_NUM, CUSTOMER_NAME, BALANCE, CREDIT_LIMIT)\nVALUES ('1550', 'Harbor Reef Supply', 0.00, 4000.00);"
+       "text": "-- MySQL. Not runnable in the sandbox on this page.\n-- INSERT INTO a view: the new row is really added to CUSTOMER. The catch is that\n--   the view only names four columns, so every other column of CUSTOMER - REP_NUM\n--   included - is left null.\nINSERT INTO KAISER_CUST (CUSTOMER_NUM, CUSTOMER_NAME, BALANCE, CREDIT_LIMIT)\n\n-- VALUES: the four values supplied. The new customer has no rep number, which\n--   means the view's own WHERE clause excludes it: you insert a row through the\n--   view and then cannot see it. That surprise is the reason for CHECK OPTION.\nVALUES ('1550', 'Harbor Reef Supply', 0.00, 4000.00);"
       },
       {
        "type": "p",
@@ -284,11 +284,11 @@
       },
       {
        "type": "code",
-       "text": "-- MySQL. Not runnable in the sandbox on this page.\nCREATE VIEW BROOKVILLE_CUST AS\nSELECT CUSTOMER_NUM, CUSTOMER_NAME, CITY, BALANCE\nFROM   CUSTOMER\nWHERE  CITY = 'Brookville'\nWITH CHECK OPTION;"
+       "text": "-- MySQL. Not runnable in the sandbox on this page.\n-- CREATE VIEW: another single-table view, this one restricted by city.\nCREATE VIEW BROOKVILLE_CUST AS\n\n-- SELECT: the four columns the view exposes.\nSELECT CUSTOMER_NUM, CUSTOMER_NAME, CITY, BALANCE\n\n-- FROM: the base table.\nFROM   CUSTOMER\n\n-- WHERE: the rows the view can see.\nWHERE  CITY = 'Brookville'\n\n-- WITH CHECK OPTION: refuses any INSERT or UPDATE through this view that would\n--   produce a row the view could not then see. It closes the trap in the previous\n--   example - rows cannot be pushed out of sight through the view that made them.\nWITH CHECK OPTION;"
       },
       {
        "type": "code",
-       "text": "-- MySQL. Not runnable in the sandbox on this page.\nUPDATE BROOKVILLE_CUST\nSET    CITY = 'Northfield'\nWHERE  CUSTOMER_NUM = '1420';"
+       "text": "-- MySQL. Not runnable in the sandbox on this page.\n-- UPDATE: an attempt to change a row through the protected view.\nUPDATE BROOKVILLE_CUST\n\n-- SET: BROKEN by the CHECK OPTION. Moving this customer to Northfield would put\n--   it outside the view's WHERE clause, so the row would vanish from the very\n--   view that changed it. The engine rejects the statement instead.\nSET    CITY = 'Northfield'\n\n-- WHERE: the row that would have been moved.\nWHERE  CUSTOMER_NUM = '1420';"
       },
       {
        "type": "p",
@@ -298,7 +298,7 @@
        "type": "sandbox",
        "seed": "kimtay_full",
        "starter": "DROP VIEW IF EXISTS BROOKVILLE_CUST;\n\nCREATE VIEW BROOKVILLE_CUST AS\nSELECT CUSTOMER_NUM, CUSTOMER_NAME, CITY, BALANCE\nFROM   CUSTOMER\nWHERE  CITY = 'Brookville';\n\nSELECT * FROM BROOKVILLE_CUST ORDER BY CUSTOMER_NUM;\n\nUPDATE CUSTOMER\nSET    CITY = 'Northfield'\nWHERE  CUSTOMER_NUM = '1420';\n\nSELECT * FROM BROOKVILLE_CUST ORDER BY CUSTOMER_NUM;\n\nSELECT CUSTOMER_NUM, CUSTOMER_NAME, CITY\nFROM   CUSTOMER\nWHERE  CUSTOMER_NUM = '1420';",
-       "solution": "DROP VIEW IF EXISTS BROOKVILLE_CUST;\n\nCREATE VIEW BROOKVILLE_CUST AS\nSELECT CUSTOMER_NUM, CUSTOMER_NAME, CITY, BALANCE\nFROM   CUSTOMER\nWHERE  CITY = 'Brookville';\n\nSELECT * FROM BROOKVILLE_CUST ORDER BY CUSTOMER_NUM;\n\nUPDATE CUSTOMER\nSET    CITY = 'Northfield'\nWHERE  CUSTOMER_NUM = '1420';\n\nSELECT * FROM BROOKVILLE_CUST ORDER BY CUSTOMER_NUM;\n\nSELECT CUSTOMER_NUM, CUSTOMER_NAME, CITY\nFROM   CUSTOMER\nWHERE  CUSTOMER_NUM = '1420';",
+       "solution": "DROP VIEW IF EXISTS BROOKVILLE_CUST;\n\n-- A view restricted by city.\nCREATE VIEW BROOKVILLE_CUST AS\nSELECT CUSTOMER_NUM, CUSTOMER_NAME, CITY, BALANCE\nFROM   CUSTOMER\nWHERE  CITY = 'Brookville';\n\n-- One row to start with.\nSELECT * FROM BROOKVILLE_CUST ORDER BY CUSTOMER_NUM;\n\n-- Change that customer's city in the BASE TABLE. Nothing here mentions the view.\nUPDATE CUSTOMER\nSET    CITY = 'Northfield'\nWHERE  CUSTOMER_NUM = '1420';\n\n-- The view is now empty: the row no longer satisfies its WHERE clause, so it has\n-- dropped out of sight. WITH CHECK OPTION is what prevents this happening when\n-- the change is made THROUGH the view.\nSELECT * FROM BROOKVILLE_CUST ORDER BY CUSTOMER_NUM;\n\n-- The row is perfectly fine in the base table - only the view cannot see it.\nSELECT CUSTOMER_NUM, CUSTOMER_NAME, CITY\nFROM   CUSTOMER\nWHERE  CUSTOMER_NUM = '1420';",
        "hint": "Whiskers & Wags Boutique is the only Brookville customer, so the view starts with one row and ends with none. The final query proves the row is still in `CUSTOMER`, alive and well, now showing Northfield. It stopped satisfying the defining query, that is all."
       },
       {
@@ -309,7 +309,7 @@
        "type": "sandbox",
        "seed": "kimtay_full",
        "starter": "-- The DELETE clears anything a previous Run added, so this page can be run twice.\nDROP VIEW IF EXISTS KAISER_CUST;\nDELETE FROM CUSTOMER WHERE CUSTOMER_NUM IN ('1550','1600');\n\nCREATE VIEW KAISER_CUST AS\nSELECT CUSTOMER_NUM, CUSTOMER_NAME, BALANCE, CREDIT_LIMIT\nFROM   CUSTOMER\nWHERE  REP_NUM = '20';\n\nINSERT INTO CUSTOMER VALUES\n  ('1550','Harbor Reef Supply','12 Dock St.','Northfield','OH','44067',0.00,4000.00,'20');\nINSERT INTO CUSTOMER VALUES\n  ('1600','Paws Plaza','5 Center Sq.','Brookville','OH','44403',0.00,4000.00,'65');\n\nSELECT * FROM KAISER_CUST ORDER BY CUSTOMER_NUM;\n\nSELECT CUSTOMER_NUM, CUSTOMER_NAME, REP_NUM\nFROM   CUSTOMER\nORDER BY CUSTOMER_NUM;",
-       "solution": "-- The DELETE clears anything a previous Run added, so this page can be run twice.\nDROP VIEW IF EXISTS KAISER_CUST;\nDELETE FROM CUSTOMER WHERE CUSTOMER_NUM IN ('1550','1600');\n\nCREATE VIEW KAISER_CUST AS\nSELECT CUSTOMER_NUM, CUSTOMER_NAME, BALANCE, CREDIT_LIMIT\nFROM   CUSTOMER\nWHERE  REP_NUM = '20';\n\nINSERT INTO CUSTOMER VALUES\n  ('1550','Harbor Reef Supply','12 Dock St.','Northfield','OH','44067',0.00,4000.00,'20');\nINSERT INTO CUSTOMER VALUES\n  ('1600','Paws Plaza','5 Center Sq.','Brookville','OH','44403',0.00,4000.00,'65');\n\nSELECT * FROM KAISER_CUST ORDER BY CUSTOMER_NUM;\n\nSELECT CUSTOMER_NUM, CUSTOMER_NAME, REP_NUM\nFROM   CUSTOMER\nORDER BY CUSTOMER_NUM;",
+       "solution": "-- The DELETE clears anything a previous Run added, so this page can be run twice.\nDROP VIEW IF EXISTS KAISER_CUST;\nDELETE FROM CUSTOMER WHERE CUSTOMER_NUM IN ('1550','1600');\n\n-- A view showing one rep's customers only.\nCREATE VIEW KAISER_CUST AS\nSELECT CUSTOMER_NUM, CUSTOMER_NAME, BALANCE, CREDIT_LIMIT\nFROM   CUSTOMER\nWHERE  REP_NUM = '20';\n\n-- A new customer assigned to rep 20: it will appear in the view.\nINSERT INTO CUSTOMER VALUES\n  ('1550','Harbor Reef Supply','12 Dock St.','Northfield','OH','44067',0.00,4000.00,'20');\n-- And one assigned to rep 65, which the view's WHERE clause excludes.\nINSERT INTO CUSTOMER VALUES\n  ('1600','Paws Plaza','5 Center Sq.','Brookville','OH','44403',0.00,4000.00,'65');\n\n-- Three rows: the view picked up the new rep-20 customer automatically.\nSELECT * FROM KAISER_CUST ORDER BY CUSTOMER_NUM;\n\n-- The base table holds both new customers. The view is a window, not a copy.\nSELECT CUSTOMER_NUM, CUSTOMER_NAME, REP_NUM\nFROM   CUSTOMER\nORDER BY CUSTOMER_NUM;",
        "hint": "Two customers were added to the base table and only one shows up in the view, which goes from two rows to three: 1550 belongs to rep 20, 1600 does not. Because the insert went to `CUSTOMER`, it could supply `REP_NUM`, which is precisely the column the view cannot reach."
       },
       {
@@ -322,7 +322,7 @@
       },
       {
        "type": "code",
-       "text": "CREATE VIEW CUST_REP AS\nSELECT C.CUSTOMER_NUM, C.CUSTOMER_NAME, C.BALANCE, R.LAST_NAME, R.RATE\nFROM   CUSTOMER C\n       INNER JOIN REP R ON C.REP_NUM = R.REP_NUM;"
+       "text": "-- CREATE VIEW: a view over a JOIN, which is where views earn their keep - the\n--   join is written once, and everybody else just selects from CUST_REP.\nCREATE VIEW CUST_REP AS\n\n-- SELECT: five columns drawn from two tables, using the aliases defined below.\nSELECT C.CUSTOMER_NUM, C.CUSTOMER_NAME, C.BALANCE, R.LAST_NAME, R.RATE\n\n-- FROM: the first base table, aliased C.\nFROM   CUSTOMER C\n\n-- INNER JOIN ... ON: the second base table and the matching condition. Because\n--   two tables feed the view, updating through it becomes much more delicate.\n       INNER JOIN REP R ON C.REP_NUM = R.REP_NUM;"
       },
       {
        "type": "p",
@@ -330,7 +330,7 @@
       },
       {
        "type": "code",
-       "text": "-- MySQL. Not runnable in the sandbox on this page.\nUPDATE CUST_REP\nSET    LAST_NAME = 'Kaiser-Wu'\nWHERE  CUSTOMER_NUM = '1120';"
+       "text": "-- MySQL. Not runnable in the sandbox on this page.\n-- UPDATE: a change through the join view.\nUPDATE CUST_REP\n\n-- SET: this looks like it edits one customer's row, but LAST_NAME belongs to REP.\n--   Kaiser serves two customers, so the single change would alter the name shown\n--   on both rows of the view - one statement, two rows affected, in a table the\n--   user may not realise they touched.\nSET    LAST_NAME = 'Kaiser-Wu'\n\n-- WHERE: the customer being aimed at.\nWHERE  CUSTOMER_NUM = '1120';"
       },
       {
        "type": "p",
@@ -340,7 +340,7 @@
        "type": "sandbox",
        "seed": "kimtay_full",
        "starter": "DROP VIEW IF EXISTS CUST_REP;\n\nCREATE VIEW CUST_REP AS\nSELECT C.CUSTOMER_NUM, C.CUSTOMER_NAME, C.BALANCE, R.LAST_NAME, R.RATE\nFROM   CUSTOMER C\n       INNER JOIN REP R ON C.REP_NUM = R.REP_NUM;\n\nSELECT * FROM CUST_REP ORDER BY CUSTOMER_NUM;\n\nUPDATE REP\nSET    RATE = 0.06\nWHERE  REP_NUM = '20';\n\nSELECT * FROM CUST_REP ORDER BY CUSTOMER_NUM;",
-       "solution": "DROP VIEW IF EXISTS CUST_REP;\n\nCREATE VIEW CUST_REP AS\nSELECT C.CUSTOMER_NUM, C.CUSTOMER_NAME, C.BALANCE, R.LAST_NAME, R.RATE\nFROM   CUSTOMER C\n       INNER JOIN REP R ON C.REP_NUM = R.REP_NUM;\n\nSELECT * FROM CUST_REP ORDER BY CUSTOMER_NUM;\n\nUPDATE REP\nSET    RATE = 0.06\nWHERE  REP_NUM = '20';\n\nSELECT * FROM CUST_REP ORDER BY CUSTOMER_NUM;",
+       "solution": "DROP VIEW IF EXISTS CUST_REP;\n\n-- A view over a join of two tables.\nCREATE VIEW CUST_REP AS\nSELECT C.CUSTOMER_NUM, C.CUSTOMER_NAME, C.BALANCE, R.LAST_NAME, R.RATE\nFROM   CUSTOMER C\n       INNER JOIN REP R ON C.REP_NUM = R.REP_NUM;\n\n-- Four rows, each carrying its rep's name and rate.\nSELECT * FROM CUST_REP ORDER BY CUSTOMER_NUM;\n\n-- Change ONE row in REP...\nUPDATE REP\nSET    RATE = 0.06\nWHERE  REP_NUM = '20';\n\n-- ...and TWO rows of the view change, because Kaiser serves two customers. That\n-- one-to-many fan-out is why updating through a join view is so delicate.\nSELECT * FROM CUST_REP ORDER BY CUSTOMER_NUM;",
        "hint": "One row of `REP` changed. Two rows of the view changed: Access Pet Center and Companion Care Clinic, both served by rep 20, now show 0.06 while 1225 stays 0.07 and 1420 stays 0.05. That one-to-many fan-out is exactly the ambiguity that makes join views dangerous to write through."
       },
       {
@@ -349,7 +349,7 @@
       },
       {
        "type": "code",
-       "text": "-- MySQL. Not runnable in the sandbox on this page.\nUPDATE CUST_REP\nSET    BALANCE   = 4000.00,\n       LAST_NAME = 'Kaiser-Wu'\nWHERE  CUSTOMER_NUM = '1120';"
+       "text": "-- MySQL. Not runnable in the sandbox on this page.\n-- UPDATE: a single statement touching both base tables at once.\nUPDATE CUST_REP\n\n-- SET: BALANCE lives in CUSTOMER...\nSET    BALANCE   = 4000.00,\n\n--   ...and LAST_NAME lives in REP. Most engines refuse to update two base tables\n--   in one statement through a view, because there is no way to say which change\n--   should happen first or what to do if only one succeeds.\n       LAST_NAME = 'Kaiser-Wu'\n\n-- WHERE: the row being aimed at.\nWHERE  CUSTOMER_NUM = '1120';"
       },
       {
        "type": "p",
@@ -396,7 +396,7 @@
       },
       {
        "type": "code",
-       "text": "CREATE VIEW REP_BALANCE AS\nSELECT REP_NUM,\n       COUNT(*) AS NUM_CUSTOMERS,\n       ROUND(SUM(BALANCE), 2) AS TOTAL_BALANCE\nFROM   CUSTOMER\nGROUP BY REP_NUM;"
+       "text": "-- CREATE VIEW: a view built on a GROUPED query, so each of its rows summarises\n--   several rows of the base table.\nCREATE VIEW REP_BALANCE AS\n\n-- SELECT: the grouping column...\nSELECT REP_NUM,\n\n--   ...and two aggregates. ROUND trims the total to two decimal places.\n       COUNT(*) AS NUM_CUSTOMERS,\n       ROUND(SUM(BALANCE), 2) AS TOTAL_BALANCE\n\n-- FROM: the base table.\nFROM   CUSTOMER\n\n-- GROUP BY: one view row per rep. Every value in the view is computed, which is\n--   what makes the next two statements impossible.\nGROUP BY REP_NUM;"
       },
       {
        "type": "p",
@@ -404,7 +404,7 @@
       },
       {
        "type": "code",
-       "text": "-- MySQL. Not runnable in the sandbox on this page.\nUPDATE REP_BALANCE\nSET    TOTAL_BALANCE = 4000.00\nWHERE  REP_NUM = '20';"
+       "text": "-- MySQL. Not runnable in the sandbox on this page.\n-- UPDATE: BROKEN, and unavoidably so.\nUPDATE REP_BALANCE\n\n-- SET: TOTAL_BALANCE is a SUM of several customers' balances. Setting it to 4000\n--   would mean the engine deciding how to split that figure back across the\n--   individual rows, and there is no correct answer - so grouped views are simply\n--   not updatable, in any engine.\nSET    TOTAL_BALANCE = 4000.00\nWHERE  REP_NUM = '20';"
       },
       {
        "type": "p",
@@ -412,7 +412,7 @@
       },
       {
        "type": "code",
-       "text": "-- MySQL. Not runnable in the sandbox on this page.\nDELETE FROM REP_BALANCE\nWHERE  REP_NUM = '35';"
+       "text": "-- MySQL. Not runnable in the sandbox on this page.\n-- DELETE FROM a grouped view: BROKEN for the same reason. One row of this view\n--   stands for several real customer rows, and deleting it would have to mean\n--   deleting all of them - which is certainly not what the statement says.\nDELETE FROM REP_BALANCE\nWHERE  REP_NUM = '35';"
       },
       {
        "type": "p",
@@ -422,7 +422,7 @@
        "type": "sandbox",
        "seed": "kimtay_full",
        "starter": "DROP VIEW IF EXISTS REP_BALANCE;\n\nCREATE VIEW REP_BALANCE AS\nSELECT REP_NUM,\n       COUNT(*) AS NUM_CUSTOMERS,\n       ROUND(SUM(BALANCE), 2) AS TOTAL_BALANCE\nFROM   CUSTOMER\nGROUP BY REP_NUM;\n\nSELECT * FROM REP_BALANCE ORDER BY REP_NUM;\n\nUPDATE CUSTOMER\nSET    BALANCE = BALANCE + 500.00\nWHERE  CUSTOMER_NUM = '1310';\n\nSELECT * FROM REP_BALANCE ORDER BY REP_NUM;",
-       "solution": "DROP VIEW IF EXISTS REP_BALANCE;\n\nCREATE VIEW REP_BALANCE AS\nSELECT REP_NUM,\n       COUNT(*) AS NUM_CUSTOMERS,\n       ROUND(SUM(BALANCE), 2) AS TOTAL_BALANCE\nFROM   CUSTOMER\nGROUP BY REP_NUM;\n\nSELECT * FROM REP_BALANCE ORDER BY REP_NUM;\n\nUPDATE CUSTOMER\nSET    BALANCE = BALANCE + 500.00\nWHERE  CUSTOMER_NUM = '1310';\n\nSELECT * FROM REP_BALANCE ORDER BY REP_NUM;",
+       "solution": "DROP VIEW IF EXISTS REP_BALANCE;\n\n-- A grouped view: one row per rep, every value computed.\nCREATE VIEW REP_BALANCE AS\nSELECT REP_NUM,\n       COUNT(*) AS NUM_CUSTOMERS,\n       ROUND(SUM(BALANCE), 2) AS TOTAL_BALANCE\nFROM   CUSTOMER\nGROUP BY REP_NUM;\n\nSELECT * FROM REP_BALANCE ORDER BY REP_NUM;\n\n-- Change one customer's balance in the base table.\nUPDATE CUSTOMER\nSET    BALANCE = BALANCE + 500.00\nWHERE  CUSTOMER_NUM = '1310';\n\n-- That rep's TOTAL_BALANCE moves by 500, but NUM_CUSTOMERS does not - the view\n-- recomputes its aggregates from scratch every time it is queried.\nSELECT * FROM REP_BALANCE ORDER BY REP_NUM;",
        "hint": "Rep 20's total moves from 3512.5 to 4012.5 and the other two reps do not budge: 1200 for rep 35, 4820.75 for rep 65. You never wrote to the view. You wrote to one customer, and the aggregate recomputed on the next use, because that is what a view does."
       },
       {
@@ -456,7 +456,7 @@
       },
       {
        "type": "code",
-       "text": "DROP VIEW view_name;"
+       "text": "-- DROP VIEW: removes the saved query and nothing else. The base tables and every\n--   row in them are untouched - you are deleting a definition, not data. That is\n--   the key difference between DROP VIEW and DROP TABLE.\nDROP VIEW view_name;"
       },
       {
        "type": "p",
@@ -466,7 +466,7 @@
        "type": "sandbox",
        "seed": "kimtay_full",
        "starter": "DROP VIEW IF EXISTS SMALL_ITEM;\n\nCREATE VIEW SMALL_ITEM AS\nSELECT ITEM_ID, DESCRIPTION, PRICE\nFROM   ITEM\nWHERE  PRICE < 30.00;\n\nSELECT * FROM SMALL_ITEM ORDER BY ITEM_ID;\n\nSELECT name AS VIEW_NAME\nFROM   sqlite_master\nWHERE  type = 'view'\nORDER BY name;\n\nDROP VIEW SMALL_ITEM;\n\nSELECT COUNT(*) AS VIEWS_LEFT FROM sqlite_master WHERE type = 'view';\n\nSELECT ITEM_ID, DESCRIPTION, PRICE\nFROM   ITEM\nWHERE  PRICE < 30.00\nORDER BY ITEM_ID;\n\nSELECT COUNT(*) AS ITEM_ROWS FROM ITEM;",
-       "solution": "DROP VIEW IF EXISTS SMALL_ITEM;\n\nCREATE VIEW SMALL_ITEM AS\nSELECT ITEM_ID, DESCRIPTION, PRICE\nFROM   ITEM\nWHERE  PRICE < 30.00;\n\nSELECT * FROM SMALL_ITEM ORDER BY ITEM_ID;\n\nSELECT name AS VIEW_NAME\nFROM   sqlite_master\nWHERE  type = 'view'\nORDER BY name;\n\nDROP VIEW SMALL_ITEM;\n\nSELECT COUNT(*) AS VIEWS_LEFT FROM sqlite_master WHERE type = 'view';\n\nSELECT ITEM_ID, DESCRIPTION, PRICE\nFROM   ITEM\nWHERE  PRICE < 30.00\nORDER BY ITEM_ID;\n\nSELECT COUNT(*) AS ITEM_ROWS FROM ITEM;",
+       "solution": "DROP VIEW IF EXISTS SMALL_ITEM;\n\nCREATE VIEW SMALL_ITEM AS\nSELECT ITEM_ID, DESCRIPTION, PRICE\nFROM   ITEM\nWHERE  PRICE < 30.00;\n\nSELECT * FROM SMALL_ITEM ORDER BY ITEM_ID;\n\n-- sqlite_master again, filtered to views this time rather than tables.\nSELECT name AS VIEW_NAME\nFROM   sqlite_master\nWHERE  type = 'view'\nORDER BY name;\n\n-- DROP VIEW removes the saved query and NOTHING else.\nDROP VIEW SMALL_ITEM;\n\n-- No views left.\nSELECT COUNT(*) AS VIEWS_LEFT FROM sqlite_master WHERE type = 'view';\n\n-- The view's query still works when written out by hand - it was only ever a\n-- name for these lines.\nSELECT ITEM_ID, DESCRIPTION, PRICE\nFROM   ITEM\nWHERE  PRICE < 30.00\nORDER BY ITEM_ID;\n\n-- And the base table still has all five rows. Dropping a view deletes no data,\n-- which is the key difference between DROP VIEW and DROP TABLE.\nSELECT COUNT(*) AS ITEM_ROWS FROM ITEM;",
        "hint": "The catalog lists SMALL_ITEM, then after the drop it lists nothing. The last two queries return the same three items the view was showing, DG04, FT88 and GR15, and confirm all five rows of `ITEM` are still there. The only thing that disappeared was the query."
       },
       {
@@ -515,7 +515,7 @@
       },
       {
        "type": "code",
-       "text": "DROP VIEW NOPE;            -- error: the view does not exist\nDROP VIEW IF EXISTS NOPE;  -- no error, nothing to do"
+       "text": "-- DROP VIEW on something that is not there: an error that stops a script.\nDROP VIEW NOPE;            -- error: the view does not exist\n\n-- IF EXISTS: the same statement made safe to re-run. Nothing happens and no error\n--   is raised, which is why teardown scripts are written this way.\nDROP VIEW IF EXISTS NOPE;  -- no error, nothing to do"
       },
       {
        "type": "h4",
@@ -529,7 +529,7 @@
        "type": "sandbox",
        "seed": "kimtay_full",
        "starter": "DROP VIEW IF EXISTS CHEAP_HABITAT;\nDROP VIEW IF EXISTS CHEAP_ITEM;\n\nCREATE VIEW CHEAP_ITEM AS\nSELECT ITEM_ID, DESCRIPTION, CATEGORY, PRICE\nFROM   ITEM\nWHERE  PRICE < 30.00;\n\nCREATE VIEW CHEAP_HABITAT AS\nSELECT ITEM_ID, DESCRIPTION, PRICE\nFROM   CHEAP_ITEM\nWHERE  CATEGORY = 'Habitat';\n\nSELECT * FROM CHEAP_HABITAT;\n\nSELECT name AS VIEW_NAME\nFROM   sqlite_master\nWHERE  type = 'view'\nORDER BY name;\n\nDROP VIEW CHEAP_HABITAT;\nDROP VIEW CHEAP_ITEM;\n\nSELECT COUNT(*) AS VIEWS_LEFT FROM sqlite_master WHERE type = 'view';\nSELECT COUNT(*) AS ITEM_ROWS  FROM ITEM;",
-       "solution": "DROP VIEW IF EXISTS CHEAP_HABITAT;\nDROP VIEW IF EXISTS CHEAP_ITEM;\n\nCREATE VIEW CHEAP_ITEM AS\nSELECT ITEM_ID, DESCRIPTION, CATEGORY, PRICE\nFROM   ITEM\nWHERE  PRICE < 30.00;\n\nCREATE VIEW CHEAP_HABITAT AS\nSELECT ITEM_ID, DESCRIPTION, PRICE\nFROM   CHEAP_ITEM\nWHERE  CATEGORY = 'Habitat';\n\nSELECT * FROM CHEAP_HABITAT;\n\nSELECT name AS VIEW_NAME\nFROM   sqlite_master\nWHERE  type = 'view'\nORDER BY name;\n\nDROP VIEW CHEAP_HABITAT;\nDROP VIEW CHEAP_ITEM;\n\nSELECT COUNT(*) AS VIEWS_LEFT FROM sqlite_master WHERE type = 'view';\nSELECT COUNT(*) AS ITEM_ROWS  FROM ITEM;",
+       "solution": "-- Drop the dependent view first, then the one it was built on.\nDROP VIEW IF EXISTS CHEAP_HABITAT;\nDROP VIEW IF EXISTS CHEAP_ITEM;\n\n-- A view over a table.\nCREATE VIEW CHEAP_ITEM AS\nSELECT ITEM_ID, DESCRIPTION, CATEGORY, PRICE\nFROM   ITEM\nWHERE  PRICE < 30.00;\n\n-- A view over THAT view. Perfectly legal - a view is a query, and a query may\n-- read anything that behaves like a table.\nCREATE VIEW CHEAP_HABITAT AS\nSELECT ITEM_ID, DESCRIPTION, PRICE\n-- Note CATEGORY is available here because CHEAP_ITEM exposes it, even though the\n-- outer view does not display it.\nFROM   CHEAP_ITEM\nWHERE  CATEGORY = 'Habitat';\n\n-- Both conditions apply: cheap AND habitat.\nSELECT * FROM CHEAP_HABITAT;\n\n-- Two views in the catalogue, with nothing recording that one depends on the other.\nSELECT name AS VIEW_NAME\nFROM   sqlite_master\nWHERE  type = 'view'\nORDER BY name;\n\n-- Drop them in dependency order. Drop CHEAP_ITEM first and CHEAP_HABITAT would\n-- survive as a definition but fail the moment anybody queried it.\nDROP VIEW CHEAP_HABITAT;\nDROP VIEW CHEAP_ITEM;\n\nSELECT COUNT(*) AS VIEWS_LEFT FROM sqlite_master WHERE type = 'view';\n-- And the data is untouched throughout.\nSELECT COUNT(*) AS ITEM_ROWS  FROM ITEM;",
        "hint": "Only FT88 satisfies both filters, so `CHEAP_HABITAT` returns one row. Note that `CHEAP_HABITAT` filters on `CATEGORY`, a column it does not itself expose but which `CHEAP_ITEM` does. The drops run outermost first, VIEWS_LEFT is 0, and `ITEM` still has all five rows at the end."
       },
       {
@@ -538,7 +538,7 @@
       },
       {
        "type": "code",
-       "text": "DROP VIEW CHEAP_ITEM;        -- succeeds\nSELECT * FROM CHEAP_HABITAT; -- fails: no such table: main.CHEAP_ITEM"
+       "text": "-- DROP VIEW: this one works, because CHEAP_ITEM exists.\nDROP VIEW CHEAP_ITEM;        -- succeeds\n\n-- SELECT from a view built ON that view: now broken. A view defined over another\n--   view stores only the text of its query, so dropping the one underneath leaves\n--   the survivor pointing at a name that no longer resolves. The failure appears\n--   at query time, not at drop time - check what depends on a view before you\n--   drop it.\nSELECT * FROM CHEAP_HABITAT; -- fails: no such table: main.CHEAP_ITEM"
       },
       {
        "type": "callout",
@@ -1017,7 +1017,7 @@
       },
       {
        "type": "code",
-       "text": "-- MySQL and Oracle only. GRANT is not implemented in SQLite,\n-- so this statement cannot run in the sandboxes on this page.\nGRANT SELECT ON CUSTOMER TO shipping_clerk;"
+       "text": "-- MySQL and Oracle only. GRANT is not implemented in SQLite,\n-- so this statement cannot run in the sandboxes on this page.\n-- GRANT: gives a privilege away. Read it in three parts - WHAT (SELECT), ON WHAT\n--   (the CUSTOMER table), TO WHOM (the shipping_clerk account). Nothing else is\n--   granted, so that account can read this one table and do nothing more to it.\nGRANT SELECT ON CUSTOMER TO shipping_clerk;"
       },
       {
        "type": "p",
@@ -1071,7 +1071,7 @@
       },
       {
        "type": "code",
-       "text": "-- MySQL and Oracle only.\nGRANT SELECT, INSERT, UPDATE ON ITEM TO inventory_clerk;\nGRANT UPDATE (CREDIT_LIMIT) ON CUSTOMER TO credit_manager;\nGRANT ALL ON ITEM TO inventory_manager;"
+       "text": "-- MySQL and Oracle only.\n-- Several privileges at once: separate them with commas. This account may read,\n--   add and change rows in ITEM - but not delete any, because DELETE is absent.\nGRANT SELECT, INSERT, UPDATE ON ITEM TO inventory_clerk;\n\n-- A COLUMN-level grant: the parentheses narrow UPDATE to one column, so the\n--   credit manager can change a credit limit and nothing else on the row.\nGRANT UPDATE (CREDIT_LIMIT) ON CUSTOMER TO credit_manager;\n\n-- ALL: every privilege the grantor holds on that table. Convenient, and the usual\n--   way people accidentally hand out DELETE and DROP - name privileges instead.\nGRANT ALL ON ITEM TO inventory_manager;"
       },
       {
        "type": "callout",
@@ -1089,7 +1089,7 @@
       },
       {
        "type": "code",
-       "text": "-- Oracle. PUBLIC is a reserved name meaning every account in the database.\nGRANT SELECT ON ITEM TO PUBLIC;"
+       "text": "-- Oracle. PUBLIC is a reserved name meaning every account in the database.\n-- GRANT ... TO PUBLIC: hands the privilege to every existing account and every\n--   account created afterwards. Reasonable for a reference table like a product\n--   catalogue; a serious mistake on anything holding personal or financial data.\nGRANT SELECT ON ITEM TO PUBLIC;"
       },
       {
        "type": "p",
@@ -1097,7 +1097,7 @@
       },
       {
        "type": "code",
-       "text": "-- MySQL. No PUBLIC exists, so build a role and hand it out.\nCREATE ROLE catalog_reader;\nGRANT SELECT ON ITEM TO catalog_reader;\nGRANT catalog_reader TO 'shipping_clerk'@'localhost';\nSET DEFAULT ROLE ALL TO 'shipping_clerk'@'localhost';"
+       "text": "-- MySQL. No PUBLIC exists, so build a role and hand it out.\n-- CREATE ROLE: a named bundle of privileges. Granting to a role rather than to\n--   people means one place to change when the rules change.\nCREATE ROLE catalog_reader;\n\n-- GRANT ... TO the role: the privilege attaches to the bundle, not to a person.\nGRANT SELECT ON ITEM TO catalog_reader;\n\n-- GRANT the role to an account: MySQL identifies accounts as user@host, so the\n--   host part is included. The clerk now holds everything the role holds.\nGRANT catalog_reader TO 'shipping_clerk'@'localhost';\n\n-- SET DEFAULT ROLE: MySQL roles are inactive until activated, so without this\n--   line the clerk would log in with none of the privileges just granted.\nSET DEFAULT ROLE ALL TO 'shipping_clerk'@'localhost';"
       },
       {
        "type": "callout",
@@ -1115,7 +1115,7 @@
       },
       {
        "type": "code",
-       "text": "-- MySQL and Oracle only.\nREVOKE SELECT ON CUSTOMER FROM shipping_clerk;\nREVOKE ALL ON ITEM FROM inventory_manager;"
+       "text": "-- MySQL and Oracle only.\n-- REVOKE: takes a privilege back. It mirrors GRANT exactly - WHAT, ON WHAT, FROM\n--   WHOM - and the account keeps everything you do not name here.\nREVOKE SELECT ON CUSTOMER FROM shipping_clerk;\n\n-- REVOKE ALL: strips every privilege that account holds on that table at once.\nREVOKE ALL ON ITEM FROM inventory_manager;"
       },
       {
        "type": "callout",
@@ -1139,7 +1139,7 @@
        "type": "sandbox",
        "seed": "kimtay_full",
        "starter": "-- The shipping desk needs mailing labels, not money.\n-- Finish the column list so the view carries the full address\n-- and leaves BALANCE and CREDIT_LIMIT behind.\nDROP VIEW IF EXISTS SHIPPING_CONTACT;\nCREATE VIEW SHIPPING_CONTACT AS\nSELECT CUSTOMER_NUM, CUSTOMER_NAME\nFROM CUSTOMER;\n\nSELECT * FROM SHIPPING_CONTACT;",
-       "solution": "DROP VIEW IF EXISTS SHIPPING_CONTACT;\nCREATE VIEW SHIPPING_CONTACT AS\nSELECT CUSTOMER_NUM, CUSTOMER_NAME, STREET, CITY, STATE, ZIP\nFROM CUSTOMER;\n\nSELECT * FROM SHIPPING_CONTACT;",
+       "solution": "DROP VIEW IF EXISTS SHIPPING_CONTACT;\n-- A view built for SECURITY: the address columns a shipping clerk needs, and\n-- nothing else. BALANCE, CREDIT_LIMIT and REP_NUM are simply not in it.\nCREATE VIEW SHIPPING_CONTACT AS\nSELECT CUSTOMER_NUM, CUSTOMER_NAME, STREET, CITY, STATE, ZIP\nFROM CUSTOMER;\n\n-- Granting SELECT on this view and nothing on CUSTOMER gives the clerk exactly\n-- these columns with no way to reach around them.\nSELECT * FROM SHIPPING_CONTACT;",
        "hint": "Add `STREET`, `CITY`, `STATE` and `ZIP` to the `SELECT` inside the view. All four customers come back, and there is no column in the result that could tell you what any of them owes. The `DROP VIEW IF EXISTS` line at the top is what lets you press Run as many times as you like."
       },
       {
@@ -1148,7 +1148,7 @@
       },
       {
        "type": "code",
-       "text": "-- MySQL and Oracle only.\nGRANT SELECT ON SHIPPING_CONTACT TO shipping_clerk;"
+       "text": "-- MySQL and Oracle only.\n-- GRANT on a VIEW rather than a table: this is the pattern that makes views a\n--   security tool. The account is given no privilege at all on the underlying\n--   CUSTOMER table, so it can see exactly the rows and columns the view exposes\n--   and has no way to reach around it.\nGRANT SELECT ON SHIPPING_CONTACT TO shipping_clerk;"
       },
       {
        "type": "p",
@@ -1158,7 +1158,7 @@
        "type": "sandbox",
        "seed": "kimtay_full",
        "starter": "-- A view can restrict rows as well as columns.\n-- Add the WHERE clause that keeps only rep 65's customers,\n-- then run it and count what comes back.\nDROP VIEW IF EXISTS REP65_CUSTOMER;\nCREATE VIEW REP65_CUSTOMER AS\nSELECT CUSTOMER_NUM, CUSTOMER_NAME, CITY, BALANCE\nFROM CUSTOMER;\n\nSELECT * FROM REP65_CUSTOMER;",
-       "solution": "DROP VIEW IF EXISTS REP65_CUSTOMER;\nCREATE VIEW REP65_CUSTOMER AS\nSELECT CUSTOMER_NUM, CUSTOMER_NAME, CITY, BALANCE\nFROM CUSTOMER\nWHERE REP_NUM = '65';\n\nSELECT * FROM REP65_CUSTOMER;",
+       "solution": "DROP VIEW IF EXISTS REP65_CUSTOMER;\n-- The other half of view security: restricting ROWS rather than columns.\nCREATE VIEW REP65_CUSTOMER AS\nSELECT CUSTOMER_NUM, CUSTOMER_NAME, CITY, BALANCE\nFROM CUSTOMER\n-- Rep 65 sees their own accounts and has no way to see anybody else's.\nWHERE REP_NUM = '65';\n\nSELECT * FROM REP65_CUSTOMER;",
        "hint": "`WHERE REP_NUM = '65'` belongs inside the view definition. Put it there and one row comes back. Writing it on the outer `SELECT` instead would show the same single row today, but it would be the account's own query doing the filtering - and an account can always delete its own `WHERE` clause. Inside the view, the restriction is not the account's to remove."
       },
       {
@@ -1228,7 +1228,7 @@
        "type": "sandbox",
        "seed": "kimtay_full",
        "starter": "-- Index the column KimTay searches by name.\n-- Both DROP lines clear whatever a previous Run left behind.\nDROP INDEX IF EXISTS ITEM_INDEX1;\nDROP INDEX IF EXISTS ITEM_INDEX2;\nCREATE INDEX ITEM_INDEX1 ON ITEM (DESCRIPTION);\n\n-- sqlite_master proves the index now exists.\nSELECT name, tbl_name\nFROM sqlite_master\nWHERE type = 'index' AND name NOT LIKE 'sqlite_%';",
-       "solution": "DROP INDEX IF EXISTS ITEM_INDEX1;\nDROP INDEX IF EXISTS ITEM_INDEX2;\nCREATE INDEX ITEM_INDEX1 ON ITEM (DESCRIPTION);\nCREATE INDEX ITEM_INDEX2 ON ITEM (CATEGORY);\n\nSELECT name, tbl_name\nFROM sqlite_master\nWHERE type = 'index' AND name NOT LIKE 'sqlite_%';",
+       "solution": "-- IF EXISTS makes the script safe to re-run.\nDROP INDEX IF EXISTS ITEM_INDEX1;\nDROP INDEX IF EXISTS ITEM_INDEX2;\n-- CREATE INDEX builds a lookup structure on a column. It stores no new data and\n-- changes no answers - it only changes how fast the engine finds rows.\nCREATE INDEX ITEM_INDEX1 ON ITEM (DESCRIPTION);\n-- A table may carry several indexes, one per column you filter or sort on often.\nCREATE INDEX ITEM_INDEX2 ON ITEM (CATEGORY);\n\n-- Indexes live in the same catalogue as tables and views.\nSELECT name, tbl_name\nFROM sqlite_master\n-- The NOT LIKE hides the indexes SQLite creates automatically for primary keys.\nWHERE type = 'index' AND name NOT LIKE 'sqlite_%';",
        "hint": "The starter creates one index and lists it - one row. The solution adds a second one on `CATEGORY`, so two rows come back. Both boxes drop both names first, which is what lets you flip between starter and solution and still get the count each one promises. The `NOT LIKE 'sqlite_%'` filter hides the indexes SQLite built automatically for the primary keys - those are there whether you ask for them or not."
       },
       {
@@ -1243,7 +1243,7 @@
        "type": "sandbox",
        "seed": "kimtay_full",
        "starter": "-- The index is commented out for now.\nDROP INDEX IF EXISTS CUSTOMER_INDEX3;\n-- CREATE INDEX CUSTOMER_INDEX3 ON CUSTOMER (REP_NUM, CUSTOMER_NAME);\n\nEXPLAIN QUERY PLAN\nSELECT CUSTOMER_NUM, CUSTOMER_NAME\nFROM CUSTOMER\nWHERE REP_NUM = '20'\nORDER BY CUSTOMER_NAME;",
-       "solution": "DROP INDEX IF EXISTS CUSTOMER_INDEX3;\nCREATE INDEX CUSTOMER_INDEX3 ON CUSTOMER (REP_NUM, CUSTOMER_NAME);\n\nEXPLAIN QUERY PLAN\nSELECT CUSTOMER_NUM, CUSTOMER_NAME\nFROM CUSTOMER\nWHERE REP_NUM = '20'\nORDER BY CUSTOMER_NAME;",
+       "solution": "DROP INDEX IF EXISTS CUSTOMER_INDEX3;\n-- A COMPOSITE index on two columns, in this order. It helps a query that filters\n-- on REP_NUM and then sorts by CUSTOMER_NAME - the index already holds the rows\n-- in exactly that arrangement, so no separate sort is needed.\nCREATE INDEX CUSTOMER_INDEX3 ON CUSTOMER (REP_NUM, CUSTOMER_NAME);\n\n-- EXPLAIN QUERY PLAN does not run the query - it reports how the engine INTENDS\n-- to run it. Look for the index name in the output: that is the proof it is used.\nEXPLAIN QUERY PLAN\nSELECT CUSTOMER_NUM, CUSTOMER_NAME\nFROM CUSTOMER\nWHERE REP_NUM = '20'\nORDER BY CUSTOMER_NAME;",
        "hint": "Without the index the plan reads `SCAN CUSTOMER` plus `USE TEMP B-TREE FOR ORDER BY` - every row read, then sorted. With it, the plan reads `SEARCH CUSTOMER USING INDEX CUSTOMER_INDEX3 (REP_NUM=?)`, and the sort disappears because the index already holds the names in order. You are reading the plan here, not the two customers of rep 20 - `EXPLAIN QUERY PLAN` describes the query instead of running it."
       },
       {
@@ -1270,7 +1270,7 @@
        "type": "sandbox",
        "seed": "kimtay_full",
        "starter": "-- Build two indexes, then remove one of them.\nDROP INDEX IF EXISTS ITEM_INDEX1;\nDROP INDEX IF EXISTS ITEM_INDEX2;\nCREATE INDEX ITEM_INDEX1 ON ITEM (DESCRIPTION);\nCREATE INDEX ITEM_INDEX2 ON ITEM (CATEGORY, DESCRIPTION);\n\nDROP INDEX ITEM_INDEX2;\n\nSELECT name, tbl_name\nFROM sqlite_master\nWHERE type = 'index' AND name NOT LIKE 'sqlite_%';",
-       "solution": "DROP INDEX IF EXISTS ITEM_INDEX1;\nDROP INDEX IF EXISTS ITEM_INDEX2;\nCREATE INDEX ITEM_INDEX1 ON ITEM (DESCRIPTION);\nCREATE INDEX ITEM_INDEX2 ON ITEM (CATEGORY, DESCRIPTION);\n\nDROP INDEX ITEM_INDEX2;\n\nSELECT name, tbl_name\nFROM sqlite_master\nWHERE type = 'index' AND name NOT LIKE 'sqlite_%';\n\nSELECT ITEM_ID, DESCRIPTION, CATEGORY FROM ITEM ORDER BY ITEM_ID;",
+       "solution": "DROP INDEX IF EXISTS ITEM_INDEX1;\nDROP INDEX IF EXISTS ITEM_INDEX2;\nCREATE INDEX ITEM_INDEX1 ON ITEM (DESCRIPTION);\n-- A composite index on two columns.\nCREATE INDEX ITEM_INDEX2 ON ITEM (CATEGORY, DESCRIPTION);\n\n-- DROP INDEX removes the lookup structure. Every row stays exactly where it is -\n-- an index is derived data, so dropping one can only make queries slower, never\n-- wrong.\nDROP INDEX ITEM_INDEX2;\n\n-- One index left.\nSELECT name, tbl_name\nFROM sqlite_master\nWHERE type = 'index' AND name NOT LIKE 'sqlite_%';\n\n-- And the table is untouched: same five rows, same values.\nSELECT ITEM_ID, DESCRIPTION, CATEGORY FROM ITEM ORDER BY ITEM_ID;",
        "hint": "Only `ITEM_INDEX1` is left in the catalog. The solution goes one step further and reads `ITEM` afterwards, so you get two result tables: the one-row catalog listing, then all five items. Dropping an index removes an access path, never data."
       },
       {
@@ -1335,7 +1335,7 @@
        "type": "sandbox",
        "seed": "kimtay_full",
        "starter": "-- A barcode table for the warehouse scanners.\nDROP TABLE IF EXISTS ITEM_BARCODE;\nCREATE TABLE ITEM_BARCODE (\n    ITEM_ID CHAR(4),\n    BARCODE CHAR(6)\n);\nINSERT INTO ITEM_BARCODE VALUES ('AV07', '740015');\nINSERT INTO ITEM_BARCODE VALUES ('CF21', '740022');\n\nCREATE UNIQUE INDEX ITEM_BARCODE_UNIQUE ON ITEM_BARCODE (BARCODE);\n\nSELECT * FROM ITEM_BARCODE;",
-       "solution": "DROP TABLE IF EXISTS ITEM_BARCODE;\nCREATE TABLE ITEM_BARCODE (\n    ITEM_ID CHAR(4),\n    BARCODE CHAR(6)\n);\nINSERT INTO ITEM_BARCODE VALUES ('AV07', '740015');\nINSERT INTO ITEM_BARCODE VALUES ('CF21', '740022');\n\nCREATE UNIQUE INDEX ITEM_BARCODE_UNIQUE ON ITEM_BARCODE (BARCODE);\n\nINSERT INTO ITEM_BARCODE VALUES ('DG04', '740039');\n\nSELECT * FROM ITEM_BARCODE;",
+       "solution": "DROP TABLE IF EXISTS ITEM_BARCODE;\nCREATE TABLE ITEM_BARCODE (\n    ITEM_ID CHAR(4),\n    BARCODE CHAR(6)\n);\nINSERT INTO ITEM_BARCODE VALUES ('AV07', '740015');\nINSERT INTO ITEM_BARCODE VALUES ('CF21', '740022');\n\n-- CREATE UNIQUE INDEX does two jobs at once: it speeds up lookups AND it enforces\n-- a rule, refusing any row that repeats a value already present.\nCREATE UNIQUE INDEX ITEM_BARCODE_UNIQUE ON ITEM_BARCODE (BARCODE);\n\n-- This insert is rejected: 740039 is fine, but run this box twice and the\n-- duplicate is caught by the index rather than by any column declaration.\nINSERT INTO ITEM_BARCODE VALUES ('DG04', '740039');\n\nSELECT * FROM ITEM_BARCODE;",
        "hint": "The starter builds the table and the unique index and shows two rows. The solution adds a third row with a barcode nobody else has - `740039` - and it is accepted, because unique means no repeats, not no new rows. `DROP TABLE IF EXISTS` at the top takes the index with the table, so both boxes start clean every Run."
       },
       {
@@ -1346,7 +1346,7 @@
        "type": "sandbox",
        "seed": "kimtay_full",
        "starter": "DROP TABLE IF EXISTS ITEM_BARCODE;\nCREATE TABLE ITEM_BARCODE (\n    ITEM_ID CHAR(4),\n    BARCODE CHAR(6)\n);\nINSERT INTO ITEM_BARCODE VALUES ('AV07', '740015');\nINSERT INTO ITEM_BARCODE VALUES ('CF21', '740022');\n\nCREATE UNIQUE INDEX ITEM_BARCODE_UNIQUE ON ITEM_BARCODE (BARCODE);\n\n-- 740022 is already taken. Expect this one to be refused.\nINSERT INTO ITEM_BARCODE VALUES ('DG04', '740022');",
-       "solution": "DROP TABLE IF EXISTS ITEM_BARCODE;\nCREATE TABLE ITEM_BARCODE (\n    ITEM_ID CHAR(4),\n    BARCODE CHAR(6)\n);\nINSERT INTO ITEM_BARCODE VALUES ('AV07', '740015');\nINSERT INTO ITEM_BARCODE VALUES ('CF21', '740022');\n\nCREATE UNIQUE INDEX ITEM_BARCODE_UNIQUE ON ITEM_BARCODE (BARCODE);\n\n-- Give DG04 a barcode of its own and the insert succeeds.\nINSERT INTO ITEM_BARCODE VALUES ('DG04', '740031');\n\nSELECT * FROM ITEM_BARCODE;",
+       "solution": "DROP TABLE IF EXISTS ITEM_BARCODE;\nCREATE TABLE ITEM_BARCODE (\n    ITEM_ID CHAR(4),\n    BARCODE CHAR(6)\n);\nINSERT INTO ITEM_BARCODE VALUES ('AV07', '740015');\nINSERT INTO ITEM_BARCODE VALUES ('CF21', '740022');\n\n-- The same unique index, enforcing one barcode per row.\nCREATE UNIQUE INDEX ITEM_BARCODE_UNIQUE ON ITEM_BARCODE (BARCODE);\n\n-- Give DG04 a barcode of its own and the insert succeeds.\n-- The index is not blocking inserts - it is blocking DUPLICATES.\nINSERT INTO ITEM_BARCODE VALUES ('DG04', '740031');\n\nSELECT * FROM ITEM_BARCODE;",
        "hint": "The starter stops with `UNIQUE constraint failed: ITEM_BARCODE.BARCODE`, and the error is all you see - the rows before it were stored, but nothing is displayed because the run never reached a `SELECT`. That is the index doing its job: the bad row never reaches the table. Change the value, as the solution does, and the insert goes through and three rows come back."
       },
       {
@@ -1357,7 +1357,7 @@
        "type": "sandbox",
        "seed": "kimtay_full",
        "starter": "-- Maple Grove appears twice in CUSTOMER, so this is refused.\nCREATE UNIQUE INDEX CUSTOMER_CITY_UNIQUE ON CUSTOMER (CITY);",
-       "solution": "DROP INDEX IF EXISTS CUSTOMER_NAME_UNIQUE;\nCREATE UNIQUE INDEX CUSTOMER_NAME_UNIQUE ON CUSTOMER (CUSTOMER_NAME);\n\nSELECT name, tbl_name\nFROM sqlite_master\nWHERE type = 'index' AND name NOT LIKE 'sqlite_%';",
+       "solution": "DROP INDEX IF EXISTS CUSTOMER_NAME_UNIQUE;\n-- A business rule expressed as an index: no two customers may share a name. The\n-- engine checks every future INSERT and UPDATE against it, and it only succeeds\n-- now because the existing four names happen to be distinct.\nCREATE UNIQUE INDEX CUSTOMER_NAME_UNIQUE ON CUSTOMER (CUSTOMER_NAME);\n\nSELECT name, tbl_name\nFROM sqlite_master\nWHERE type = 'index' AND name NOT LIKE 'sqlite_%';",
        "hint": "The starter fails with `UNIQUE constraint failed: CUSTOMER.CITY` because customers `1120` and `1310` are both in Maple Grove. Nothing is created, so you can press Run on it as often as you like. The solution indexes `CUSTOMER_NAME` instead, where all four values differ, and the index appears in the catalog."
       },
       {
@@ -1867,7 +1867,7 @@
       },
       {
        "type": "code",
-       "text": "-- MySQL. INFORMATION_SCHEMA does not exist in SQLite, so neither of these runs on this page.\nSELECT TABLE_NAME\nFROM INFORMATION_SCHEMA.TABLES\nWHERE TABLE_SCHEMA = 'KIMTAY'\nORDER BY TABLE_NAME;\n\nSELECT COLUMN_NAME, DATA_TYPE, CHARACTER_MAXIMUM_LENGTH, IS_NULLABLE\nFROM INFORMATION_SCHEMA.COLUMNS\nWHERE TABLE_SCHEMA = 'KIMTAY'\n  AND TABLE_NAME = 'REP'\nORDER BY ORDINAL_POSITION;"
+       "text": "-- MySQL. INFORMATION_SCHEMA does not exist in SQLite, so neither of these runs on this page.\n-- SELECT: the catalogue is queried with ordinary SQL - that is the whole point of\n--   it. This asks for the names of the tables.\nSELECT TABLE_NAME\n\n-- FROM: INFORMATION_SCHEMA.TABLES holds one row per table in the server.\nFROM INFORMATION_SCHEMA.TABLES\n\n-- WHERE: narrow it to one database, or you get every table on the server.\nWHERE TABLE_SCHEMA = 'KIMTAY'\n\n-- ORDER BY: the catalogue makes no promise about order either.\nORDER BY TABLE_NAME;\n\n-- SELECT: the second question - what does one particular table look like?\nSELECT COLUMN_NAME, DATA_TYPE, CHARACTER_MAXIMUM_LENGTH, IS_NULLABLE\n\n-- FROM: INFORMATION_SCHEMA.COLUMNS holds one row per COLUMN of every table.\nFROM INFORMATION_SCHEMA.COLUMNS\n\n-- WHERE: which database...\nWHERE TABLE_SCHEMA = 'KIMTAY'\n\n--   ...and which table inside it.\n  AND TABLE_NAME = 'REP'\n\n-- ORDER BY ORDINAL_POSITION: sorts the columns back into the order the table\n--   declares them, rather than alphabetically.\nORDER BY ORDINAL_POSITION;"
       },
       {
        "type": "p",
@@ -1921,7 +1921,7 @@
        "type": "sandbox",
        "seed": "kimtay_full",
        "starter": "SELECT type, name\nFROM sqlite_master\nORDER BY type, name;",
-       "solution": "SELECT type, name\nFROM sqlite_master\nWHERE type IN ('table', 'view')\nORDER BY type, name;",
+       "solution": "-- The catalogue is queried with ordinary SQL - that is the whole point of it.\nSELECT type, name\nFROM sqlite_master\n-- IN narrows the listing to the two kinds of object worth seeing here.\nWHERE type IN ('table', 'view')\n-- Sorting by type groups the tables together and the views together.\nORDER BY type, name;",
        "hint": "The unfiltered version also lists the indexes SQLite built on its own. Add a `WHERE` clause on `type` to keep tables and views only."
       },
       {
@@ -1936,7 +1936,7 @@
        "type": "sandbox",
        "seed": "kimtay_full",
        "starter": "SELECT name, type\nFROM pragma_table_info('REP')\nORDER BY cid;",
-       "solution": "SELECT name, type, \"notnull\", pk\nFROM pragma_table_info('REP')\nORDER BY cid;",
+       "solution": "-- pragma_table_info can be used as a TABLE, which means its output can be\n-- selected from, filtered and sorted like anything else.\nSELECT name, type, \"notnull\", pk\n-- The table being described is passed as an argument, in quotes.\nFROM pragma_table_info('REP')\n-- cid is the column's position, so this restores the declared column order.\nORDER BY cid;",
        "hint": "`notnull` is a keyword in SQLite, so it has to be wrapped in double quotation marks before the engine will read it as a column name."
       },
       {
@@ -1959,13 +1959,13 @@
       },
       {
        "type": "code",
-       "text": "-- MySQL: one row per column of every table, so a column name is searchable.\nSELECT TABLE_NAME\nFROM INFORMATION_SCHEMA.COLUMNS\nWHERE TABLE_SCHEMA = 'KIMTAY'\n  AND COLUMN_NAME = 'REP_NUM'\nORDER BY TABLE_NAME;"
+       "text": "-- MySQL: one row per column of every table, so a column name is searchable.\n-- SELECT: the answer wanted here is a list of TABLES, even though the search is\n--   being made on a column name.\nSELECT TABLE_NAME\n\n-- FROM: the columns catalogue, because that is where column names live.\nFROM INFORMATION_SCHEMA.COLUMNS\n\n-- WHERE: restrict to one database...\nWHERE TABLE_SCHEMA = 'KIMTAY'\n\n--   ...and to the column being hunted. This answers \"where else does REP_NUM\n--   appear?\" - the question you ask before changing or dropping a column.\n  AND COLUMN_NAME = 'REP_NUM'\n\n-- ORDER BY: sorts the list of tables found.\nORDER BY TABLE_NAME;"
       },
       {
        "type": "sandbox",
        "seed": "kimtay_full",
        "starter": "SELECT m.name AS TABLE_NAME\nFROM sqlite_master m\nWHERE m.type = 'table'\n  AND EXISTS (SELECT 1 FROM pragma_table_info(m.name) c WHERE c.name = 'PRICE')\nORDER BY m.name;",
-       "solution": "SELECT m.name AS TABLE_NAME\nFROM sqlite_master m\nWHERE m.type = 'table'\n  AND EXISTS (SELECT 1 FROM pragma_table_info(m.name) c WHERE c.name = 'REP_NUM')\nORDER BY m.name;",
+       "solution": "-- The question every developer asks before changing a column: where else is it?\nSELECT m.name AS TABLE_NAME\nFROM sqlite_master m\nWHERE m.type = 'table'\n  -- A correlated subquery: for each table in turn, look inside its column list\n  -- and keep the table only if REP_NUM is there. m.name feeds the pragma call.\n  AND EXISTS (SELECT 1 FROM pragma_table_info(m.name) c WHERE c.name = 'REP_NUM')\nORDER BY m.name;",
        "hint": "The starter searches for `PRICE` and finds one table. Change the column name to `REP_NUM` and run it again."
       },
       {
@@ -1988,7 +1988,7 @@
        "type": "sandbox",
        "seed": "kimtay_full",
        "starter": "DROP TABLE IF EXISTS ITEM_ARCHIVE;\nSELECT COUNT(*) AS ENTRIES_BEFORE FROM sqlite_master;\n\nCREATE TABLE ITEM_ARCHIVE (\n    ITEM_ID      CHAR(4)      PRIMARY KEY,\n    DESCRIPTION  VARCHAR(30)  NOT NULL,\n    PRICE        DECIMAL(7,2)\n);\n\nSELECT COUNT(*) AS ENTRIES_AFTER FROM sqlite_master;",
-       "solution": "DROP TABLE IF EXISTS ITEM_ARCHIVE;\nSELECT COUNT(*) AS ENTRIES_BEFORE FROM sqlite_master;\n\nCREATE TABLE ITEM_ARCHIVE (\n    ITEM_ID      CHAR(4)      PRIMARY KEY,\n    DESCRIPTION  VARCHAR(30)  NOT NULL,\n    PRICE        DECIMAL(7,2)\n);\nCREATE INDEX ITEM_ARCHIVE_PRICE_IDX ON ITEM_ARCHIVE (PRICE);\n\nSELECT type, name, tbl_name\nFROM sqlite_master\nWHERE tbl_name = 'ITEM_ARCHIVE'\nORDER BY type, name;\n\nSELECT COUNT(*) AS ENTRIES_AFTER FROM sqlite_master;\n\nDROP TABLE ITEM_ARCHIVE;\nSELECT COUNT(*) AS ENTRIES_AFTER_DROP FROM sqlite_master;",
+       "solution": "DROP TABLE IF EXISTS ITEM_ARCHIVE;\n-- Count the catalogue entries before anything is created.\nSELECT COUNT(*) AS ENTRIES_BEFORE FROM sqlite_master;\n\nCREATE TABLE ITEM_ARCHIVE (\n    ITEM_ID      CHAR(4)      PRIMARY KEY,\n    DESCRIPTION  VARCHAR(30)  NOT NULL,\n    PRICE        DECIMAL(7,2)\n);\n-- An index on the new table, which is a second catalogue entry.\nCREATE INDEX ITEM_ARCHIVE_PRICE_IDX ON ITEM_ARCHIVE (PRICE);\n\n-- Everything the catalogue now holds about this one table. Expect three rows:\n-- the table, your index, and SQLite's automatic index for the primary key.\nSELECT type, name, tbl_name\nFROM sqlite_master\nWHERE tbl_name = 'ITEM_ARCHIVE'\nORDER BY type, name;\n\n-- The count has grown by those entries.\nSELECT COUNT(*) AS ENTRIES_AFTER FROM sqlite_master;\n\n-- DROP TABLE takes the indexes with it - you never drop them separately.\nDROP TABLE ITEM_ARCHIVE;\n-- Back to the starting number, which is the proof.\nSELECT COUNT(*) AS ENTRIES_AFTER_DROP FROM sqlite_master;",
        "hint": "Nothing in this script writes to `sqlite_master`. Every change to it is a side effect of `CREATE` and `DROP`. The `DROP TABLE IF EXISTS` on line 1 is what lets you press Run twice."
       },
       {
@@ -2100,13 +2100,13 @@
       },
       {
        "type": "code",
-       "text": "CREATE TABLE SUPPLIER (\n    SUPPLIER_ID    CHAR(3)      PRIMARY KEY,\n    SUPPLIER_NAME  VARCHAR(30)  NOT NULL,\n    EMAIL          VARCHAR(40)  UNIQUE,\n    LEAD_DAYS      SMALLINT     NOT NULL,\n    CONSTRAINT LEAD_DAYS_POSITIVE CHECK (LEAD_DAYS > 0)\n);"
+       "text": "-- CREATE TABLE: this one is built to show constraints, so read the rules rather\n--   than the columns.\nCREATE TABLE SUPPLIER (\n\n    -- PRIMARY KEY: unique and never null, enforced on every INSERT and UPDATE.\n    SUPPLIER_ID    CHAR(3)      PRIMARY KEY,\n\n    -- NOT NULL: this column must always hold a value.\n    SUPPLIER_NAME  VARCHAR(30)  NOT NULL,\n\n    -- UNIQUE: no two suppliers may share an email address. Unlike a primary key,\n    --   a UNIQUE column is still allowed to be null.\n    EMAIL          VARCHAR(40)  UNIQUE,\n\n    -- Both rules on one column: a lead time must be present...\n    LEAD_DAYS      SMALLINT     NOT NULL,\n\n    -- CONSTRAINT ... CHECK: ...and it must make sense. CHECK tests a condition on\n    --   every row written; naming the constraint means the error message tells\n    --   you which rule was broken instead of leaving you to guess.\n    CONSTRAINT LEAD_DAYS_POSITIVE CHECK (LEAD_DAYS > 0)\n);"
       },
       {
        "type": "sandbox",
        "seed": "kimtay_full",
        "starter": "DROP TABLE IF EXISTS SUPPLIER;\nCREATE TABLE SUPPLIER (\n    SUPPLIER_ID    CHAR(3)      PRIMARY KEY,\n    SUPPLIER_NAME  VARCHAR(30)  NOT NULL,\n    EMAIL          VARCHAR(40)  UNIQUE,\n    LEAD_DAYS      SMALLINT     NOT NULL\n);\nINSERT INTO SUPPLIER VALUES ('S10', 'Buckeye Pet Supply', 'orders@buckeyepet.example', 7);\nSELECT * FROM SUPPLIER;",
-       "solution": "DROP TABLE IF EXISTS SUPPLIER;\nCREATE TABLE SUPPLIER (\n    SUPPLIER_ID    CHAR(3)      PRIMARY KEY,\n    SUPPLIER_NAME  VARCHAR(30)  NOT NULL,\n    EMAIL          VARCHAR(40)  UNIQUE,\n    LEAD_DAYS      SMALLINT     NOT NULL,\n    CONSTRAINT LEAD_DAYS_POSITIVE CHECK (LEAD_DAYS > 0)\n);\nINSERT INTO SUPPLIER VALUES ('S10', 'Buckeye Pet Supply', 'orders@buckeyepet.example', 7);\nINSERT INTO SUPPLIER VALUES ('S20', 'Lakeside Aquatics', 'sales@lakeside.example', 14);\n\nSELECT * FROM SUPPLIER ORDER BY SUPPLIER_ID;\n\nSELECT type, name\nFROM sqlite_master\nWHERE tbl_name = 'SUPPLIER'\nORDER BY type, name;",
+       "solution": "DROP TABLE IF EXISTS SUPPLIER;\n-- A table written to show constraints, so read the rules rather than the columns.\nCREATE TABLE SUPPLIER (\n    -- PRIMARY KEY: unique and never null.\n    SUPPLIER_ID    CHAR(3)      PRIMARY KEY,\n    -- NOT NULL: must always hold a value.\n    SUPPLIER_NAME  VARCHAR(30)  NOT NULL,\n    -- UNIQUE: no two suppliers may share an email. Unlike a primary key, a\n    -- UNIQUE column is still allowed to be null.\n    EMAIL          VARCHAR(40)  UNIQUE,\n    LEAD_DAYS      SMALLINT     NOT NULL,\n    -- CHECK tests a condition on every row written. Naming the constraint means\n    -- the error message tells you which rule broke instead of leaving you to guess.\n    CONSTRAINT LEAD_DAYS_POSITIVE CHECK (LEAD_DAYS > 0)\n);\n-- Both rows satisfy every rule, so both are stored.\nINSERT INTO SUPPLIER VALUES ('S10', 'Buckeye Pet Supply', 'orders@buckeyepet.example', 7);\nINSERT INTO SUPPLIER VALUES ('S20', 'Lakeside Aquatics', 'sales@lakeside.example', 14);\n\nSELECT * FROM SUPPLIER ORDER BY SUPPLIER_ID;\n\n-- The catalogue shows the table plus the automatic indexes the PRIMARY KEY and\n-- UNIQUE constraints created behind the scenes to enforce themselves.\nSELECT type, name\nFROM sqlite_master\nWHERE tbl_name = 'SUPPLIER'\nORDER BY type, name;",
        "hint": "Add the named `CHECK` as a line of its own after `LEAD_DAYS`, then a second supplier, then read the catalog entries the table produced."
       },
       {
@@ -2125,7 +2125,7 @@
        "type": "sandbox",
        "seed": "kimtay_full",
        "starter": "DROP TABLE IF EXISTS SUPPLIER;\nCREATE TABLE SUPPLIER (\n    SUPPLIER_ID    CHAR(3)      PRIMARY KEY,\n    SUPPLIER_NAME  VARCHAR(30)  NOT NULL,\n    EMAIL          VARCHAR(40)  UNIQUE,\n    LEAD_DAYS      SMALLINT     NOT NULL,\n    CONSTRAINT LEAD_DAYS_POSITIVE CHECK (LEAD_DAYS > 0)\n);\nINSERT INTO SUPPLIER VALUES ('S10', 'Buckeye Pet Supply', 'orders@buckeyepet.example', 7);\nINSERT INTO SUPPLIER VALUES ('S30', 'Same Day Pet Foods', 'rush@sameday.example', 0);",
-       "solution": "DROP TABLE IF EXISTS SUPPLIER;\nCREATE TABLE SUPPLIER (\n    SUPPLIER_ID    CHAR(3)      PRIMARY KEY,\n    SUPPLIER_NAME  VARCHAR(30)  NOT NULL,\n    EMAIL          VARCHAR(40)  UNIQUE,\n    LEAD_DAYS      SMALLINT     NOT NULL,\n    CONSTRAINT LEAD_DAYS_POSITIVE CHECK (LEAD_DAYS > 0)\n);\nINSERT INTO SUPPLIER VALUES ('S10', 'Buckeye Pet Supply', 'orders@buckeyepet.example', 7);\nINSERT INTO SUPPLIER VALUES ('S30', 'Same Day Pet Foods', 'rush@sameday.example', 1);\n\nSELECT * FROM SUPPLIER ORDER BY SUPPLIER_ID;",
+       "solution": "DROP TABLE IF EXISTS SUPPLIER;\nCREATE TABLE SUPPLIER (\n    SUPPLIER_ID    CHAR(3)      PRIMARY KEY,\n    SUPPLIER_NAME  VARCHAR(30)  NOT NULL,\n    EMAIL          VARCHAR(40)  UNIQUE,\n    LEAD_DAYS      SMALLINT     NOT NULL,\n    -- The rule under test below: a lead time must be a positive number.\n    CONSTRAINT LEAD_DAYS_POSITIVE CHECK (LEAD_DAYS > 0)\n);\nINSERT INTO SUPPLIER VALUES ('S10', 'Buckeye Pet Supply', 'orders@buckeyepet.example', 7);\n-- 1 is greater than 0, so the CHECK passes and this row is stored. A same-day\n-- supplier is legal; only 0 or a negative number would be refused.\nINSERT INTO SUPPLIER VALUES ('S30', 'Same Day Pet Foods', 'rush@sameday.example', 1);\n\nSELECT * FROM SUPPLIER ORDER BY SUPPLIER_ID;",
        "hint": "The starter is meant to fail, so read the message before you change anything. Then give the rule the smallest lead time it will accept and run it again."
       },
       {
@@ -2134,7 +2134,7 @@
       },
       {
        "type": "code",
-       "text": "-- Each of these is rejected. They assume SUPPLIER exists and already holds S10,\n-- so build it with the CREATE TABLE above first, then paste ONE of these and run it.\nINSERT INTO SUPPLIER VALUES ('S10', 'Duplicate Co', 'new@duplicate.example', 4);\n-- UNIQUE constraint failed: SUPPLIER.SUPPLIER_ID     (that primary key is taken)\n\nINSERT INTO SUPPLIER VALUES ('S40', NULL, 'nameless@example.com', 4);\n-- NOT NULL constraint failed: SUPPLIER.SUPPLIER_NAME\n\nINSERT INTO SUPPLIER VALUES ('S50', 'Second Buckeye', 'orders@buckeyepet.example', 4);\n-- UNIQUE constraint failed: SUPPLIER.EMAIL"
+       "text": "-- Each of these is rejected. They assume SUPPLIER exists and already holds S10,\n-- so build it with the CREATE TABLE above first, then paste ONE of these and run it.\n-- Rejected by the PRIMARY KEY: S10 is already in the table, and a primary key\n--   value can only be used once.\nINSERT INTO SUPPLIER VALUES ('S10', 'Duplicate Co', 'new@duplicate.example', 4);\n\n-- UNIQUE constraint failed: SUPPLIER.SUPPLIER_ID     (that primary key is taken)\n\n-- Rejected by NOT NULL: the id is new and the email is new, but the name is\n--   missing, and that column was declared NOT NULL.\nINSERT INTO SUPPLIER VALUES ('S40', NULL, 'nameless@example.com', 4);\n\n-- NOT NULL constraint failed: SUPPLIER.SUPPLIER_NAME\n\n-- Rejected by UNIQUE: a brand new supplier id, but an email address another row\n--   already holds. Each constraint is checked separately, and any one of them\n--   failing stops the whole statement.\nINSERT INTO SUPPLIER VALUES ('S50', 'Second Buckeye', 'orders@buckeyepet.example', 4);\n\n-- UNIQUE constraint failed: SUPPLIER.EMAIL"
       },
       {
        "type": "callout",
@@ -2154,7 +2154,7 @@
        "type": "sandbox",
        "seed": "kimtay_full",
        "starter": "PRAGMA foreign_keys;",
-       "solution": "PRAGMA foreign_keys;\n\n-- The DELETE is only a guard so this script survives a second Run.\nDELETE FROM INVOICE_LINE WHERE ITEM_ID = 'ZZ99';\nINSERT INTO INVOICE_LINE VALUES ('50710', 'ZZ99', 1, 9.99);\n\nSELECT INVOICE_NUM, ITEM_ID, NUM_ORDERED\nFROM INVOICE_LINE\nWHERE ITEM_ID = 'ZZ99';",
+       "solution": "-- PRAGMA with no value READS the setting. SQLite ships with foreign key checking\n-- OFF, so this answers 0.\nPRAGMA foreign_keys;\n\n-- The DELETE is only a guard so this script survives a second Run.\nDELETE FROM INVOICE_LINE WHERE ITEM_ID = 'ZZ99';\n-- With enforcement off, this is accepted even though item ZZ99 does not exist.\n-- The row is an orphan: it points at nothing.\nINSERT INTO INVOICE_LINE VALUES ('50710', 'ZZ99', 1, 9.99);\n\n-- And there it sits, with no warning of any kind.\nSELECT INVOICE_NUM, ITEM_ID, NUM_ORDERED\nFROM INVOICE_LINE\nWHERE ITEM_ID = 'ZZ99';",
        "hint": "Ask the engine for the current setting first, then try the insert it should have stopped."
       },
       {
@@ -2169,7 +2169,7 @@
        "type": "sandbox",
        "seed": "kimtay_full",
        "starter": "PRAGMA foreign_keys = ON;\nPRAGMA foreign_keys;",
-       "solution": "PRAGMA foreign_keys = ON;\nINSERT INTO INVOICE_LINE VALUES ('50710', 'ZZ99', 1, 9.99);",
+       "solution": "-- PRAGMA with a value WRITES the setting, turning enforcement on for this\n-- connection only.\nPRAGMA foreign_keys = ON;\n-- Now the same insert is refused: ZZ99 does not exist in ITEM, so the foreign key\n-- rejects the row rather than letting an orphan into the database.\nINSERT INTO INVOICE_LINE VALUES ('50710', 'ZZ99', 1, 9.99);",
        "hint": "The starter proves the switch flipped: it reports `1` instead of `0`. Then add the same insert as the sandbox above and watch it be refused."
       },
       {
@@ -2184,7 +2184,7 @@
        "type": "sandbox",
        "seed": "kimtay_full",
        "starter": "PRAGMA foreign_keys = ON;\nSELECT INVOICE_NUM, NUM_ORDERED\nFROM INVOICE_LINE\nWHERE ITEM_ID = 'CF21'\nORDER BY INVOICE_NUM;",
-       "solution": "PRAGMA foreign_keys = ON;\nDELETE FROM ITEM WHERE ITEM_ID = 'CF21';",
+       "solution": "PRAGMA foreign_keys = ON;\n-- The other direction. Deleting a PARENT row is refused while children still\n-- point at it - invoice lines reference CF21, and removing it would leave them\n-- referring to nothing. Delete the children first, or the rule stops you.\nDELETE FROM ITEM WHERE ITEM_ID = 'CF21';",
        "hint": "`CF21` is the grain-free dry food. The starter shows you which invoices ordered it; decide what should happen before you run the delete."
       },
       {
@@ -2205,7 +2205,7 @@
        "type": "sandbox",
        "seed": "kimtay_full",
        "starter": "PRAGMA foreign_keys = ON;\nSELECT INVOICE_NUM, ITEM_ID, NUM_ORDERED\nFROM INVOICE_LINE\nWHERE INVOICE_NUM = '50712'\nORDER BY ITEM_ID;",
-       "solution": "PRAGMA foreign_keys = ON;\n\n-- The DELETE is only a guard so this script survives a second Run.\nDELETE FROM INVOICE_LINE WHERE INVOICE_NUM = '50712' AND ITEM_ID = 'DG04';\nINSERT INTO INVOICE_LINE VALUES ('50712', 'DG04', 4, 11.99);\n\nSELECT INVOICE_NUM, ITEM_ID, NUM_ORDERED\nFROM INVOICE_LINE\nWHERE INVOICE_NUM = '50712'\nORDER BY ITEM_ID;",
+       "solution": "PRAGMA foreign_keys = ON;\n\n-- The DELETE is only a guard so this script survives a second Run.\nDELETE FROM INVOICE_LINE WHERE INVOICE_NUM = '50712' AND ITEM_ID = 'DG04';\n-- Both parents exist - invoice 50712 and item DG04 - so the row is accepted even\n-- with enforcement on. A foreign key blocks orphans, not inserts in general.\nINSERT INTO INVOICE_LINE VALUES ('50712', 'DG04', 4, 11.99);\n\nSELECT INVOICE_NUM, ITEM_ID, NUM_ORDERED\nFROM INVOICE_LINE\nWHERE INVOICE_NUM = '50712'\nORDER BY ITEM_ID;",
        "hint": "The starter shows the two lines invoice 50712 shipped with. Add the leash and three lines should come back."
       },
       {
@@ -2220,7 +2220,7 @@
        "type": "sandbox",
        "seed": "kimtay_full",
        "starter": "DROP TABLE IF EXISTS REP_PRACTICE;\nCREATE TABLE REP_PRACTICE (\n    REP_NUM    CHAR(2)      PRIMARY KEY,\n    LAST_NAME  VARCHAR(15)  NOT NULL\n);\nINSERT INTO REP_PRACTICE VALUES (NULL, 'Kaiser');\nSELECT * FROM REP_PRACTICE;",
-       "solution": "DROP TABLE IF EXISTS REP_PRACTICE;\nCREATE TABLE REP_PRACTICE (\n    REP_NUM    CHAR(2)      PRIMARY KEY,\n    LAST_NAME  VARCHAR(15)  NOT NULL\n);\nINSERT INTO REP_PRACTICE VALUES (NULL, 'Kaiser');\n\nSELECT COUNT(*) AS ROWS_STORED, COUNT(REP_NUM) AS KEYS_STORED\nFROM REP_PRACTICE;",
+       "solution": "DROP TABLE IF EXISTS REP_PRACTICE;\nCREATE TABLE REP_PRACTICE (\n    -- Declared PRIMARY KEY, which is supposed to mean unique AND never null.\n    REP_NUM    CHAR(2)      PRIMARY KEY,\n    LAST_NAME  VARCHAR(15)  NOT NULL\n);\n-- And yet SQLite accepts a null key: a long-standing quirk kept for backward\n-- compatibility. MySQL and Oracle both refuse this row outright.\nINSERT INTO REP_PRACTICE VALUES (NULL, 'Kaiser');\n\n-- The proof: one row stored, but zero keys stored. If you rely on a primary key\n-- never being null, declare the column NOT NULL as well in SQLite.\nSELECT COUNT(*) AS ROWS_STORED, COUNT(REP_NUM) AS KEYS_STORED\nFROM REP_PRACTICE;",
        "hint": "This is a scratch table of your own, not KimTay's data, which ships with no nulls anywhere. Count the rows and count the keys separately, and Module 5 explains why the two numbers can differ."
       },
       {
@@ -2237,7 +2237,7 @@
       },
       {
        "type": "code",
-       "text": "-- MySQL 8.0 and Oracle. SQLite answers 'near \"CONSTRAINT\": syntax error'.\nALTER TABLE ITEM\nADD CONSTRAINT PRICE_POSITIVE CHECK (PRICE > 0);\n\nALTER TABLE INVOICE\nADD CONSTRAINT INVOICE_CUSTOMER_FK\nFOREIGN KEY (CUSTOMER_NUM) REFERENCES CUSTOMER(CUSTOMER_NUM);\n\nALTER TABLE ITEM\nDROP CONSTRAINT PRICE_POSITIVE;"
+       "text": "-- MySQL 8.0 and Oracle. SQLite answers 'near \"CONSTRAINT\": syntax error'.\n-- ALTER TABLE: constraints can be added to a table that already exists.\nALTER TABLE ITEM\n\n-- ADD CONSTRAINT ... CHECK: names the rule and states it. The engine tests every\n--   existing row before accepting it - if any current price were zero or less,\n--   the statement would be rejected until the data was fixed.\nADD CONSTRAINT PRICE_POSITIVE CHECK (PRICE > 0);\n\n-- ALTER TABLE: a second table, a different kind of rule.\nALTER TABLE INVOICE\n\n-- ADD CONSTRAINT: naming it makes it possible to drop it later by name.\nADD CONSTRAINT INVOICE_CUSTOMER_FK\n\n-- FOREIGN KEY ... REFERENCES: says the column on the left must always hold a value\n--   that exists in the column on the right - the rule that stops orphan invoices.\nFOREIGN KEY (CUSTOMER_NUM) REFERENCES CUSTOMER(CUSTOMER_NUM);\n\n-- ALTER TABLE: removing a rule.\nALTER TABLE ITEM\n\n-- DROP CONSTRAINT: takes the rule off the table by name. The data stays exactly\n--   as it is - only the checking stops, so new rows may now break the old rule.\nDROP CONSTRAINT PRICE_POSITIVE;"
       },
       {
        "type": "p",
@@ -2316,7 +2316,7 @@
        "type": "sandbox",
        "seed": "kimtay_full",
        "starter": "SELECT COUNT(*) AS CATALOG_ENTRIES FROM sqlite_master;",
-       "solution": "DROP VIEW IF EXISTS BIG_BALANCE;\nDROP INDEX IF EXISTS CUSTOMER_BALANCE_IDX;\n\nCREATE VIEW BIG_BALANCE AS\nSELECT CUSTOMER_NUM, CUSTOMER_NAME, BALANCE\nFROM CUSTOMER\nWHERE BALANCE > 1000;\n\nCREATE INDEX CUSTOMER_BALANCE_IDX ON CUSTOMER (BALANCE);\n\nSELECT type, name\nFROM sqlite_master\nWHERE name NOT LIKE 'sqlite_%'\n  AND type IN ('view', 'index')\nORDER BY type, name;\n\nSELECT * FROM BIG_BALANCE ORDER BY BALANCE DESC;",
+       "solution": "DROP VIEW IF EXISTS BIG_BALANCE;\nDROP INDEX IF EXISTS CUSTOMER_BALANCE_IDX;\n\n-- A view: a saved query, storing no data.\nCREATE VIEW BIG_BALANCE AS\nSELECT CUSTOMER_NUM, CUSTOMER_NAME, BALANCE\nFROM CUSTOMER\nWHERE BALANCE > 1000;\n\n-- An index: a lookup structure, also storing no data of its own. Both are\n-- derived objects that sit beside the table without changing it.\nCREATE INDEX CUSTOMER_BALANCE_IDX ON CUSTOMER (BALANCE);\n\n-- Both appear in the one catalogue, distinguished by their type column.\nSELECT type, name\nFROM sqlite_master\nWHERE name NOT LIKE 'sqlite_%'\n  AND type IN ('view', 'index')\nORDER BY type, name;\n\n-- The view is queried like a table; the index is never named in a query at all -\n-- the engine decides on its own whether to use it.\nSELECT * FROM BIG_BALANCE ORDER BY BALANCE DESC;",
        "hint": "The starter counts the ten entries the shipped database already has. Build one view and one index, then ask the catalog what you built. Both `DROP ... IF EXISTS` lines are there so you can press Run twice."
       },
       {
@@ -2487,7 +2487,7 @@
        "type": "sandbox",
        "seed": "kimtay_full",
        "starter": "SELECT sql FROM sqlite_master WHERE name = 'INVOICE_LINE';",
-       "solution": "SELECT name, sql\nFROM sqlite_master\nWHERE type = 'table'\n  AND sql LIKE '%FOREIGN KEY%'\nORDER BY name;",
+       "solution": "-- sqlite_master keeps each object's original CREATE statement in its sql column,\n-- so the catalogue can be searched as TEXT.\nSELECT name, sql\nFROM sqlite_master\nWHERE type = 'table'\n  -- LIKE with % on both sides finds the phrase anywhere in the statement. This\n  -- is the quick way to ask which tables declare a foreign key.\n  AND sql LIKE '%FOREIGN KEY%'\nORDER BY name;",
        "hint": "The `sql` column holds the text of the `CREATE TABLE`. Search that text for the words you care about."
       },
       {
@@ -2519,7 +2519,7 @@
        "type": "sandbox",
        "seed": "kimtay_full",
        "starter": "SELECT type, name, tbl_name\nFROM sqlite_master\nWHERE tbl_name = 'ITEM'\nORDER BY type;",
-       "solution": "DROP TABLE IF EXISTS REORDER_REQUEST;\nCREATE TABLE REORDER_REQUEST (\n    REQUEST_ID  CHAR(4)   PRIMARY KEY,\n    ITEM_ID     CHAR(4)   NOT NULL,\n    QUANTITY    SMALLINT  NOT NULL,\n    CONSTRAINT QUANTITY_POSITIVE CHECK (QUANTITY > 0),\n    FOREIGN KEY (ITEM_ID) REFERENCES ITEM(ITEM_ID)\n);\n\nINSERT INTO REORDER_REQUEST VALUES ('R001', 'CF21', 24);\nINSERT INTO REORDER_REQUEST VALUES ('R002', 'GR15', 12);\n\nSELECT R.REQUEST_ID, I.DESCRIPTION, R.QUANTITY\nFROM REORDER_REQUEST R INNER JOIN ITEM I ON R.ITEM_ID = I.ITEM_ID\nORDER BY R.REQUEST_ID;\n\nSELECT COUNT(*) AS CATALOG_ENTRIES\nFROM sqlite_master\nWHERE tbl_name = 'REORDER_REQUEST';",
+       "solution": "DROP TABLE IF EXISTS REORDER_REQUEST;\n-- A table that carries every kind of constraint at once.\nCREATE TABLE REORDER_REQUEST (\n    REQUEST_ID  CHAR(4)   PRIMARY KEY,\n    -- NOT NULL, because a request for nothing in particular is meaningless.\n    ITEM_ID     CHAR(4)   NOT NULL,\n    QUANTITY    SMALLINT  NOT NULL,\n    -- A named CHECK: reordering zero or minus five units is not a real request.\n    CONSTRAINT QUANTITY_POSITIVE CHECK (QUANTITY > 0),\n    -- And a foreign key, so a request can only name an item that exists.\n    FOREIGN KEY (ITEM_ID) REFERENCES ITEM(ITEM_ID)\n);\n\n-- Both rows satisfy every rule.\nINSERT INTO REORDER_REQUEST VALUES ('R001', 'CF21', 24);\nINSERT INTO REORDER_REQUEST VALUES ('R002', 'GR15', 12);\n\n-- The join proves the foreign key values really do point at live items.\nSELECT R.REQUEST_ID, I.DESCRIPTION, R.QUANTITY\nFROM REORDER_REQUEST R INNER JOIN ITEM I ON R.ITEM_ID = I.ITEM_ID\nORDER BY R.REQUEST_ID;\n\n-- More than one entry: the table itself, plus the index SQLite built to enforce\n-- the primary key.\nSELECT COUNT(*) AS CATALOG_ENTRIES\nFROM sqlite_master\nWHERE tbl_name = 'REORDER_REQUEST';",
        "hint": "Build the table with a named `CHECK` and a foreign key, add two requests, join to `ITEM` for the descriptions, then count what the table put in the catalog. Keep the `DROP TABLE IF EXISTS` so you can run it twice."
       },
       {
@@ -2566,7 +2566,7 @@
        "type": "sandbox",
        "seed": "staywell_full",
        "starter": "SELECT type, name FROM sqlite_master ORDER BY type, name;",
-       "solution": "SELECT type, name\nFROM sqlite_master\nWHERE type = 'table'\nORDER BY name;\n\nSELECT name, type, \"notnull\", pk\nFROM pragma_table_info('LEASE')\nORDER BY cid;",
+       "solution": "-- What tables does this database hold?\nSELECT type, name\nFROM sqlite_master\nWHERE type = 'table'\nORDER BY name;\n\n-- And what does one of them look like? notnull is quoted because NOT NULL is a\n-- reserved phrase - the double quotes say to read it as a column name.\nSELECT name, type, \"notnull\", pk\nFROM pragma_table_info('LEASE')\nORDER BY cid;",
        "hint": "`notnull` needs double quotation marks. Order by `cid` to get the columns in the order they were declared."
       },
       {
@@ -2585,7 +2585,7 @@
        "type": "sandbox",
        "seed": "staywell_full",
        "starter": "SELECT type, name, tbl_name\nFROM sqlite_master\nWHERE type IN ('view', 'index')\n  AND name NOT LIKE 'sqlite_%'\nORDER BY type, name;",
-       "solution": "DROP VIEW IF EXISTS DOUBLE_ROOMS;\nDROP INDEX IF EXISTS ROOM_RENT_IDX;\n\nCREATE VIEW DOUBLE_ROOMS AS\nSELECT PROPERTY_ID, ROOM_NUM, MONTHLY_RENT\nFROM ROOM\nWHERE ROOM_TYPE = 'Double';\n\nCREATE INDEX ROOM_RENT_IDX ON ROOM (MONTHLY_RENT);\n\nSELECT type, name, tbl_name\nFROM sqlite_master\nWHERE name IN ('DOUBLE_ROOMS', 'ROOM_RENT_IDX')\nORDER BY type;\n\nSELECT * FROM DOUBLE_ROOMS ORDER BY PROPERTY_ID;",
+       "solution": "DROP VIEW IF EXISTS DOUBLE_ROOMS;\nDROP INDEX IF EXISTS ROOM_RENT_IDX;\n\n-- The view narrows the rows anyone using it can see.\nCREATE VIEW DOUBLE_ROOMS AS\nSELECT PROPERTY_ID, ROOM_NUM, MONTHLY_RENT\nFROM ROOM\nWHERE ROOM_TYPE = 'Double';\n\n-- The index speeds up queries that filter or sort on rent. It changes no answers.\nCREATE INDEX ROOM_RENT_IDX ON ROOM (MONTHLY_RENT);\n\n-- IN lets one catalogue query ask about both objects at once.\nSELECT type, name, tbl_name\nFROM sqlite_master\nWHERE name IN ('DOUBLE_ROOMS', 'ROOM_RENT_IDX')\nORDER BY type;\n\nSELECT * FROM DOUBLE_ROOMS ORDER BY PROPERTY_ID;",
        "hint": "The starter returns nothing at all, which is the point: this database ships with no views and no indexes of its own."
       },
       {
@@ -2604,7 +2604,7 @@
        "type": "sandbox",
        "seed": "staywell_full",
        "starter": "DROP TABLE IF EXISTS INSPECTION;\nCREATE TABLE INSPECTION (\n    INSPECTION_ID  CHAR(4)      PRIMARY KEY,\n    PROPERTY_ID    CHAR(4)      NOT NULL,\n    ROOM_NUM       CHAR(3)      NOT NULL,\n    INSPECTOR      VARCHAR(20)  NOT NULL,\n    SCORE          SMALLINT     NOT NULL\n);\nINSERT INTO INSPECTION VALUES ('I001', 'P100', '101', 'Ortiz', 92);\nSELECT * FROM INSPECTION;",
-       "solution": "DROP TABLE IF EXISTS INSPECTION;\nCREATE TABLE INSPECTION (\n    INSPECTION_ID  CHAR(4)      PRIMARY KEY,\n    PROPERTY_ID    CHAR(4)      NOT NULL,\n    ROOM_NUM       CHAR(3)      NOT NULL,\n    INSPECTOR      VARCHAR(20)  NOT NULL,\n    SCORE          SMALLINT     NOT NULL,\n    CONSTRAINT SCORE_RANGE CHECK (SCORE BETWEEN 0 AND 100),\n    CONSTRAINT ONE_PER_ROOM UNIQUE (PROPERTY_ID, ROOM_NUM),\n    FOREIGN KEY (PROPERTY_ID, ROOM_NUM) REFERENCES ROOM(PROPERTY_ID, ROOM_NUM)\n);\n\nINSERT INTO INSPECTION VALUES ('I001', 'P100', '101', 'Ortiz', 92);\nINSERT INTO INSPECTION VALUES ('I002', 'P200', '202', 'Feldman', 88);\n\nSELECT * FROM INSPECTION ORDER BY INSPECTION_ID;\n\nSELECT COUNT(*) AS CATALOG_ENTRIES\nFROM sqlite_master\nWHERE tbl_name = 'INSPECTION';",
+       "solution": "DROP TABLE IF EXISTS INSPECTION;\nCREATE TABLE INSPECTION (\n    INSPECTION_ID  CHAR(4)      PRIMARY KEY,\n    PROPERTY_ID    CHAR(4)      NOT NULL,\n    ROOM_NUM       CHAR(3)      NOT NULL,\n    INSPECTOR      VARCHAR(20)  NOT NULL,\n    SCORE          SMALLINT     NOT NULL,\n    -- CHECK with BETWEEN: a percentage below 0 or above 100 is not a score.\n    CONSTRAINT SCORE_RANGE CHECK (SCORE BETWEEN 0 AND 100),\n    -- A table-level UNIQUE over TWO columns: one inspection per room, and the\n    -- pair must be unique even though neither column is unique alone.\n    CONSTRAINT ONE_PER_ROOM UNIQUE (PROPERTY_ID, ROOM_NUM),\n    -- A COMPOSITE foreign key, because ROOM is identified by two columns. Both\n    -- are listed on each side, in matching order.\n    FOREIGN KEY (PROPERTY_ID, ROOM_NUM) REFERENCES ROOM(PROPERTY_ID, ROOM_NUM)\n);\n\n-- Both rooms exist and both scores are in range, so both rows are accepted.\nINSERT INTO INSPECTION VALUES ('I001', 'P100', '101', 'Ortiz', 92);\nINSERT INTO INSPECTION VALUES ('I002', 'P200', '202', 'Feldman', 88);\n\nSELECT * FROM INSPECTION ORDER BY INSPECTION_ID;\n\n-- Several entries: the table, plus an automatic index for the primary key and\n-- another for the UNIQUE constraint.\nSELECT COUNT(*) AS CATALOG_ENTRIES\nFROM sqlite_master\nWHERE tbl_name = 'INSPECTION';",
        "hint": "A constraint that covers two columns cannot live on a column line. Give it its own line after the last column, and a name."
       },
       {
@@ -2623,14 +2623,14 @@
        "type": "sandbox",
        "seed": "staywell_full",
        "starter": "PRAGMA foreign_keys;",
-       "solution": "PRAGMA foreign_keys;\n\nINSERT INTO LEASE VALUES ('L005', 'S099', 'P100', '101', '2026-08-15', '2027-05-15', 595.00);\n\nSELECT LEASE_ID, STUDENT_ID FROM LEASE ORDER BY LEASE_ID;\n\nSELECT COUNT(*) AS MATCHED_TO_A_STUDENT\nFROM LEASE L INNER JOIN STUDENT S ON L.STUDENT_ID = S.STUDENT_ID;\n\nDELETE FROM LEASE WHERE LEASE_ID = 'L005';\nSELECT COUNT(*) AS LEASES FROM LEASE;",
+       "solution": "-- Read the setting first: 0, so foreign keys are not being enforced.\nPRAGMA foreign_keys;\n\n-- Student S099 does not exist, and with enforcement off the lease is accepted anyway.\nINSERT INTO LEASE VALUES ('L005', 'S099', 'P100', '101', '2026-08-15', '2027-05-15', 595.00);\n\n-- There it is in the table, looking perfectly ordinary.\nSELECT LEASE_ID, STUDENT_ID FROM LEASE ORDER BY LEASE_ID;\n\n-- The damage made visible: an INNER JOIN drops the orphan, so this count is one\n-- lower than the number of leases. Rows that match nothing quietly vanish from\n-- every report built on a join.\nSELECT COUNT(*) AS MATCHED_TO_A_STUDENT\nFROM LEASE L INNER JOIN STUDENT S ON L.STUDENT_ID = S.STUDENT_ID;\n\n-- Clean up after the demonstration.\nDELETE FROM LEASE WHERE LEASE_ID = 'L005';\nSELECT COUNT(*) AS LEASES FROM LEASE;",
        "hint": "Ask for the setting first. A `0` tells you what to expect from the insert that follows. The `DELETE` at the end tidies up, which is also what lets you press Run twice."
       },
       {
        "type": "sandbox",
        "seed": "staywell_full",
        "starter": "PRAGMA foreign_keys = ON;\nPRAGMA foreign_keys;",
-       "solution": "PRAGMA foreign_keys = ON;\n\nINSERT INTO LEASE VALUES ('L005', 'S099', 'P100', '101', '2026-08-15', '2027-05-15', 595.00);",
+       "solution": "-- Turn enforcement on for this connection.\nPRAGMA foreign_keys = ON;\n\n-- The same insert is now refused: S099 is not a student, so the lease cannot be\n-- stored. The database is protecting its own consistency.\nINSERT INTO LEASE VALUES ('L005', 'S099', 'P100', '101', '2026-08-15', '2027-05-15', 595.00);",
        "hint": "The starter proves the switch flipped. The solution is the same insert as the sandbox above, and it should now be refused."
       },
       {
@@ -2649,7 +2649,7 @@
        "type": "sandbox",
        "seed": "kimtay_full",
        "starter": "SELECT sql FROM sqlite_master WHERE name = 'REP';",
-       "solution": "DROP TABLE IF EXISTS REP_NEW;\nBEGIN;\n\nCREATE TABLE REP_NEW (\n    REP_NUM      CHAR(2)      NOT NULL,\n    LAST_NAME    VARCHAR(15)  NOT NULL,\n    FIRST_NAME   VARCHAR(15)  NOT NULL,\n    STREET       VARCHAR(20),\n    CITY         VARCHAR(15),\n    STATE        CHAR(2),\n    ZIP          CHAR(5),\n    COMMISSION   DECIMAL(8,2) NOT NULL DEFAULT 0,\n    RATE         DECIMAL(4,2) NOT NULL,\n    PRIMARY KEY (REP_NUM),\n    CONSTRAINT RATE_RANGE CHECK (RATE >= 0 AND RATE <= 0.25),\n    CONSTRAINT COMMISSION_NOT_NEGATIVE CHECK (COMMISSION >= 0)\n);\n\nINSERT INTO REP_NEW (REP_NUM, LAST_NAME, FIRST_NAME, STREET, CITY, STATE, ZIP, COMMISSION, RATE)\nSELECT REP_NUM, LAST_NAME, FIRST_NAME, STREET, CITY, STATE, ZIP, COMMISSION, RATE\nFROM REP;\n\nDROP TABLE REP;\nALTER TABLE REP_NEW RENAME TO REP;\nCOMMIT;\n\nSELECT REP_NUM, LAST_NAME, COMMISSION, RATE FROM REP ORDER BY REP_NUM;\nSELECT sql FROM sqlite_master WHERE name = 'REP';",
+       "solution": "DROP TABLE IF EXISTS REP_NEW;\n-- SQLite cannot add a constraint to an existing table, so the rebuild dance is\n-- the way to do it - all inside one transaction, so REP is never missing.\nBEGIN;\n\n-- Step 1: the table you want, with the new rules written in.\nCREATE TABLE REP_NEW (\n    REP_NUM      CHAR(2)      NOT NULL,\n    LAST_NAME    VARCHAR(15)  NOT NULL,\n    FIRST_NAME   VARCHAR(15)  NOT NULL,\n    STREET       VARCHAR(20),\n    CITY         VARCHAR(15),\n    STATE        CHAR(2),\n    ZIP          CHAR(5),\n    -- DEFAULT supplies a value when an INSERT does not mention the column.\n    COMMISSION   DECIMAL(8,2) NOT NULL DEFAULT 0,\n    RATE         DECIMAL(4,2) NOT NULL,\n    -- Declared at table level here, and paired with NOT NULL above so the SQLite\n    -- null-key quirk cannot apply.\n    PRIMARY KEY (REP_NUM),\n    -- A CHECK may combine conditions with AND, exactly like a WHERE clause.\n    CONSTRAINT RATE_RANGE CHECK (RATE >= 0 AND RATE <= 0.25),\n    CONSTRAINT COMMISSION_NOT_NEGATIVE CHECK (COMMISSION >= 0)\n);\n\n-- Step 2: copy the data across. Every existing row is checked against the new\n-- constraints as it lands, so bad data is caught here.\nINSERT INTO REP_NEW (REP_NUM, LAST_NAME, FIRST_NAME, STREET, CITY, STATE, ZIP, COMMISSION, RATE)\nSELECT REP_NUM, LAST_NAME, FIRST_NAME, STREET, CITY, STATE, ZIP, COMMISSION, RATE\nFROM REP;\n\n-- Steps 3 and 4: remove the old table and rename the new one into its place.\nDROP TABLE REP;\nALTER TABLE REP_NEW RENAME TO REP;\nCOMMIT;\n\nSELECT REP_NUM, LAST_NAME, COMMISSION, RATE FROM REP ORDER BY REP_NUM;\n-- Reading the sql column back is how you confirm the constraints really are there.\nSELECT sql FROM sqlite_master WHERE name = 'REP';",
        "hint": "The starter shows the definition you are replacing. Copy it, add the rules, and remember that the `INSERT` will fail if any existing rep breaks one of them."
       },
       {
@@ -2668,7 +2668,7 @@
        "type": "sandbox",
        "seed": "kimtay_full",
        "starter": "SELECT COUNT(*) AS COLUMN_COUNT FROM pragma_table_info('CUSTOMER');",
-       "solution": "SELECT m.name AS TABLE_NAME,\n       (SELECT COUNT(*) FROM pragma_table_info(m.name)) AS COLUMN_COUNT\nFROM sqlite_master m\nWHERE m.type = 'table'\nORDER BY m.name;\n\nSELECT m.name AS TABLE_NAME\nFROM sqlite_master m\nWHERE m.type = 'table'\n  AND EXISTS (SELECT 1 FROM pragma_table_info(m.name) c WHERE c.name = 'ITEM_ID')\nORDER BY m.name;",
+       "solution": "-- A correlated subquery in the SELECT list rather than the WHERE clause: for each\n-- table, count its columns. It runs once per row of the outer query.\nSELECT m.name AS TABLE_NAME,\n       (SELECT COUNT(*) FROM pragma_table_info(m.name)) AS COLUMN_COUNT\nFROM sqlite_master m\nWHERE m.type = 'table'\nORDER BY m.name;\n\n-- The impact question: which tables would a change to ITEM_ID touch?\nSELECT m.name AS TABLE_NAME\nFROM sqlite_master m\nWHERE m.type = 'table'\n  -- EXISTS looks inside each table's column list and keeps the table if the\n  -- column is there. This is the query to run BEFORE renaming anything.\n  AND EXISTS (SELECT 1 FROM pragma_table_info(m.name) c WHERE c.name = 'ITEM_ID')\nORDER BY m.name;",
        "hint": "The starter counts one table's columns. Put that count in the select list of a query over `sqlite_master` and it runs once per table."
       },
       {
@@ -2682,7 +2682,7 @@
     {
      "anchor": "m7-6",
      "quizId": "m7-6-quiz",
-     "heading": "\ud83d\udd0d Check yourself: the system catalog",
+     "heading": "🔍 Check yourself: the system catalog",
      "questions": [
       {
        "scenarioTitle": "KimTay's inherited MySQL database",
@@ -2743,7 +2743,7 @@
     {
      "anchor": "m7-7",
      "quizId": "m7-7-quiz",
-     "heading": "\ud83d\udd0d Check yourself: integrity constraints",
+     "heading": "🔍 Check yourself: integrity constraints",
      "questions": [
       {
        "scenarioTitle": "Whiskers and Wags Boutique, entered twice",
@@ -2822,7 +2822,7 @@
     {
      "anchor": "m7-review",
      "quizId": "m7-review-quiz",
-     "heading": "\ud83d\udd0d Module 7 Review Questions",
+     "heading": "🔍 Module 7 Review Questions",
      "questions": [
       {
        "scenarioTitle": "Two questions about Access Pet Center",
@@ -3011,7 +3011,7 @@
     {
      "anchor": "m7-7",
      "matchId": "m7-7-match",
-     "heading": "\ud83e\udde9 Match the rule to the constraint that enforces it",
+     "heading": "🧩 Match the rule to the constraint that enforces it",
      "prompt": "Each card states a rule KimTay Pet Supplies wants the database itself to keep. Drop it on the constraint that enforces exactly that rule and nothing wider. Every card fits one zone only.",
      "zones": [
       {
@@ -3086,7 +3086,7 @@
     {
      "anchor": "m7-terms",
      "matchId": "m7-terms-match",
-     "heading": "\ud83e\udde9 Sort the Module 7 Terms",
+     "heading": "🧩 Sort the Module 7 Terms",
      "prompt": "Each card describes one thing a database professional relied on this week. Drop it into the part of Module 7 it belongs to. Every card fits exactly one zone.",
      "zones": [
       {

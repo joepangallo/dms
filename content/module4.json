@@ -91,7 +91,7 @@
       },
       {
        "type": "code",
-       "text": "SELECT ITEM_ID, DESCRIPTION, PRICE\nFROM ITEM;"
+       "text": "-- SELECT: names the three columns you want to see, in the order you want them.\n--   Everything not listed here stays in the table and simply is not returned.\nSELECT ITEM_ID, DESCRIPTION, PRICE\n\n-- FROM: which table to read them out of. With no WHERE clause, every row of ITEM\n--   comes back - all five of them.\nFROM ITEM;"
       },
       {
        "type": "p",
@@ -153,7 +153,7 @@
       },
       {
        "type": "code",
-       "text": "SELECT *\nFROM ITEM;"
+       "text": "-- SELECT *: the asterisk is shorthand for \"every column, in the order the table\n--   defines them\". Handy while exploring, risky in saved code - the moment\n--   somebody adds a column, your output silently changes shape.\nSELECT *\n\n-- FROM: the table being read. Five rows, six columns.\nFROM ITEM;"
       },
       {
        "type": "p",
@@ -169,7 +169,7 @@
        "type": "sandbox",
        "seed": "kimtay_full",
        "starter": "-- This returns three columns for all five items.\nSELECT ITEM_ID, DESCRIPTION, PRICE\nFROM ITEM;\n\n-- Your turn: change it so that every column comes back, then run it again.",
-       "solution": "SELECT *\nFROM ITEM;",
+       "solution": "-- SELECT *: every column, in the order the table declares them.\nSELECT *\n-- FROM: the table read. No WHERE clause, so all five rows come back.\nFROM ITEM;",
        "hint": "Five rows either way; only the number of columns should change, from three to six."
       },
       {
@@ -227,7 +227,7 @@
       },
       {
        "type": "code",
-       "text": "SELECT ITEM_ID, DESCRIPTION, ON_HAND\nFROM ITEM\nWHERE ON_HAND < 25;"
+       "text": "-- SELECT: the three columns to display.\nSELECT ITEM_ID, DESCRIPTION, ON_HAND\n\n-- FROM: the table being read.\nFROM ITEM\n\n-- WHERE: the filter. It is tested once per row, and a row is returned only when\n--   the condition comes back true. Two items are stocked below 25.\nWHERE ON_HAND < 25;"
       },
       {
        "type": "p",
@@ -239,7 +239,7 @@
       },
       {
        "type": "code",
-       "text": "SELECT CUSTOMER_NUM, CUSTOMER_NAME\nFROM CUSTOMER\nWHERE CITY = 'Maple Grove';"
+       "text": "-- SELECT: two columns from the customer table.\nSELECT CUSTOMER_NUM, CUSTOMER_NAME\n\n-- FROM: the table being read.\nFROM CUSTOMER\n\n-- WHERE: an equality test against a text value, so the value goes in single\n--   quotes. Numbers never take quotes; text and dates always do.\nWHERE CITY = 'Maple Grove';"
       },
       {
        "type": "p",
@@ -257,7 +257,7 @@
       },
       {
        "type": "code",
-       "text": "SELECT ITEM_ID, CATEGORY\nFROM ITEM\nWHERE CATEGORY <> 'Habitat';"
+       "text": "-- SELECT: the id and the category, so the filter can be checked by eye.\nSELECT ITEM_ID, CATEGORY\n\n-- FROM: the table being read.\nFROM ITEM\n\n-- WHERE: <> means \"not equal to\". Some engines also accept !=, but <> is the\n--   standard spelling and works everywhere.\nWHERE CATEGORY <> 'Habitat';"
       },
       {
        "type": "p",
@@ -308,7 +308,7 @@
       },
       {
        "type": "code",
-       "text": "SELECT CUSTOMER_NUM, CUSTOMER_NAME, BALANCE\nFROM CUSTOMER\nWHERE CITY = 'Maple Grove'\n  AND BALANCE > 1000;"
+       "text": "-- SELECT: three columns, including BALANCE so the second condition is visible.\nSELECT CUSTOMER_NUM, CUSTOMER_NAME, BALANCE\n\n-- FROM: the table being read.\nFROM CUSTOMER\n\n-- WHERE: the first of two conditions.\nWHERE CITY = 'Maple Grove'\n\n-- AND: a compound condition. BOTH sides must be true for the row to be kept, so\n--   this is stricter than either condition alone. Companion Care Clinic is in\n--   Maple Grove but owes nothing, so it fails here.\n  AND BALANCE > 1000;"
       },
       {
        "type": "p",
@@ -316,7 +316,7 @@
       },
       {
        "type": "code",
-       "text": "SELECT ITEM_ID, DESCRIPTION, PRICE\nFROM ITEM\nWHERE CATEGORY = 'Food'\n   OR PRICE > 60;"
+       "text": "-- SELECT: three columns.\nSELECT ITEM_ID, DESCRIPTION, PRICE\n\n-- FROM: the table being read.\nFROM ITEM\n\n-- WHERE: the first of two conditions.\nWHERE CATEGORY = 'Food'\n\n-- OR: EITHER side being true is enough to keep the row, so this is looser than\n--   either condition alone. A row satisfying both is still returned once.\n   OR PRICE > 60;"
       },
       {
        "type": "p",
@@ -324,7 +324,7 @@
       },
       {
        "type": "code",
-       "text": "SELECT ITEM_ID, CATEGORY\nFROM ITEM\nWHERE NOT (CATEGORY = 'Habitat');"
+       "text": "-- SELECT: the id and the category being tested.\nSELECT ITEM_ID, CATEGORY\n\n-- FROM: the table being read.\nFROM ITEM\n\n-- WHERE: NOT reverses the condition inside the parentheses - keep the row when\n--   the test is false. The parentheses are optional here but worth writing, as\n--   they make it unmistakable which condition NOT applies to.\nWHERE NOT (CATEGORY = 'Habitat');"
       },
       {
        "type": "p",
@@ -353,7 +353,7 @@
        "type": "sandbox",
        "seed": "kimtay_full",
        "starter": "-- Run this as written and count the rows.\nSELECT ITEM_ID, CATEGORY, PRICE\nFROM ITEM\nWHERE CATEGORY = 'Habitat' OR CATEGORY = 'Food' AND PRICE < 30;\n\n-- Now add parentheses so that the price test applies to both categories.",
-       "solution": "SELECT ITEM_ID, CATEGORY, PRICE\nFROM ITEM\nWHERE (CATEGORY = 'Habitat' OR CATEGORY = 'Food') AND PRICE < 30;",
+       "solution": "-- SELECT: the id plus the two columns being tested, so the filter is checkable by eye.\nSELECT ITEM_ID, CATEGORY, PRICE\nFROM ITEM\n-- The parentheses matter: OR is evaluated first, then AND applies to the whole\n-- bracket. Without them, AND would bind tighter and the query would mean\n-- something quite different.\nWHERE (CATEGORY = 'Habitat' OR CATEGORY = 'Food') AND PRICE < 30;",
        "hint": "Two rows before the parentheses, one row after. If both runs match, the parentheses landed in the wrong place."
       },
       {
@@ -366,7 +366,7 @@
       },
       {
        "type": "code",
-       "text": "SELECT ITEM_ID, DESCRIPTION, PRICE\nFROM ITEM\nWHERE PRICE BETWEEN 15.25 AND 27.75;"
+       "text": "-- SELECT: three columns, PRICE included so the range is easy to verify.\nSELECT ITEM_ID, DESCRIPTION, PRICE\n\n-- FROM: the table being read.\nFROM ITEM\n\n-- WHERE: BETWEEN tests a range and is INCLUSIVE at both ends, so an item priced\n--   at exactly 15.25 or exactly 27.75 is kept. The smaller value must be written\n--   first; reverse them and the condition matches nothing at all.\nWHERE PRICE BETWEEN 15.25 AND 27.75;"
       },
       {
        "type": "p",
@@ -380,7 +380,7 @@
       },
       {
        "type": "code",
-       "text": "SELECT ITEM_ID, DESCRIPTION, PRICE\nFROM ITEM\nWHERE PRICE >= 15.25 AND PRICE <= 27.75;"
+       "text": "-- SELECT: the same three columns as the BETWEEN version above.\nSELECT ITEM_ID, DESCRIPTION, PRICE\n\n-- FROM: the same table.\nFROM ITEM\n\n-- WHERE: exactly what BETWEEN means, spelled out. Two comparisons joined by AND,\n--   each using >= or <= so both endpoints are included. Same rows, more typing -\n--   which is the whole argument for BETWEEN.\nWHERE PRICE >= 15.25 AND PRICE <= 27.75;"
       },
       {
        "type": "p",
@@ -390,7 +390,7 @@
        "type": "sandbox",
        "seed": "staywell_full",
        "starter": "-- StayWell's leasing office wants every room renting from 450 through 610 a month.\nSELECT PROPERTY_ID, ROOM_NUM, ROOM_TYPE, MONTHLY_RENT\nFROM ROOM\nWHERE MONTHLY_RENT BETWEEN 450 AND 610;\n\n-- Your turn: rewrite the condition using >= and <= and confirm you get the same rooms.",
-       "solution": "SELECT PROPERTY_ID, ROOM_NUM, ROOM_TYPE, MONTHLY_RENT\nFROM ROOM\nWHERE MONTHLY_RENT >= 450 AND MONTHLY_RENT <= 610;",
+       "solution": "-- SELECT: four columns from StayWell's room table.\nSELECT PROPERTY_ID, ROOM_NUM, ROOM_TYPE, MONTHLY_RENT\nFROM ROOM\n-- Two comparisons joined by AND, each using >= or <= so both endpoints count.\n-- BETWEEN 450 AND 610 would say exactly the same thing in fewer characters.\nWHERE MONTHLY_RENT >= 450 AND MONTHLY_RENT <= 610;",
        "hint": "Four of the five rooms qualify; only the 725.00 studio in Sycamore Court falls outside the window. The rents print as 595 and 450 here, without the trailing zeros."
       },
       {
@@ -409,7 +409,7 @@
       },
       {
        "type": "code",
-       "text": "SELECT ITEM_ID, DESCRIPTION, ON_HAND * PRICE AS ON_HAND_VALUE\nFROM ITEM;"
+       "text": "-- SELECT: two stored columns, then a computed one. ON_HAND * PRICE is worked out\n--   once for each row as the result is built; nothing is stored back in the\n--   table. AS gives the computed column the heading ON_HAND_VALUE, which is\n--   worth doing - without it the heading is the arithmetic itself.\nSELECT ITEM_ID, DESCRIPTION, ON_HAND * PRICE AS ON_HAND_VALUE\n\n-- FROM: the table supplying both columns being multiplied.\nFROM ITEM;"
       },
       {
        "type": "table",
@@ -475,7 +475,7 @@
       },
       {
        "type": "code",
-       "text": "SELECT CUSTOMER_NUM, CUSTOMER_NAME, CREDIT_LIMIT - BALANCE AS AVAILABLE_CREDIT\nFROM CUSTOMER;"
+       "text": "-- SELECT: two stored columns plus a subtraction. The calculation answers a\n--   question the table never stored: how much of the credit limit is still free.\nSELECT CUSTOMER_NUM, CUSTOMER_NAME, CREDIT_LIMIT - BALANCE AS AVAILABLE_CREDIT\n\n-- FROM: the table holding both of the columns being subtracted.\nFROM CUSTOMER;"
       },
       {
        "type": "p",
@@ -493,7 +493,7 @@
        "type": "sandbox",
        "seed": "kimtay_full",
        "starter": "-- Stock value per item, calculated on the fly.\nSELECT ITEM_ID, DESCRIPTION, ON_HAND * PRICE AS ON_HAND_VALUE\nFROM ITEM;\n\n-- Your turn: write a query on CUSTOMER that shows CUSTOMER_NUM and\n-- the credit still available (CREDIT_LIMIT minus BALANCE), keeping only\n-- the customers with more than 3900 available.",
-       "solution": "SELECT CUSTOMER_NUM, CREDIT_LIMIT - BALANCE AS AVAILABLE_CREDIT\nFROM CUSTOMER\nWHERE CREDIT_LIMIT - BALANCE > 3900;",
+       "solution": "-- SELECT: a computed column. The subtraction runs once per row and AS names it.\nSELECT CUSTOMER_NUM, CREDIT_LIMIT - BALANCE AS AVAILABLE_CREDIT\nFROM CUSTOMER\n-- The calculation is repeated here rather than reusing AVAILABLE_CREDIT: WHERE is\n-- evaluated before the SELECT list, so the alias does not exist yet.\nWHERE CREDIT_LIMIT - BALANCE > 3900;",
        "hint": "Two customers qualify. Repeat the whole expression in the WHERE clause instead of using the alias, so the query also runs on MySQL."
       },
       {
@@ -543,7 +543,7 @@
       },
       {
        "type": "code",
-       "text": "SELECT CUSTOMER_NUM, CUSTOMER_NAME, STREET\nFROM CUSTOMER\nWHERE STREET LIKE '%St.';"
+       "text": "-- SELECT: three columns, STREET included so the pattern match is visible.\nSELECT CUSTOMER_NUM, CUSTOMER_NAME, STREET\n\n-- FROM: the table being read.\nFROM CUSTOMER\n\n-- WHERE: LIKE matches a pattern instead of an exact value. % stands for any run\n--   of characters, including none, so '%St.' means \"anything, ending in St.\".\n--   LIKE is for text only, and it is slower than = because every row's value has\n--   to be examined character by character.\nWHERE STREET LIKE '%St.';"
       },
       {
        "type": "p",
@@ -551,7 +551,7 @@
       },
       {
        "type": "code",
-       "text": "SELECT ITEM_ID, DESCRIPTION\nFROM ITEM\nWHERE DESCRIPTION LIKE '%Kit';"
+       "text": "-- SELECT: the id and the description being matched.\nSELECT ITEM_ID, DESCRIPTION\n\n-- FROM: the table being read.\nFROM ITEM\n\n-- WHERE: the same trailing-% pattern applied to product names - anything that\n--   ends in the word Kit. Two of the five items do.\nWHERE DESCRIPTION LIKE '%Kit';"
       },
       {
        "type": "p",
@@ -559,7 +559,7 @@
       },
       {
        "type": "code",
-       "text": "SELECT ITEM_ID, DESCRIPTION\nFROM ITEM\nWHERE ITEM_ID LIKE '_F__';"
+       "text": "-- SELECT: the id and the description.\nSELECT ITEM_ID, DESCRIPTION\n\n-- FROM: the table being read.\nFROM ITEM\n\n-- WHERE: the other wildcard. _ stands for EXACTLY ONE character, so '_F__' means\n--   a four-character id whose second character is F, with any characters in the\n--   other three positions. FT88 does not qualify - its F is in position one.\nWHERE ITEM_ID LIKE '_F__';"
       },
       {
        "type": "p",
@@ -575,7 +575,7 @@
        "type": "sandbox",
        "seed": "kimtay_full",
        "starter": "-- Customers whose street address ends in St.\nSELECT CUSTOMER_NUM, CUSTOMER_NAME, STREET\nFROM CUSTOMER\nWHERE STREET LIKE '%St.';\n\n-- Your turn: change the pattern to find streets that contain Ave. anywhere.",
-       "solution": "SELECT CUSTOMER_NUM, CUSTOMER_NAME, STREET\nFROM CUSTOMER\nWHERE STREET LIKE '%Ave.%';",
+       "solution": "SELECT CUSTOMER_NUM, CUSTOMER_NAME, STREET\nFROM CUSTOMER\n-- LIKE matches a pattern. % stands for any run of characters, so a % on both\n-- sides means the word may appear anywhere inside the street.\nWHERE STREET LIKE '%Ave.%';",
        "hint": "One customer qualifies. A percent sign on both sides is what says anywhere in the value, rather than only at the end."
       },
       {
@@ -588,7 +588,7 @@
       },
       {
        "type": "code",
-       "text": "SELECT CUSTOMER_NUM, CUSTOMER_NAME, CITY\nFROM CUSTOMER\nWHERE CITY IN ('Maple Grove', 'Brookville');"
+       "text": "-- SELECT: three columns, CITY included so the membership test can be checked.\nSELECT CUSTOMER_NUM, CUSTOMER_NAME, CITY\n\n-- FROM: the table being read.\nFROM CUSTOMER\n\n-- WHERE: IN is a membership test - true when the row's CITY equals ANY value in\n--   the parenthesised list. The list can be as long as you like, and each value\n--   is separated by a comma.\nWHERE CITY IN ('Maple Grove', 'Brookville');"
       },
       {
        "type": "p",
@@ -596,7 +596,7 @@
       },
       {
        "type": "code",
-       "text": "SELECT CUSTOMER_NUM, CUSTOMER_NAME, CITY\nFROM CUSTOMER\nWHERE CITY = 'Maple Grove' OR CITY = 'Brookville';"
+       "text": "-- SELECT: the same three columns as the IN version above.\nSELECT CUSTOMER_NUM, CUSTOMER_NAME, CITY\n\n-- FROM: the same table.\nFROM CUSTOMER\n\n-- WHERE: exactly what IN means, written out as separate equality tests joined by\n--   OR. Identical rows come back. IN is simply shorter, and stays readable when\n--   the list grows to ten values instead of two.\nWHERE CITY = 'Maple Grove' OR CITY = 'Brookville';"
       },
       {
        "type": "p",
@@ -614,7 +614,7 @@
       },
       {
        "type": "code",
-       "text": "SELECT ITEM_ID, CATEGORY\nFROM ITEM\nWHERE CATEGORY NOT IN ('Habitat', 'Food');"
+       "text": "-- SELECT: the id and the category being tested.\nSELECT ITEM_ID, CATEGORY\n\n-- FROM: the table being read.\nFROM ITEM\n\n-- WHERE: NOT IN keeps a row whose value matches NONE of the listed values. It is\n--   the reverse of IN, and the same as writing CATEGORY <> 'Habitat' AND\n--   CATEGORY <> 'Food'.\nWHERE CATEGORY NOT IN ('Habitat', 'Food');"
       },
       {
        "type": "p",
@@ -624,7 +624,7 @@
        "type": "sandbox",
        "seed": "kimtay_full",
        "starter": "-- Items in either of two categories, written the long way.\nSELECT ITEM_ID, DESCRIPTION, CATEGORY\nFROM ITEM\nWHERE CATEGORY = 'Food' OR CATEGORY = 'Grooming';\n\n-- Your turn: rewrite the condition with IN and confirm the rows are the same.",
-       "solution": "SELECT ITEM_ID, DESCRIPTION, CATEGORY\nFROM ITEM\nWHERE CATEGORY IN ('Food', 'Grooming');",
+       "solution": "SELECT ITEM_ID, DESCRIPTION, CATEGORY\nFROM ITEM\n-- IN is a membership test - true when CATEGORY equals any value in the list.\n-- The same thing as CATEGORY = 'Food' OR CATEGORY = 'Grooming', but shorter.\nWHERE CATEGORY IN ('Food', 'Grooming');",
        "hint": "Two rows either way, CF21 and GR15. If you get five rows, check that the list is inside one pair of parentheses."
       },
       {
@@ -1229,7 +1229,7 @@
       },
       {
        "type": "code",
-       "text": "SELECT CUSTOMER_NUM, CUSTOMER_NAME, BALANCE\nFROM CUSTOMER\nORDER BY CUSTOMER_NAME;"
+       "text": "-- SELECT: three columns.\nSELECT CUSTOMER_NUM, CUSTOMER_NAME, BALANCE\n\n-- FROM: the table being read.\nFROM CUSTOMER\n\n-- ORDER BY: sorts the finished result. Without it a database makes no promise at\n--   all about row order, so any report anybody is going to read needs one. Text\n--   sorts alphabetically, and ascending is the default.\nORDER BY CUSTOMER_NAME;"
       },
       {
        "type": "p",
@@ -1284,7 +1284,7 @@
       },
       {
        "type": "code",
-       "text": "SELECT ITEM_ID, DESCRIPTION, PRICE\nFROM ITEM\nORDER BY PRICE DESC;"
+       "text": "-- SELECT: three columns.\nSELECT ITEM_ID, DESCRIPTION, PRICE\n\n-- FROM: the table being read.\nFROM ITEM\n\n-- ORDER BY: DESC reverses the sort, putting the largest value first - the usual\n--   choice for \"most expensive\", \"biggest total\", \"newest\". ASC is the default\n--   and rarely needs writing.\nORDER BY PRICE DESC;"
       },
       {
        "type": "p",
@@ -1310,7 +1310,7 @@
       },
       {
        "type": "code",
-       "text": "SELECT ITEM_ID, DESCRIPTION, ON_HAND\nFROM ITEM\nWHERE ON_HAND > 20\nORDER BY ON_HAND DESC;"
+       "text": "-- SELECT: three columns.\nSELECT ITEM_ID, DESCRIPTION, ON_HAND\n\n-- FROM: the table being read.\nFROM ITEM\n\n-- WHERE: filters first - only well-stocked items get through.\nWHERE ON_HAND > 20\n\n-- ORDER BY: sorts what survived the filter. Order of clauses matters: WHERE\n--   always comes before ORDER BY, and ORDER BY is always last.\nORDER BY ON_HAND DESC;"
       },
       {
        "type": "p",
@@ -1326,7 +1326,7 @@
        "type": "sandbox",
        "seed": "kimtay_full",
        "starter": "SELECT CUSTOMER_NUM, CUSTOMER_NAME, BALANCE\nFROM CUSTOMER\nWHERE BALANCE > 1000\nORDER BY BALANCE;",
-       "solution": "SELECT CUSTOMER_NUM, CUSTOMER_NAME, BALANCE\nFROM CUSTOMER\nWHERE BALANCE > 1000\nORDER BY BALANCE DESC;",
+       "solution": "SELECT CUSTOMER_NUM, CUSTOMER_NAME, BALANCE\nFROM CUSTOMER\n-- WHERE filters first...\nWHERE BALANCE > 1000\n-- ...then ORDER BY sorts whatever survived. DESC puts the largest first.\nORDER BY BALANCE DESC;",
        "hint": "Run it as written (1225, 1120, 1420), then add DESC so the largest balance is on top."
       },
       {
@@ -1339,7 +1339,7 @@
       },
       {
        "type": "code",
-       "text": "SELECT CUSTOMER_NAME, CITY, BALANCE\nFROM CUSTOMER\nORDER BY CITY, CUSTOMER_NAME;"
+       "text": "-- SELECT: three columns.\nSELECT CUSTOMER_NAME, CITY, BALANCE\n\n-- FROM: the table being read.\nFROM CUSTOMER\n\n-- ORDER BY: two sort keys. CITY is the major key and decides the overall order;\n--   CUSTOMER_NAME is the minor key and only breaks ties inside one city. Swap\n--   them and you get a different report.\nORDER BY CITY, CUSTOMER_NAME;"
       },
       {
        "type": "p",
@@ -1388,7 +1388,7 @@
       },
       {
        "type": "code",
-       "text": "SELECT CUSTOMER_NAME, CITY, BALANCE\nFROM CUSTOMER\nORDER BY CITY DESC, BALANCE DESC;"
+       "text": "-- SELECT: three columns.\nSELECT CUSTOMER_NAME, CITY, BALANCE\n\n-- FROM: the table being read.\nFROM CUSTOMER\n\n-- ORDER BY: DESC attaches to one column, not to the whole clause, so it has to\n--   be repeated. Here both keys descend: cities in reverse alphabetical order,\n--   and inside each city the largest balance first.\nORDER BY CITY DESC, BALANCE DESC;"
       },
       {
        "type": "p",
@@ -1413,7 +1413,7 @@
       },
       {
        "type": "code",
-       "text": "SELECT PROPERTY_ID, ROOM_NUM, ROOM_TYPE, MONTHLY_RENT\nFROM ROOM\nORDER BY PROPERTY_ID, MONTHLY_RENT DESC;"
+       "text": "-- SELECT: four columns from StayWell's room table.\nSELECT PROPERTY_ID, ROOM_NUM, ROOM_TYPE, MONTHLY_RENT\n\n-- FROM: the table being read.\nFROM ROOM\n\n-- ORDER BY: mixed directions. PROPERTY_ID ascends so the properties come out in\n--   a predictable order, and within each property the rents descend - the usual\n--   shape of a grouped listing.\nORDER BY PROPERTY_ID, MONTHLY_RENT DESC;"
       },
       {
        "type": "table",
@@ -1473,7 +1473,7 @@
       },
       {
        "type": "code",
-       "text": "SELECT ITEM_ID, DESCRIPTION, ON_HAND * PRICE AS ON_HAND_VALUE\nFROM ITEM\nORDER BY ON_HAND_VALUE DESC;"
+       "text": "-- SELECT: two stored columns and one computed column named with AS.\nSELECT ITEM_ID, DESCRIPTION, ON_HAND * PRICE AS ON_HAND_VALUE\n\n-- FROM: the table being read.\nFROM ITEM\n\n-- ORDER BY: you may sort by the alias you just created. ORDER BY runs after the\n--   SELECT list has been worked out, which is why the name is available here -\n--   and why the same alias would NOT work in a WHERE clause.\nORDER BY ON_HAND_VALUE DESC;"
       },
       {
        "type": "p",
@@ -1495,7 +1495,7 @@
       },
       {
        "type": "code",
-       "text": "SELECT DESCRIPTION, CATEGORY, PRICE\nFROM ITEM\nORDER BY 2, 3 DESC;"
+       "text": "-- SELECT: three columns; their positions in this list are 1, 2 and 3.\nSELECT DESCRIPTION, CATEGORY, PRICE\n\n-- FROM: the table being read.\nFROM ITEM\n\n-- ORDER BY: sorting by column POSITION rather than name - 2 is CATEGORY and 3 is\n--   PRICE. It is legal and compact, and it is also fragile: reorder the SELECT\n--   list and the sort silently changes. Prefer names in anything you keep.\nORDER BY 2, 3 DESC;"
       },
       {
        "type": "p",
@@ -1532,7 +1532,7 @@
        "type": "sandbox",
        "seed": "staywell_full",
        "starter": "SELECT PROPERTY_ID, ROOM_NUM, MONTHLY_RENT * 9 AS ACADEMIC_YEAR_RENT\nFROM ROOM\nORDER BY PROPERTY_ID, ROOM_NUM;",
-       "solution": "SELECT PROPERTY_ID, ROOM_NUM, MONTHLY_RENT * 9 AS ACADEMIC_YEAR_RENT\nFROM ROOM\nORDER BY ACADEMIC_YEAR_RENT DESC;",
+       "solution": "-- The multiplication happens once per row, and AS names the result.\nSELECT PROPERTY_ID, ROOM_NUM, MONTHLY_RENT * 9 AS ACADEMIC_YEAR_RENT\nFROM ROOM\n-- Sorting by the alias is allowed, because ORDER BY runs after the SELECT list.\nORDER BY ACADEMIC_YEAR_RENT DESC;",
        "hint": "A StayWell room is let for a nine-month academic year; re-sort by ACADEMIC_YEAR_RENT descending so P200 201 (6525) leads and P100 102 (4050) trails."
       },
       {
@@ -1814,7 +1814,7 @@
       },
       {
        "type": "code",
-       "text": "SELECT COUNT(*)\nFROM ITEM;"
+       "text": "-- SELECT: COUNT(*) is an aggregate - it collapses many rows into one number.\n--   The * means \"count rows\", not \"count values\", so nothing can be skipped.\nSELECT COUNT(*)\n\n-- FROM: the table whose rows are being counted. One row of output comes back,\n--   whatever the size of the table.\nFROM ITEM;"
       },
       {
        "type": "p",
@@ -1826,7 +1826,7 @@
       },
       {
        "type": "code",
-       "text": "SELECT COUNT(*) AS ITEM_COUNT\nFROM ITEM\nWHERE CATEGORY = 'Habitat';"
+       "text": "-- SELECT: the same row count, given a readable heading with AS.\nSELECT COUNT(*) AS ITEM_COUNT\n\n-- FROM: the table being counted.\nFROM ITEM\n\n-- WHERE: the filter runs FIRST, and the count is taken over whatever survives.\n--   That ordering is the whole trick to aggregates: filter, then aggregate.\nWHERE CATEGORY = 'Habitat';"
       },
       {
        "type": "p",
@@ -1838,7 +1838,7 @@
       },
       {
        "type": "code",
-       "text": "SELECT COUNT(*) AS ALL_ROWS, COUNT(REP_NUM) AS WITH_A_REP\nFROM CUSTOMER;"
+       "text": "-- SELECT: two counts side by side, and they answer different questions.\n--   COUNT(*) counts ROWS. COUNT(REP_NUM) counts VALUES in that column, skipping\n--   any row where it is null. Equal numbers mean no nulls; a gap between them is\n--   how you discover nulls you did not know about.\nSELECT COUNT(*) AS ALL_ROWS, COUNT(REP_NUM) AS WITH_A_REP\n\n-- FROM: the table being counted. Every shipped row is filled in, so both read 4.\nFROM CUSTOMER;"
       },
       {
        "type": "p",
@@ -1867,7 +1867,7 @@
        "type": "sandbox",
        "seed": "kimtay_full",
        "starter": "-- Step 1: run this as it stands. Both counts come back as 4.\n-- Step 2: delete the two dashes in front of the UPDATE line, run it again,\n--         and watch WITH_A_REP drop to 3 while ALL_ROWS stays at 4.\n-- UPDATE CUSTOMER SET REP_NUM = NULL WHERE CUSTOMER_NUM = '1310';\nSELECT COUNT(*) AS ALL_ROWS, COUNT(REP_NUM) AS WITH_A_REP\nFROM CUSTOMER;",
-       "solution": "UPDATE CUSTOMER SET REP_NUM = NULL WHERE CUSTOMER_NUM = '1310';\nSELECT COUNT(*) AS ALL_ROWS, COUNT(REP_NUM) AS WITH_A_REP\nFROM CUSTOMER;",
+       "solution": "-- Create a null to study: this clears one customer's rep, it does not delete the row.\nUPDATE CUSTOMER SET REP_NUM = NULL WHERE CUSTOMER_NUM = '1310';\n-- COUNT(*) counts ROWS and COUNT(column) counts VALUES, skipping nulls. The gap\n-- between the two numbers is exactly how many rows have no rep recorded.\nSELECT COUNT(*) AS ALL_ROWS, COUNT(REP_NUM) AS WITH_A_REP\nFROM CUSTOMER;",
        "hint": "Both statements run together, and only the SELECT prints a result. Press Reset when you are done -- it reloads the original KimTay data with the rep number back in place."
       },
       {
@@ -1880,7 +1880,7 @@
       },
       {
        "type": "code",
-       "text": "SELECT SUM(BALANCE) AS TOTAL_OWED\nFROM CUSTOMER;"
+       "text": "-- SELECT: SUM adds up the values in one column across every row it is given.\n--   It only makes sense on numbers - there is nothing to add in a city name.\nSELECT SUM(BALANCE) AS TOTAL_OWED\n\n-- FROM: the table supplying the rows. One number comes back.\nFROM CUSTOMER;"
       },
       {
        "type": "p",
@@ -1888,7 +1888,7 @@
       },
       {
        "type": "code",
-       "text": "SELECT SUM(BALANCE) AS OWED_TO_REP_20\nFROM CUSTOMER\nWHERE REP_NUM = '20';"
+       "text": "-- SELECT: the same total, over a smaller set of rows.\nSELECT SUM(BALANCE) AS OWED_TO_REP_20\n\n-- FROM: the table being read.\nFROM CUSTOMER\n\n-- WHERE: applied before the SUM, so only rep 20's customers are added together.\n--   Change the WHERE and the single number changes with it.\nWHERE REP_NUM = '20';"
       },
       {
        "type": "p",
@@ -1931,7 +1931,7 @@
       },
       {
        "type": "code",
-       "text": "SELECT AVG(PRICE) AS AVG_PRICE,\n       MAX(PRICE) AS HIGHEST,\n       MIN(PRICE) AS LOWEST\nFROM ITEM;"
+       "text": "-- SELECT: three aggregates in one statement, each over the same column.\n--   AVG is the mean of the values.\nSELECT AVG(PRICE) AS AVG_PRICE,\n\n--   MAX is the largest value present - not a calculation, just a pick.\n       MAX(PRICE) AS HIGHEST,\n\n--   MIN is the smallest. All three collapse the whole table to one row, so the\n--   output is one row with three columns.\n       MIN(PRICE) AS LOWEST\n\n-- FROM: the table all three are computed over.\nFROM ITEM;"
       },
       {
        "type": "p",
@@ -1953,7 +1953,7 @@
       },
       {
        "type": "code",
-       "text": "SELECT MIN(INVOICE_DATE) AS FIRST_INVOICE,\n       MAX(INVOICE_DATE) AS LAST_INVOICE\nFROM INVOICE;"
+       "text": "-- SELECT: MIN and MAX are not restricted to numbers. On a DATE column they give\n--   the earliest date...\nSELECT MIN(INVOICE_DATE) AS FIRST_INVOICE,\n\n--   ...and the latest one. This works because the column is a real DATE type; on\n--   dates stored as text it would only work by luck of the format.\n       MAX(INVOICE_DATE) AS LAST_INVOICE\n\n-- FROM: the table being read.\nFROM INVOICE;"
       },
       {
        "type": "p",
@@ -1975,7 +1975,7 @@
       },
       {
        "type": "code",
-       "text": "SELECT CITY\nFROM CUSTOMER;"
+       "text": "-- SELECT: one column, with no filtering and no de-duplication.\nSELECT CITY\n\n-- FROM: the table being read. One row comes back per CUSTOMER row, so a city\n--   used by two customers is printed twice. That repetition is the problem the\n--   next query solves.\nFROM CUSTOMER;"
       },
       {
        "type": "p",
@@ -1983,7 +1983,7 @@
       },
       {
        "type": "code",
-       "text": "SELECT DISTINCT CITY\nFROM CUSTOMER\nORDER BY CITY;"
+       "text": "-- SELECT: DISTINCT removes duplicate ROWS from the result - it is not a function\n--   attached to the column, but a keyword applied to the whole SELECT list.\nSELECT DISTINCT CITY\n\n-- FROM: the table being read.\nFROM CUSTOMER\n\n-- ORDER BY: sorts what is left. De-duplication happens first, sorting afterwards.\nORDER BY CITY;"
       },
       {
        "type": "p",
@@ -1995,7 +1995,7 @@
       },
       {
        "type": "code",
-       "text": "SELECT DISTINCT CITY, STATE\nFROM CUSTOMER\nORDER BY CITY;"
+       "text": "-- SELECT: DISTINCT applies to the COMBINATION of every listed column, not to\n--   each column separately. Two rows are duplicates only when the city and the\n--   state both match, so this returns distinct city-and-state pairs.\nSELECT DISTINCT CITY, STATE\n\n-- FROM: the table being read.\nFROM CUSTOMER\n\n-- ORDER BY: sorts the surviving pairs by city.\nORDER BY CITY;"
       },
       {
        "type": "p",
@@ -2007,7 +2007,7 @@
       },
       {
        "type": "code",
-       "text": "SELECT COUNT(*) AS ALL_ROWS,\n       COUNT(CITY) AS CITY_VALUES,\n       COUNT(DISTINCT CITY) AS DIFFERENT_CITIES\nFROM CUSTOMER;"
+       "text": "-- SELECT: three counts that answer three different questions.\n--   COUNT(*) counts rows, regardless of what is in them.\nSELECT COUNT(*) AS ALL_ROWS,\n\n--   COUNT(CITY) counts non-null values in that column - rows with no city are\n--     skipped entirely.\n       COUNT(CITY) AS CITY_VALUES,\n\n--   COUNT(DISTINCT CITY) counts how many DIFFERENT cities appear. Reading the\n--     three side by side tells you about nulls and about repetition at once.\n       COUNT(DISTINCT CITY) AS DIFFERENT_CITIES\n\n-- FROM: the table all three are computed over.\nFROM CUSTOMER;"
       },
       {
        "type": "p",
@@ -2015,7 +2015,7 @@
       },
       {
        "type": "code",
-       "text": "SELECT COUNT(*) AS LINE_COUNT,\n       COUNT(DISTINCT INVOICE_NUM) AS INVOICES,\n       COUNT(DISTINCT ITEM_ID) AS ITEMS\nFROM INVOICE_LINE;"
+       "text": "-- SELECT: the same three shapes of count, pointed at the line-item table.\n--   How many invoice lines exist in total.\nSELECT COUNT(*) AS LINE_COUNT,\n\n--   How many different invoices those lines belong to.\n       COUNT(DISTINCT INVOICE_NUM) AS INVOICES,\n\n--   How many different items were ordered. Six lines can cover three invoices and\n--     five items at the same time, which is exactly what these numbers show.\n       COUNT(DISTINCT ITEM_ID) AS ITEMS\n\n-- FROM: the table being read.\nFROM INVOICE_LINE;"
       },
       {
        "type": "p",
@@ -2088,7 +2088,7 @@
        "type": "sandbox",
        "seed": "kimtay_full",
        "starter": "-- ITEM holds 5 rows. Answer three questions, one query at a time.\n-- 1. How many different categories are there? (written for you)\n-- 2. How many Habitat items are there, and what do they average in price?\n-- 3. How many units are on hand across all items, and what are the highest\n--    and lowest prices in the catalog?\nSELECT COUNT(DISTINCT CATEGORY) AS DIFFERENT_CATEGORIES\nFROM ITEM;",
-       "solution": "SELECT COUNT(DISTINCT CATEGORY) AS DIFFERENT_CATEGORIES\nFROM ITEM;\n\nSELECT COUNT(*) AS HABITAT_ITEMS, AVG(PRICE) AS AVG_HABITAT_PRICE\nFROM ITEM\nWHERE CATEGORY = 'Habitat';\n\nSELECT SUM(ON_HAND) AS UNITS_ON_HAND,\n       MAX(PRICE) AS HIGHEST_PRICE,\n       MIN(PRICE) AS LOWEST_PRICE\nFROM ITEM;",
+       "solution": "-- COUNT(DISTINCT column): how many DIFFERENT values appear, not how many rows.\nSELECT COUNT(DISTINCT CATEGORY) AS DIFFERENT_CATEGORIES\nFROM ITEM;\n\n-- Two aggregates over the same filtered rows. The WHERE runs first, so both\n-- numbers describe the habitat items only.\nSELECT COUNT(*) AS HABITAT_ITEMS, AVG(PRICE) AS AVG_HABITAT_PRICE\nFROM ITEM\nWHERE CATEGORY = 'Habitat';\n\n-- SUM adds the values in a column; MAX and MIN simply pick the largest and\n-- smallest. All three collapse the whole table into one row.\nSELECT SUM(ON_HAND) AS UNITS_ON_HAND,\n       MAX(PRICE) AS HIGHEST_PRICE,\n       MIN(PRICE) AS LOWEST_PRICE\nFROM ITEM;",
        "hint": "Question 2 needs a WHERE clause; question 3 needs three functions in one SELECT list."
       },
       {
@@ -2413,7 +2413,7 @@
       },
       {
        "type": "code",
-       "text": "SELECT ITEM_ID, DESCRIPTION\nFROM ITEM\nWHERE PRICE > AVG(PRICE);"
+       "text": "-- GOAL: a deliberate error, and the most common one in this lesson.\n-- SELECT: two ordinary columns.\nSELECT ITEM_ID, DESCRIPTION\n\n-- FROM: the table being read.\nFROM ITEM\n\n-- WHERE: BROKEN. An aggregate cannot appear in a WHERE clause. WHERE is tested\n--   one row at a time, while AVG(PRICE) needs the whole table before it can\n--   produce a number, so the engine is being asked to use an answer that does\n--   not exist yet. SQLite says \"misuse of aggregate function AVG()\". The fix is\n--   to work the average out first, in a subquery.\nWHERE PRICE > AVG(PRICE);"
       },
       {
        "type": "p",
@@ -2435,7 +2435,7 @@
       },
       {
        "type": "code",
-       "text": "SELECT AVG(PRICE)\nFROM ITEM;"
+       "text": "-- SELECT: step 1 of the fix - work out the average on its own, and look at it.\n--   Run any subquery by itself before nesting it, so you know what it returns.\nSELECT AVG(PRICE)\n\n-- FROM: the table being averaged. One row, one column, one number.\nFROM ITEM;"
       },
       {
        "type": "p",
@@ -2447,7 +2447,7 @@
       },
       {
        "type": "code",
-       "text": "SELECT ITEM_ID, DESCRIPTION, PRICE\nFROM ITEM\nWHERE PRICE > (SELECT AVG(PRICE) FROM ITEM)\nORDER BY PRICE DESC;"
+       "text": "-- SELECT: three columns, PRICE included so the comparison can be checked by eye.\nSELECT ITEM_ID, DESCRIPTION, PRICE\n\n-- FROM: the table being read.\nFROM ITEM\n\n-- WHERE: the subquery in parentheses runs FIRST and collapses to a single number,\n--   the average price. The outer WHERE then compares each row against that one\n--   value. Because the subquery is an aggregate over the whole table, it is\n--   guaranteed to return exactly one row, which is what makes = or > safe here.\nWHERE PRICE > (SELECT AVG(PRICE) FROM ITEM)\n\n-- ORDER BY: sorts the survivors, dearest first.\nORDER BY PRICE DESC;"
       },
       {
        "type": "table",
@@ -2496,7 +2496,7 @@
       },
       {
        "type": "code",
-       "text": "SELECT CATEGORY\nFROM ITEM\nWHERE ITEM_ID = 'FT88';"
+       "text": "-- SELECT: step 1 again - find the value you are going to compare against.\nSELECT CATEGORY\n\n-- FROM: the table being read.\nFROM ITEM\n\n-- WHERE: filtering on the PRIMARY KEY, so at most one row can come back. That\n--   guarantee is what will make it safe to use this query with = in a moment.\nWHERE ITEM_ID = 'FT88';"
       },
       {
        "type": "p",
@@ -2504,7 +2504,7 @@
       },
       {
        "type": "code",
-       "text": "SELECT ITEM_ID, DESCRIPTION, PRICE\nFROM ITEM\nWHERE CATEGORY = (SELECT CATEGORY FROM ITEM WHERE ITEM_ID = 'FT88')\nORDER BY ITEM_ID;"
+       "text": "-- SELECT: three columns.\nSELECT ITEM_ID, DESCRIPTION, PRICE\n\n-- FROM: the table being read.\nFROM ITEM\n\n-- WHERE: the subquery finds FT88's category, and the outer query keeps every item\n--   in that same category - FT88 itself included. = is safe here only because the\n--   subquery filters on a primary key and so cannot return two rows.\nWHERE CATEGORY = (SELECT CATEGORY FROM ITEM WHERE ITEM_ID = 'FT88')\n\n-- ORDER BY: sorts the result by item id.\nORDER BY ITEM_ID;"
       },
       {
        "type": "table",
@@ -2537,7 +2537,7 @@
        "type": "sandbox",
        "seed": "kimtay_full",
        "starter": "SELECT CUSTOMER_NUM, CUSTOMER_NAME, BALANCE\nFROM CUSTOMER\nORDER BY BALANCE DESC;",
-       "solution": "SELECT CUSTOMER_NUM, CUSTOMER_NAME, BALANCE\nFROM CUSTOMER\nWHERE BALANCE > (SELECT AVG(BALANCE) FROM CUSTOMER)\nORDER BY BALANCE DESC;",
+       "solution": "SELECT CUSTOMER_NUM, CUSTOMER_NAME, BALANCE\nFROM CUSTOMER\n-- The subquery runs first and collapses to one number, the average balance.\n-- Being an aggregate over the whole table, it can only ever return one row,\n-- which is what makes the plain > comparison safe here.\nWHERE BALANCE > (SELECT AVG(BALANCE) FROM CUSTOMER)\nORDER BY BALANCE DESC;",
        "hint": "Run it to see all four customers, then add a WHERE that compares BALANCE to a subquery over the whole table -- the four balances total 9533.25, so the average is 2383.3125 and two customers should survive."
       },
       {
@@ -2550,7 +2550,7 @@
       },
       {
        "type": "code",
-       "text": "SELECT ITEM_ID\nFROM INVOICE_LINE\nWHERE NUM_ORDERED >= 2;"
+       "text": "-- SELECT: one column, which is a requirement - a subquery used with IN or = must\n--   return exactly one column.\nSELECT ITEM_ID\n\n-- FROM: the line-item table, where quantities are recorded.\nFROM INVOICE_LINE\n\n-- WHERE: keeps the lines of two or more units. Run alone, this returns several\n--   rows, and CF21 appears twice because it was ordered in bulk on two invoices.\nWHERE NUM_ORDERED >= 2;"
       },
       {
        "type": "p",
@@ -2562,7 +2562,7 @@
       },
       {
        "type": "code",
-       "text": "SELECT ITEM_ID, DESCRIPTION, ON_HAND\nFROM ITEM\nWHERE ITEM_ID IN (SELECT ITEM_ID FROM INVOICE_LINE WHERE NUM_ORDERED >= 2)\nORDER BY ITEM_ID;"
+       "text": "-- SELECT: three columns from the item table.\nSELECT ITEM_ID, DESCRIPTION, ON_HAND\n\n-- FROM: the table being read.\nFROM ITEM\n\n-- WHERE: IN handles a subquery returning MANY rows - read it as \"keep this item\n--   if its id is one of the ids the inner query found\". Duplicates in that inner\n--   list are harmless, because each item is tested once and either matches or\n--   does not.\nWHERE ITEM_ID IN (SELECT ITEM_ID FROM INVOICE_LINE WHERE NUM_ORDERED >= 2)\n\n-- ORDER BY: sorts the result by item id.\nORDER BY ITEM_ID;"
       },
       {
        "type": "table",
@@ -2604,7 +2604,7 @@
       },
       {
        "type": "code",
-       "text": "SELECT ITEM_ID, DESCRIPTION\nFROM ITEM\nWHERE ITEM_ID = (SELECT ITEM_ID FROM INVOICE_LINE WHERE NUM_ORDERED >= 2);"
+       "text": "-- GOAL: the classic error - the previous query written with = instead of IN.\n-- SELECT: two columns.\nSELECT ITEM_ID, DESCRIPTION\n\n-- FROM: the table being read.\nFROM ITEM\n\n-- WHERE: BROKEN. = compares one value against ONE other value, and the subquery\n--   here returns several rows. MySQL refuses the statement outright (error 1242,\n--   \"Subquery returns more than 1 row\"). SQLite, the engine on this page, does\n--   not complain at all - it keeps whichever value came back first and quietly\n--   answers the wrong question, which is far more dangerous. Use = only when the\n--   subquery is an aggregate or filters on a key; otherwise use IN.\nWHERE ITEM_ID = (SELECT ITEM_ID FROM INVOICE_LINE WHERE NUM_ORDERED >= 2);"
       },
       {
        "type": "callout",
@@ -2650,7 +2650,7 @@
        "type": "sandbox",
        "seed": "staywell_full",
        "starter": "SELECT PROPERTY_ID\nFROM ROOM\nWHERE ROOM_TYPE = 'Double';",
-       "solution": "SELECT PROPERTY_ID, PROPERTY_NAME\nFROM PROPERTY\nWHERE PROPERTY_ID IN (SELECT PROPERTY_ID FROM ROOM WHERE ROOM_TYPE = 'Double')\nORDER BY PROPERTY_ID;",
+       "solution": "SELECT PROPERTY_ID, PROPERTY_NAME\nFROM PROPERTY\n-- The subquery returns MANY property ids, so the test has to be IN and not =.\n-- Read it as: keep this property if its id is one of the ids the inner query found.\nWHERE PROPERTY_ID IN (SELECT PROPERTY_ID FROM ROOM WHERE ROOM_TYPE = 'Double')\nORDER BY PROPERTY_ID;",
        "hint": "The inner query returns two property IDs, P100 and P200, because each property has one Double room. Nest it inside a query on PROPERTY to name both buildings, then swap IN for = and watch this engine hand back Millbrook Commons on its own."
       },
       {
@@ -2909,7 +2909,7 @@
       },
       {
        "type": "code",
-       "text": "SELECT CATEGORY, COUNT(*) AS ITEM_COUNT, AVG(PRICE) AS AVG_PRICE\nFROM ITEM\nGROUP BY CATEGORY;"
+       "text": "-- SELECT: the grouping column, then two aggregates. Each aggregate is now\n--   computed once PER GROUP rather than once over the whole table.\nSELECT CATEGORY, COUNT(*) AS ITEM_COUNT, AVG(PRICE) AS AVG_PRICE\n\n-- FROM: the table being read.\nFROM ITEM\n\n-- GROUP BY: sorts the rows into piles, one pile per distinct CATEGORY value, and\n--   returns one output row per pile. Four distinct categories means four rows.\nGROUP BY CATEGORY;"
       },
       {
        "type": "table",
@@ -2958,7 +2958,7 @@
       },
       {
        "type": "code",
-       "text": "SELECT INVOICE_NUM, SUM(NUM_ORDERED * QUOTED_PRICE) AS INVOICE_TOTAL\nFROM INVOICE_LINE\nGROUP BY INVOICE_NUM\nORDER BY INVOICE_TOTAL DESC;"
+       "text": "-- SELECT: the grouping column, then an aggregate over a calculation. The\n--   multiplication happens per line, and SUM adds those line values within the\n--   group - so the arithmetic runs before the aggregation, as you would expect.\nSELECT INVOICE_NUM, SUM(NUM_ORDERED * QUOTED_PRICE) AS INVOICE_TOTAL\n\n-- FROM: the line-item table - six rows, before grouping.\nFROM INVOICE_LINE\n\n-- GROUP BY: one pile per invoice number, so six lines become three totals.\nGROUP BY INVOICE_NUM\n\n-- ORDER BY: sorts the summary rows, largest total first. Sorting by the alias is\n--   allowed because ORDER BY runs last of all.\nORDER BY INVOICE_TOTAL DESC;"
       },
       {
        "type": "table",
@@ -2990,7 +2990,7 @@
        "type": "sandbox",
        "seed": "kimtay_full",
        "starter": "-- One row per category, with a count:\nSELECT CATEGORY, COUNT(*) AS ITEM_COUNT\nFROM ITEM\nGROUP BY CATEGORY;\n\n-- Your turn: keep the count, add the cheapest and the dearest price\n-- in each category, and sort so the biggest category comes first.\n",
-       "solution": "SELECT CATEGORY, COUNT(*) AS ITEM_COUNT, MIN(PRICE) AS LOWEST, MAX(PRICE) AS HIGHEST\nFROM ITEM\nGROUP BY CATEGORY\nORDER BY ITEM_COUNT DESC, CATEGORY;",
+       "solution": "-- The grouping column, then three aggregates computed once PER GROUP.\nSELECT CATEGORY, COUNT(*) AS ITEM_COUNT, MIN(PRICE) AS LOWEST, MAX(PRICE) AS HIGHEST\nFROM ITEM\n-- GROUP BY sorts the rows into piles, one pile per distinct category.\nGROUP BY CATEGORY\n-- Two sort keys: biggest count first, then category name to break ties.\nORDER BY ITEM_COUNT DESC, CATEGORY;",
        "hint": "MIN and MAX group the same way COUNT does. Expect Habitat first with 2, 27.75 and 64.99, then the three single-item categories, where the lowest and the highest are the same price."
       },
       {
@@ -3007,7 +3007,7 @@
       },
       {
        "type": "code",
-       "text": "SELECT CATEGORY, DESCRIPTION, COUNT(*) AS ITEM_COUNT\nFROM ITEM\nGROUP BY CATEGORY;"
+       "text": "-- GOAL: a deliberate error, and the rule that catches everybody.\n-- SELECT: BROKEN. Every column here must either appear in GROUP BY or sit inside\n--   an aggregate. CATEGORY is grouped and COUNT(*) is aggregated, but DESCRIPTION\n--   is neither. The Habitat pile holds two rows with two different descriptions,\n--   and the query has asked for one - there is no correct answer to give.\nSELECT CATEGORY, DESCRIPTION, COUNT(*) AS ITEM_COUNT\n\n-- FROM: the table being read.\nFROM ITEM\n\n-- GROUP BY: one pile per category. MySQL rejects the whole statement because of\n--   its ONLY_FULL_GROUP_BY setting; SQLite runs it and picks a description at\n--   random from the pile, which is worse - a wrong answer with no warning.\nGROUP BY CATEGORY;"
       },
       {
        "type": "p",
@@ -3025,7 +3025,7 @@
       },
       {
        "type": "code",
-       "text": "SELECT CATEGORY, DESCRIPTION, COUNT(*) AS ITEM_COUNT\nFROM ITEM\nGROUP BY CATEGORY, DESCRIPTION\nORDER BY CATEGORY, DESCRIPTION;"
+       "text": "-- SELECT: the same three columns, now legal, because of the line below.\nSELECT CATEGORY, DESCRIPTION, COUNT(*) AS ITEM_COUNT\n\n-- FROM: the table being read.\nFROM ITEM\n\n-- GROUP BY: adding DESCRIPTION makes a pile out of each distinct CATEGORY and\n--   DESCRIPTION combination, so every column in SELECT is now either grouped or\n--   aggregated. This is the \"finer grouping\" fix; the other fix is to drop\n--   DESCRIPTION from the SELECT list and keep the coarse summary.\nGROUP BY CATEGORY, DESCRIPTION\n\n-- ORDER BY: sorts the groups for reading.\nORDER BY CATEGORY, DESCRIPTION;"
       },
       {
        "type": "h4",
@@ -3037,7 +3037,7 @@
       },
       {
        "type": "code",
-       "text": "SELECT REP_NUM, CITY, COUNT(*) AS CUSTOMER_COUNT\nFROM CUSTOMER\nGROUP BY REP_NUM, CITY\nORDER BY REP_NUM, CITY;"
+       "text": "-- SELECT: two grouping columns plus a count.\nSELECT REP_NUM, CITY, COUNT(*) AS CUSTOMER_COUNT\n\n-- FROM: the table being read.\nFROM CUSTOMER\n\n-- GROUP BY: listing two columns makes one pile per distinct COMBINATION of the\n--   two - not two separate sets of piles. This answers \"which rep covers which\n--   city, and how many customers there\", a question neither column answers alone.\nGROUP BY REP_NUM, CITY\n\n-- ORDER BY: sorts the summary rows by rep, then by city.\nORDER BY REP_NUM, CITY;"
       },
       {
        "type": "table",
@@ -3079,7 +3079,7 @@
       },
       {
        "type": "code",
-       "text": "SELECT CATEGORY, COUNT(*) AS ITEM_COUNT\nFROM ITEM\nGROUP BY CATEGORY\nHAVING COUNT(*) > 1;"
+       "text": "-- SELECT: the grouping column and a count.\nSELECT CATEGORY, COUNT(*) AS ITEM_COUNT\n\n-- FROM: the table being read.\nFROM ITEM\n\n-- GROUP BY: one pile per category.\nGROUP BY CATEGORY\n\n-- HAVING: filters the GROUPS, after they have been formed and counted. This is\n--   the one place an aggregate may appear in a condition, and it is exactly what\n--   WHERE cannot do - WHERE runs before the piles exist. Only the category\n--   holding more than one item survives.\nHAVING COUNT(*) > 1;"
       },
       {
        "type": "table",
@@ -3175,7 +3175,7 @@
       },
       {
        "type": "code",
-       "text": "SELECT REP_NUM, COUNT(*) AS CUSTOMER_COUNT\nFROM CUSTOMER\nWHERE BALANCE > 1000.00\nGROUP BY REP_NUM\nORDER BY REP_NUM;"
+       "text": "-- SELECT: the grouping column and a count.\nSELECT REP_NUM, COUNT(*) AS CUSTOMER_COUNT\n\n-- FROM: the table being read.\nFROM CUSTOMER\n\n-- WHERE: filters ROWS, before any grouping happens. Customers owing 1000.00 or\n--   less are removed here and never reach a pile at all.\nWHERE BALANCE > 1000.00\n\n-- GROUP BY: piles up whatever rows survived the WHERE, one pile per rep.\nGROUP BY REP_NUM\n\n-- ORDER BY: sorts the summary rows.\nORDER BY REP_NUM;"
       },
       {
        "type": "table",
@@ -3205,7 +3205,7 @@
       },
       {
        "type": "code",
-       "text": "SELECT REP_NUM, COUNT(*) AS CUSTOMER_COUNT\nFROM CUSTOMER\nGROUP BY REP_NUM\nHAVING SUM(BALANCE) > 1000.00\nORDER BY REP_NUM;"
+       "text": "-- SELECT: the grouping column and a count.\nSELECT REP_NUM, COUNT(*) AS CUSTOMER_COUNT\n\n-- FROM: the table being read - every row this time, with no WHERE.\nFROM CUSTOMER\n\n-- GROUP BY: one pile per rep, containing all of that rep's customers.\nGROUP BY REP_NUM\n\n-- HAVING: filters the finished piles on a total computed from every row in the\n--   pile. Note the difference from the previous query: there a customer owing\n--   nothing was thrown out before counting, here it is still counted and simply\n--   contributes 0.00 to its rep's total.\nHAVING SUM(BALANCE) > 1000.00\n\n-- ORDER BY: sorts the summary rows.\nORDER BY REP_NUM;"
       },
       {
        "type": "table",
@@ -3245,7 +3245,7 @@
       },
       {
        "type": "code",
-       "text": "SELECT REP_NUM, COUNT(*) AS CUSTOMER_COUNT, SUM(BALANCE) AS TOTAL_OWED\nFROM CUSTOMER\nWHERE BALANCE > 1000.00\nGROUP BY REP_NUM\nHAVING SUM(BALANCE) > 2000.00\nORDER BY TOTAL_OWED DESC;"
+       "text": "-- SELECT: the grouping column and two aggregates.\nSELECT REP_NUM, COUNT(*) AS CUSTOMER_COUNT, SUM(BALANCE) AS TOTAL_OWED\n\n-- FROM: the table being read.\nFROM CUSTOMER\n\n-- WHERE: step 1 - throw out individual rows. Only balances above 1000.00 go on.\nWHERE BALANCE > 1000.00\n\n-- GROUP BY: step 2 - pile up what is left, one pile per rep.\nGROUP BY REP_NUM\n\n-- HAVING: step 3 - throw out whole piles whose total is too small. WHERE and\n--   HAVING are doing different jobs in the same statement, which is the point of\n--   this example: rows first, groups second.\nHAVING SUM(BALANCE) > 2000.00\n\n-- ORDER BY: step 4 - sort what survived, largest total first.\nORDER BY TOTAL_OWED DESC;"
       },
       {
        "type": "table",
@@ -3286,7 +3286,7 @@
        "type": "sandbox",
        "seed": "staywell_full",
        "starter": "-- Every property, every room:\nSELECT PROPERTY_ID, COUNT(*) AS ROOM_COUNT, AVG(MONTHLY_RENT) AS AVG_RENT\nFROM ROOM\nGROUP BY PROPERTY_ID\nORDER BY PROPERTY_ID;\n\n-- Your turn, one clause at a time:\n--   1. count only rooms renting for more than 500.00\n--   2. keep only the properties that still have more than one such room\n--   3. sort by average rent, highest first\n",
-       "solution": "SELECT PROPERTY_ID, COUNT(*) AS ROOM_COUNT, AVG(MONTHLY_RENT) AS AVG_RENT\nFROM ROOM\nWHERE MONTHLY_RENT > 500.00\nGROUP BY PROPERTY_ID\nHAVING COUNT(*) > 1\nORDER BY AVG_RENT DESC;",
+       "solution": "SELECT PROPERTY_ID, COUNT(*) AS ROOM_COUNT, AVG(MONTHLY_RENT) AS AVG_RENT\nFROM ROOM\n-- WHERE runs FIRST and discards individual rows before any grouping happens.\nWHERE MONTHLY_RENT > 500.00\n-- GROUP BY piles up whatever survived, one pile per property.\nGROUP BY PROPERTY_ID\n-- HAVING runs LAST and discards whole piles. It is the only place an aggregate\n-- may appear in a condition, and it is what WHERE cannot do.\nHAVING COUNT(*) > 1\nORDER BY AVG_RENT DESC;",
        "hint": "The rent test is about one room row, the count test is about a finished group. The starter gives P100 with 2 rooms at 522.5 and P200 with 3 at 600; the finished query gives one row, P200 with 2 rooms at 667.5."
       },
       {
@@ -3588,7 +3588,7 @@
       },
       {
        "type": "code",
-       "text": "UPDATE STUDENT\nSET HOME_STATE = NULL\nWHERE STUDENT_ID = 'S003';\n\nSELECT STUDENT_ID, LAST_NAME, HOME_STATE\nFROM STUDENT\nORDER BY STUDENT_ID;"
+       "text": "-- UPDATE: names the table whose rows are about to change.\nUPDATE STUDENT\n\n-- SET: which column gets a new value, and what that value is. NULL is a keyword,\n--   not text - writing 'NULL' in quotes would store the four letters N-U-L-L.\nSET HOME_STATE = NULL\n\n-- WHERE: which rows are affected. Leave this line off and every student in the\n--   table loses their home state, so read it before running the statement.\nWHERE STUDENT_ID = 'S003';\n\n-- SELECT: the check. Look at the table after any change you make.\nSELECT STUDENT_ID, LAST_NAME, HOME_STATE\n\n-- FROM: the table just updated.\nFROM STUDENT\n\n-- ORDER BY: sorts the four rows so the cleared one is easy to find. S003 now\n--   prints as NULL, which is this page's way of showing \"no value recorded\".\nORDER BY STUDENT_ID;"
       },
       {
        "type": "p",
@@ -3627,7 +3627,7 @@
       },
       {
        "type": "code",
-       "text": "SELECT STUDENT_ID, LAST_NAME, HOME_STATE\nFROM STUDENT\nWHERE HOME_STATE = NULL;"
+       "text": "-- GOAL: a deliberate error, and the one every beginner writes.\n-- SELECT: three columns.\nSELECT STUDENT_ID, LAST_NAME, HOME_STATE\n\n-- FROM: the table being read.\nFROM STUDENT\n\n-- WHERE: BROKEN, though it reads like plain English. NULL is not a value, it is\n--   the absence of one, so \"equals NULL\" cannot be answered true or false - it\n--   comes back unknown. WHERE keeps a row only when the condition is TRUE, and\n--   unknown is not true, so every row is discarded, including the very row you\n--   were hunting for. No error message appears; you simply get nothing.\nWHERE HOME_STATE = NULL;"
       },
       {
        "type": "p",
@@ -3649,7 +3649,7 @@
       },
       {
        "type": "code",
-       "text": "SELECT STUDENT_ID, LAST_NAME, HOME_STATE\nFROM STUDENT\nWHERE HOME_STATE IS NULL;"
+       "text": "-- SELECT: three columns.\nSELECT STUDENT_ID, LAST_NAME, HOME_STATE\n\n-- FROM: the table being read.\nFROM STUDENT\n\n-- WHERE: IS NULL is the only test that works, because it asks about the presence\n--   of a value rather than comparing values. It is a phrase in its own right -\n--   there is no = anywhere in it.\nWHERE HOME_STATE IS NULL;"
       },
       {
        "type": "p",
@@ -3657,7 +3657,7 @@
       },
       {
        "type": "code",
-       "text": "SELECT STUDENT_ID, LAST_NAME, HOME_STATE\nFROM STUDENT\nWHERE HOME_STATE IS NOT NULL\nORDER BY STUDENT_ID;"
+       "text": "-- SELECT: three columns.\nSELECT STUDENT_ID, LAST_NAME, HOME_STATE\n\n-- FROM: the table being read.\nFROM STUDENT\n\n-- WHERE: IS NOT NULL is the mirror image - keep the rows that DO have a value.\n--   Together, IS NULL and IS NOT NULL account for every row in the table, which\n--   ordinary comparisons like <> never do.\nWHERE HOME_STATE IS NOT NULL\n\n-- ORDER BY: sorts what comes back.\nORDER BY STUDENT_ID;"
       },
       {
        "type": "p",
@@ -3710,7 +3710,7 @@
       },
       {
        "type": "code",
-       "text": "UPDATE ROOM\nSET MONTHLY_RENT = NULL\nWHERE PROPERTY_ID = 'P200' AND ROOM_NUM = '202';\n\nSELECT PROPERTY_ID, ROOM_NUM, MONTHLY_RENT, MONTHLY_RENT * 9 AS NINE_MONTH_TOTAL\nFROM ROOM\nWHERE PROPERTY_ID = 'P200'\nORDER BY ROOM_NUM;"
+       "text": "-- UPDATE: the table being changed.\nUPDATE ROOM\n\n-- SET: clear the rent, because next year's figure has not been decided yet. A\n--   null is the honest record of \"not known\"; 0 would be a lie about the price.\nSET MONTHLY_RENT = NULL\n\n-- WHERE: two conditions, because ROOM's primary key is made of two columns.\n--   Both are needed to identify exactly one room.\nWHERE PROPERTY_ID = 'P200' AND ROOM_NUM = '202';\n\n-- SELECT: the stored rent alongside a calculation that uses it. Any arithmetic\n--   touching a null produces a null, so the cleared room shows NULL in the rent\n--   column and NULL again in the total - the unknown spreads.\nSELECT PROPERTY_ID, ROOM_NUM, MONTHLY_RENT, MONTHLY_RENT * 9 AS NINE_MONTH_TOTAL\n\n-- FROM: the table just updated.\nFROM ROOM\n\n-- WHERE: narrows the report to the one property.\nWHERE PROPERTY_ID = 'P200'\n\n-- ORDER BY: sorts the three rooms by number.\nORDER BY ROOM_NUM;"
       },
       {
        "type": "p",
@@ -3732,7 +3732,7 @@
       },
       {
        "type": "code",
-       "text": "SELECT STUDENT_ID, LAST_NAME, HOME_STATE\nFROM STUDENT\nWHERE HOME_STATE <> 'OH';"
+       "text": "-- SELECT: three columns.\nSELECT STUDENT_ID, LAST_NAME, HOME_STATE\n\n-- FROM: the table being read.\nFROM STUDENT\n\n-- WHERE: an ordinary comparison with nothing to do with nulls - and it still\n--   drops the null row. S003 is missing not because that student is known to\n--   live in Ohio, but because \"unknown is not equal to OH\" cannot be answered,\n--   and WHERE keeps only what is definitely true.\nWHERE HOME_STATE <> 'OH';"
       },
       {
        "type": "p",
@@ -3744,7 +3744,7 @@
       },
       {
        "type": "code",
-       "text": "SELECT COUNT(*) AS ROOMS_OVER_500\nFROM ROOM\nWHERE MONTHLY_RENT > 500.00;\n\nSELECT COUNT(*) AS ROOMS_500_OR_LESS\nFROM ROOM\nWHERE MONTHLY_RENT <= 500.00;"
+       "text": "-- SELECT: count the rooms above the line.\nSELECT COUNT(*) AS ROOMS_OVER_500\n\n-- FROM: the table being counted.\nFROM ROOM\n\n-- WHERE: the first half of what looks like a complete split of the data.\nWHERE MONTHLY_RENT > 500.00;\n\n-- SELECT: count the rooms at or below the line.\nSELECT COUNT(*) AS ROOMS_500_OR_LESS\n\n-- FROM: the same table.\nFROM ROOM\n\n-- WHERE: the opposite condition. The two counts come to 3 and 1, but ROOM holds\n--   5 rows - the unpriced room fell out of BOTH halves, because a comparison\n--   against a null is unknown either way. Whenever two opposite filters fail to\n--   add up to the row count, look for nulls.\nWHERE MONTHLY_RENT <= 500.00;"
       },
       {
        "type": "p",
@@ -3760,7 +3760,7 @@
       },
       {
        "type": "code",
-       "text": "SELECT COUNT(*) AS ALL_ROOMS,\n       COUNT(MONTHLY_RENT) AS RENTS_RECORDED,\n       SUM(MONTHLY_RENT) AS TOTAL_RENT,\n       AVG(MONTHLY_RENT) AS AVERAGE_RENT\nFROM ROOM;"
+       "text": "-- SELECT: four numbers that only agree with each other when there are no nulls.\n--   COUNT(*) counts rows, so it reports all five rooms.\nSELECT COUNT(*) AS ALL_ROOMS,\n\n--   COUNT(column) counts values, so it reports the four rooms that have a rent.\n       COUNT(MONTHLY_RENT) AS RENTS_RECORDED,\n\n--   SUM skips the null and adds those same four values.\n       SUM(MONTHLY_RENT) AS TOTAL_RENT,\n\n--   AVG divides the total by 4, not by 5. That is the trap: the average is of the\n--     rooms that have a rent, which is not the same as the average across all\n--     rooms - and no error is raised to tell you which one you got.\n       AVG(MONTHLY_RENT) AS AVERAGE_RENT\n\n-- FROM: the table all four are computed over.\nFROM ROOM;"
       },
       {
        "type": "p",
@@ -3776,7 +3776,7 @@
        "type": "sandbox",
        "seed": "staywell_full",
        "starter": "-- Step 1: clear one home state so there is a null to study.\nUPDATE STUDENT\nSET HOME_STATE = NULL\nWHERE STUDENT_ID = 'S003';\n\n-- Step 2: this is meant to list the students whose home state is missing.\n-- Run the box exactly as written first. No result table will appear at all,\n-- because the condition below matches nothing. Then repair the condition.\nSELECT STUDENT_ID, LAST_NAME, HOME_STATE\nFROM STUDENT\nWHERE HOME_STATE = NULL;",
-       "solution": "UPDATE STUDENT\nSET HOME_STATE = NULL\nWHERE STUDENT_ID = 'S003';\n\nSELECT STUDENT_ID, LAST_NAME, HOME_STATE\nFROM STUDENT\nWHERE HOME_STATE IS NULL;",
+       "solution": "-- Clear one value so there is a null to look for. NULL is a keyword, not text.\nUPDATE STUDENT\nSET HOME_STATE = NULL\nWHERE STUDENT_ID = 'S003';\n\nSELECT STUDENT_ID, LAST_NAME, HOME_STATE\nFROM STUDENT\n-- IS NULL is the only test that finds a missing value. = NULL never matches\n-- anything, because comparing against an unknown gives unknown, not true.\nWHERE HOME_STATE IS NULL;",
        "hint": "Run it unchanged first. The page answers \"Statement ran. 1 row affected.\" -- that 1 belongs to the UPDATE, and the absence of any result table is the SELECT matching nothing. Now swap the comparison for the null-aware test and you get a real grid: one row, S003, with NULL in HOME_STATE."
       },
       {
@@ -3873,7 +3873,7 @@
       },
       {
        "type": "code",
-       "text": "SELECT CATEGORY, COUNT(*) AS ITEM_COUNT, AVG(PRICE) AS AVERAGE_PRICE\nFROM ITEM\nWHERE ON_HAND > 10\nGROUP BY CATEGORY\nHAVING COUNT(*) > 1\nORDER BY CATEGORY;"
+       "text": "-- SELECT: the grouping column and two aggregates - every column here is either\n--   grouped or aggregated, as the rule requires.\nSELECT CATEGORY, COUNT(*) AS ITEM_COUNT, AVG(PRICE) AS AVERAGE_PRICE\n\n-- FROM: the table being read. This is the clause order the engine follows:\nFROM ITEM\n\n-- WHERE: 1st - discard individual rows before anything is grouped.\nWHERE ON_HAND > 10\n\n-- GROUP BY: 2nd - pile up the survivors, one pile per category.\nGROUP BY CATEGORY\n\n-- HAVING: 3rd - discard whole piles, using a condition on an aggregate.\nHAVING COUNT(*) > 1\n\n-- ORDER BY: 4th and last - sort what is left for reading.\nORDER BY CATEGORY;"
       },
       {
        "type": "p",
@@ -4067,7 +4067,7 @@
        "type": "sandbox",
        "seed": "kimtay_full",
        "starter": "-- All six clauses, in the order you write them.\nSELECT CATEGORY, COUNT(*) AS ITEM_COUNT, AVG(PRICE) AS AVERAGE_PRICE\nFROM ITEM\nWHERE ON_HAND > 10\nGROUP BY CATEGORY\nHAVING COUNT(*) > 1\nORDER BY CATEGORY;",
-       "solution": "SELECT CATEGORY, COUNT(*) AS ITEM_COUNT, AVG(PRICE) AS AVERAGE_PRICE\nFROM ITEM\nWHERE ON_HAND > 10\nGROUP BY CATEGORY\nORDER BY CATEGORY;",
+       "solution": "SELECT CATEGORY, COUNT(*) AS ITEM_COUNT, AVG(PRICE) AS AVERAGE_PRICE\nFROM ITEM\n-- Filter rows first: only well-stocked items reach a pile.\nWHERE ON_HAND > 10\n-- Then group what is left. Every column above is either grouped or aggregated,\n-- which is the rule a grouped query has to obey.\nGROUP BY CATEGORY\nORDER BY CATEGORY;",
        "hint": "As written you get one row, Habitat. Delete the HAVING line and run it again to see the three single-item groups it was holding back, for four rows in total."
       }
      ]
@@ -4384,7 +4384,7 @@
       },
       {
        "type": "code",
-       "text": "SELECT CATEGORY, COUNT(*) AS NUM_ITEMS\nFROM ITEM\nWHERE PRICE > 12\nGROUP BY CATEGORY\nHAVING COUNT(*) >= 1\nORDER BY NUM_ITEMS DESC, CATEGORY;"
+       "text": "-- SELECT: the grouping column and a count, given a readable heading.\nSELECT CATEGORY, COUNT(*) AS NUM_ITEMS\n\n-- FROM: the table being read.\nFROM ITEM\n\n-- WHERE: filters rows first - only items dearer than 12 reach a pile.\nWHERE PRICE > 12\n\n-- GROUP BY: one pile per category, built from the surviving rows.\nGROUP BY CATEGORY\n\n-- HAVING: filters the piles. >= 1 keeps every pile that exists, so it changes\n--   nothing here - it is written to show where the clause goes.\nHAVING COUNT(*) >= 1\n\n-- ORDER BY: two keys - biggest count first, then category name to break ties.\nORDER BY NUM_ITEMS DESC, CATEGORY;"
       },
       {
        "type": "p",
@@ -4406,7 +4406,7 @@
        "type": "sandbox",
        "seed": "kimtay_full",
        "starter": "SELECT CATEGORY, COUNT(*) AS NUM_ITEMS, AVG(PRICE) AS AVG_PRICE\nFROM ITEM\nWHERE PRICE BETWEEN 10 AND 70\nGROUP BY CATEGORY\nHAVING COUNT(*) > 1\nORDER BY AVG_PRICE DESC;",
-       "solution": "SELECT CATEGORY, COUNT(*) AS NUM_ITEMS, AVG(PRICE) AS AVG_PRICE\nFROM ITEM\nWHERE PRICE BETWEEN 10 AND 70\nGROUP BY CATEGORY\nHAVING COUNT(*) >= 1\nORDER BY AVG_PRICE DESC;",
+       "solution": "SELECT CATEGORY, COUNT(*) AS NUM_ITEMS, AVG(PRICE) AS AVG_PRICE\nFROM ITEM\n-- BETWEEN is inclusive at both ends, so a price of exactly 10 or 70 is kept.\nWHERE PRICE BETWEEN 10 AND 70\nGROUP BY CATEGORY\n-- >= 1 keeps every pile that exists, so it changes nothing here. It is written\n-- to show where the clause goes and that it belongs after GROUP BY.\nHAVING COUNT(*) >= 1\nORDER BY AVG_PRICE DESC;",
        "hint": "Run it as written -- one row, Habitat with 2 items averaging 46.37. Then change `HAVING COUNT(*) > 1` to `>= 1` and the other three categories reappear, in the order Habitat, Food, Grooming, Accessory."
       },
       {
@@ -4534,7 +4534,7 @@
        "type": "sandbox",
        "seed": "kimtay_full",
        "starter": "SELECT DISTINCT CATEGORY\nFROM ITEM\nORDER BY CATEGORY;",
-       "solution": "SELECT CATEGORY, COUNT(*) AS NUM_ITEMS\nFROM ITEM\nGROUP BY CATEGORY\nORDER BY CATEGORY;",
+       "solution": "SELECT CATEGORY, COUNT(*) AS NUM_ITEMS\nFROM ITEM\n-- One output row per distinct category, with COUNT(*) counting the rows in each.\nGROUP BY CATEGORY\nORDER BY CATEGORY;",
        "hint": "The starter returns four rows -- Accessory, Food, Grooming, Habitat. The worked answer groups instead of de-duplicating, so you also see that Habitat holds 2 items and the rest hold 1."
       }
      ]
@@ -4580,7 +4580,7 @@
        "type": "sandbox",
        "seed": "both_full",
        "starter": "-- Both databases are loaded. Exercise 1 starter:\nSELECT ITEM_ID, DESCRIPTION, PRICE\nFROM ITEM\nORDER BY PRICE DESC;",
-       "solution": "SELECT ITEM_ID, DESCRIPTION, PRICE\nFROM ITEM\nWHERE PRICE BETWEEN 15 AND 50\nORDER BY PRICE DESC;",
+       "solution": "SELECT ITEM_ID, DESCRIPTION, PRICE\nFROM ITEM\n-- BETWEEN tests a range and includes both endpoints. The smaller value must be\n-- written first; reversed, the condition matches nothing at all.\nWHERE PRICE BETWEEN 15 AND 50\nORDER BY PRICE DESC;",
        "hint": "The starter lists all five items, priciest first. Add one clause to answer Exercise 1; the worked answer is one click away when you want to compare."
       },
       {

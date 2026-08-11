@@ -166,7 +166,7 @@
       },
       {
        "type": "code",
-       "text": "SELECT CUSTOMER.CUSTOMER_NUM, CUSTOMER.CUSTOMER_NAME, REP.LAST_NAME, REP.FIRST_NAME\nFROM CUSTOMER, REP\nWHERE CUSTOMER.REP_NUM = REP.REP_NUM\nORDER BY CUSTOMER.CUSTOMER_NUM;"
+       "text": "-- GOAL: list every customer next to the name of the rep who serves that account.\n-- SELECT: the four columns the answer will contain. Each one is written as\n--   TABLE.COLUMN, so it is plain that two values are read out of CUSTOMER and\n--   two out of REP.\nSELECT CUSTOMER.CUSTOMER_NUM, CUSTOMER.CUSTOMER_NAME, REP.LAST_NAME, REP.FIRST_NAME\n\n-- FROM: puts both tables in play. On its own this line pairs every customer with\n--   every rep - 4 customers x 3 reps = 12 pairings, most of them nonsense.\nFROM CUSTOMER, REP\n\n-- WHERE: the matching condition, and the line that turns those 12 pairings into\n--   a join. A pairing survives only when the rep number stored on the customer\n--   row equals the rep number on the rep row, which leaves 4 real rows.\nWHERE CUSTOMER.REP_NUM = REP.REP_NUM\n\n-- ORDER BY: sorts the surviving rows by customer number. It decides the order\n--   rows are printed in, never which rows match.\nORDER BY CUSTOMER.CUSTOMER_NUM;"
       },
       {
        "type": "p",
@@ -222,7 +222,7 @@
        "type": "sandbox",
        "seed": "kimtay_full",
        "starter": "SELECT CUSTOMER.CUSTOMER_NUM, CUSTOMER.CUSTOMER_NAME\nFROM CUSTOMER, REP\nWHERE CUSTOMER.REP_NUM = REP.REP_NUM\nORDER BY CUSTOMER.CUSTOMER_NUM;",
-       "solution": "SELECT CUSTOMER.CUSTOMER_NUM, CUSTOMER.CUSTOMER_NAME, REP.LAST_NAME, REP.FIRST_NAME\nFROM CUSTOMER, REP\nWHERE CUSTOMER.REP_NUM = REP.REP_NUM\nORDER BY CUSTOMER.CUSTOMER_NUM;",
+       "solution": "-- SELECT: four columns, two from each table, every one qualified as TABLE.COLUMN.\nSELECT CUSTOMER.CUSTOMER_NUM, CUSTOMER.CUSTOMER_NAME, REP.LAST_NAME, REP.FIRST_NAME\n-- FROM: both tables in play. On its own this pairs every customer with every rep.\nFROM CUSTOMER, REP\n-- WHERE: the matching condition, and the line that makes this a join - keep a\n-- pairing only when the two rep numbers agree.\nWHERE CUSTOMER.REP_NUM = REP.REP_NUM\n-- ORDER BY: sorts the result; it never affects which rows match.\nORDER BY CUSTOMER.CUSTOMER_NUM;",
        "hint": "The starter already joins the two tables correctly - it is only selecting from one of them. Add `REP.LAST_NAME` and `REP.FIRST_NAME` to the column list. The row count does not change; the rows just get wider."
       },
       {
@@ -235,7 +235,7 @@
       },
       {
        "type": "code",
-       "text": "SELECT CUSTOMER.CUSTOMER_NUM, CUSTOMER.CUSTOMER_NAME, REP.LAST_NAME\nFROM CUSTOMER, REP\nWHERE CUSTOMER.REP_NUM = REP.REP_NUM\n  AND CUSTOMER.CREDIT_LIMIT >= 7500\nORDER BY CUSTOMER.CUSTOMER_NUM;"
+       "text": "-- GOAL: the same join, narrowed to customers with a credit limit of 7500 or more.\n-- SELECT: three output columns - two read from CUSTOMER, one read from REP.\nSELECT CUSTOMER.CUSTOMER_NUM, CUSTOMER.CUSTOMER_NAME, REP.LAST_NAME\n\n-- FROM: the two tables being joined.\nFROM CUSTOMER, REP\n\n-- WHERE: the matching condition - which customer row belongs with which rep row.\nWHERE CUSTOMER.REP_NUM = REP.REP_NUM\n\n-- AND: an ordinary business restriction, exactly like the ones in Module 4.\n--   Nothing about it is join-specific. Both conditions have to be true, so the\n--   4 joined rows become the 2 whose credit limit clears 7500.\n  AND CUSTOMER.CREDIT_LIMIT >= 7500\n\n-- ORDER BY: sorts those two rows by customer number.\nORDER BY CUSTOMER.CUSTOMER_NUM;"
       },
       {
        "type": "table",
@@ -268,7 +268,7 @@
        "type": "sandbox",
        "seed": "kimtay_full",
        "starter": "SELECT CUSTOMER.CUSTOMER_NUM, CUSTOMER.CUSTOMER_NAME, REP.LAST_NAME\nFROM CUSTOMER, REP\nWHERE CUSTOMER.REP_NUM = REP.REP_NUM\nORDER BY CUSTOMER.CUSTOMER_NUM;",
-       "solution": "SELECT CUSTOMER.CUSTOMER_NUM, CUSTOMER.CUSTOMER_NAME, REP.LAST_NAME\nFROM CUSTOMER, REP\nWHERE CUSTOMER.REP_NUM = REP.REP_NUM\n  AND CUSTOMER.CREDIT_LIMIT >= 7500\nORDER BY CUSTOMER.CUSTOMER_NUM;",
+       "solution": "SELECT CUSTOMER.CUSTOMER_NUM, CUSTOMER.CUSTOMER_NAME, REP.LAST_NAME\nFROM CUSTOMER, REP\n-- The matching condition: which customer row belongs with which rep row.\nWHERE CUSTOMER.REP_NUM = REP.REP_NUM\n-- An ordinary business restriction on top of it. Both must be true, so the four\n-- joined rows become the two whose credit limit clears 7500.\n  AND CUSTOMER.CREDIT_LIMIT >= 7500\nORDER BY CUSTOMER.CUSTOMER_NUM;",
        "hint": "Add one more line with `AND` under the matching condition, restricting `CUSTOMER.CREDIT_LIMIT`. Four rows should become two."
       },
       {
@@ -279,7 +279,7 @@
       },
       {
        "type": "code",
-       "text": "SELECT COUNT(*) AS COMBINATIONS\nFROM CUSTOMER, REP;"
+       "text": "-- GOAL: show what the row count does when the matching condition is left out.\n-- SELECT: COUNT(*) counts the rows this query produces, and AS gives that single\n--   number the heading COMBINATIONS.\nSELECT COUNT(*) AS COMBINATIONS\n\n-- FROM: two tables and no WHERE clause anywhere, so nothing restricts the\n--   pairings. Each of the 4 customers is paired with each of the 3 reps, and the\n--   answer comes back 12 - eight rows more than the real join returned.\nFROM CUSTOMER, REP;"
       },
       {
        "type": "p",
@@ -287,7 +287,7 @@
       },
       {
        "type": "code",
-       "text": "SELECT REP.LAST_NAME, COUNT(*) AS NUM_CUSTOMERS, SUM(CUSTOMER.BALANCE) AS TOTAL_BALANCE\nFROM REP, CUSTOMER\nWHERE REP.REP_NUM = CUSTOMER.REP_NUM\nGROUP BY REP.LAST_NAME\nORDER BY REP.LAST_NAME;"
+       "text": "-- GOAL: one summary line per rep - how many customers, and their total balance.\n-- SELECT: the grouping column first, then two aggregates. COUNT(*) counts the\n--   rows inside each group, SUM adds up the balances inside each group, and AS\n--   gives each computed value a readable heading.\nSELECT REP.LAST_NAME, COUNT(*) AS NUM_CUSTOMERS, SUM(CUSTOMER.BALANCE) AS TOTAL_BALANCE\n\n-- FROM: the two tables. Naming REP before CUSTOMER changes nothing - the order\n--   of tables in FROM is cosmetic.\nFROM REP, CUSTOMER\n\n-- WHERE: the matching condition. It is applied BEFORE the grouping, so the\n--   aggregates are computed over joined rows and never over the raw tables.\nWHERE REP.REP_NUM = CUSTOMER.REP_NUM\n\n-- GROUP BY: collapses the joined rows into one output row per rep last name.\n--   Kaiser's two customers become a single line reading 2.\nGROUP BY REP.LAST_NAME\n\n-- ORDER BY: sorts those summary lines alphabetically by last name.\nORDER BY REP.LAST_NAME;"
       },
       {
        "type": "table",
@@ -323,7 +323,7 @@
        "type": "sandbox",
        "seed": "kimtay_full",
        "starter": "SELECT REP.LAST_NAME, CUSTOMER.CUSTOMER_NAME, CUSTOMER.BALANCE\nFROM REP, CUSTOMER\nWHERE REP.REP_NUM = CUSTOMER.REP_NUM\nORDER BY REP.LAST_NAME, CUSTOMER.CUSTOMER_NAME;",
-       "solution": "SELECT REP.LAST_NAME, COUNT(*) AS NUM_CUSTOMERS, SUM(CUSTOMER.BALANCE) AS TOTAL_BALANCE\nFROM REP, CUSTOMER\nWHERE REP.REP_NUM = CUSTOMER.REP_NUM\nGROUP BY REP.LAST_NAME\nORDER BY REP.LAST_NAME;",
+       "solution": "-- The grouping column, then two aggregates over the joined rows.\nSELECT REP.LAST_NAME, COUNT(*) AS NUM_CUSTOMERS, SUM(CUSTOMER.BALANCE) AS TOTAL_BALANCE\nFROM REP, CUSTOMER\n-- The matching condition is applied BEFORE the grouping, so the aggregates are\n-- computed over joined rows rather than over either raw table.\nWHERE REP.REP_NUM = CUSTOMER.REP_NUM\n-- One output row per rep last name.\nGROUP BY REP.LAST_NAME\nORDER BY REP.LAST_NAME;",
        "hint": "Start from the four detail rows, then collapse them: replace the customer columns with `COUNT(*)` and `SUM(CUSTOMER.BALANCE)`, and add `GROUP BY REP.LAST_NAME`. Four rows become three."
       },
       {
@@ -375,7 +375,7 @@
       },
       {
        "type": "code",
-       "text": "SELECT CUSTOMER_NUM, CUSTOMER_NAME, CITY\nFROM CUSTOMER\nWHERE CITY IN ('Maple Grove', 'Brookville')\nORDER BY CUSTOMER_NUM;"
+       "text": "-- GOAL: the customers located in either of two named cities.\n-- SELECT: three columns. Only one table is involved, so nothing has to be\n--   qualified with a table name.\nSELECT CUSTOMER_NUM, CUSTOMER_NAME, CITY\n\n-- FROM: a single table - this query is not a join at all.\nFROM CUSTOMER\n\n-- WHERE: IN is true when the row's CITY equals ANY value inside the parentheses.\n--   It is shorthand for CITY = 'Maple Grove' OR CITY = 'Brookville', and the\n--   longer the list, the more typing it saves.\nWHERE CITY IN ('Maple Grove', 'Brookville')\n\n-- ORDER BY: sorts the matching rows by customer number.\nORDER BY CUSTOMER_NUM;"
       },
       {
        "type": "p",
@@ -383,7 +383,7 @@
       },
       {
        "type": "code",
-       "text": "SELECT DISTINCT CUSTOMER.CUSTOMER_NUM, CUSTOMER.CUSTOMER_NAME\nFROM CUSTOMER, INVOICE\nWHERE CUSTOMER.CUSTOMER_NUM = INVOICE.CUSTOMER_NUM\nORDER BY CUSTOMER.CUSTOMER_NUM;"
+       "text": "-- GOAL: which customers have at least one invoice - answered with a join.\n-- SELECT: DISTINCT throws away duplicate output rows. It is here because a join\n--   returns one row per matching PAIR, so a customer holding three invoices\n--   would otherwise be listed three times.\nSELECT DISTINCT CUSTOMER.CUSTOMER_NUM, CUSTOMER.CUSTOMER_NAME\n\n-- FROM: the customer table and the invoice table.\nFROM CUSTOMER, INVOICE\n\n-- WHERE: the matching condition, written on the customer number the two tables\n--   share. A customer with no invoice matches nothing here and disappears from\n--   the result - which is exactly what \"has at least one invoice\" means.\nWHERE CUSTOMER.CUSTOMER_NUM = INVOICE.CUSTOMER_NUM\n\n-- ORDER BY: sorts the surviving customers by number.\nORDER BY CUSTOMER.CUSTOMER_NUM;"
       },
       {
        "type": "p",
@@ -391,7 +391,7 @@
       },
       {
        "type": "code",
-       "text": "SELECT CUSTOMER_NUM, CUSTOMER_NAME\nFROM CUSTOMER\nWHERE CUSTOMER_NUM IN (SELECT CUSTOMER_NUM FROM INVOICE)\nORDER BY CUSTOMER_NUM;"
+       "text": "-- GOAL: the same question - customers with at least one invoice - written with a\n-- subquery instead of a join.\n-- SELECT: two columns, both from CUSTOMER. No DISTINCT is needed this time.\nSELECT CUSTOMER_NUM, CUSTOMER_NAME\n\n-- FROM: one table only. INVOICE is reached by the subquery below, not by FROM.\nFROM CUSTOMER\n\n-- WHERE: the inner SELECT runs first, on its own, and returns a one-column list\n--   of the customer numbers that appear in INVOICE. IN then tests each customer\n--   once against that finished list, which is why no customer can come back\n--   twice and why DISTINCT is unnecessary.\nWHERE CUSTOMER_NUM IN (SELECT CUSTOMER_NUM FROM INVOICE)\n\n-- ORDER BY: sorts the kept customers by number.\nORDER BY CUSTOMER_NUM;"
       },
       {
        "type": "table",
@@ -427,7 +427,7 @@
       },
       {
        "type": "code",
-       "text": "SELECT ITEM.ITEM_ID, ITEM.DESCRIPTION, INVOICE_LINE.INVOICE_NUM\nFROM ITEM, INVOICE_LINE\nWHERE ITEM.ITEM_ID = INVOICE_LINE.ITEM_ID\nORDER BY ITEM.ITEM_ID, INVOICE_LINE.INVOICE_NUM;"
+       "text": "-- GOAL: show which invoices ordered each item, so the duplicate rows a join can\n-- produce are visible in the shipped data.\n-- SELECT: two columns from ITEM and one from INVOICE_LINE. There is deliberately\n--   no DISTINCT here, because the repeats are the point of the example.\nSELECT ITEM.ITEM_ID, ITEM.DESCRIPTION, INVOICE_LINE.INVOICE_NUM\n\n-- FROM: the item table plus the line-item table that records what was ordered.\nFROM ITEM, INVOICE_LINE\n\n-- WHERE: the matching condition on the item id the two tables share. Item CF21\n--   was ordered on two different invoices, so CF21 makes two matching pairs -\n--   and a join reports one row per pair. Five items, six rows.\nWHERE ITEM.ITEM_ID = INVOICE_LINE.ITEM_ID\n\n-- ORDER BY: two sort columns - by item first, then by invoice within each item.\nORDER BY ITEM.ITEM_ID, INVOICE_LINE.INVOICE_NUM;"
       },
       {
        "type": "table",
@@ -480,7 +480,7 @@
        "type": "sandbox",
        "seed": "kimtay_full",
        "starter": "SELECT CUSTOMER_NUM, CUSTOMER_NAME\nFROM CUSTOMER\nWHERE CUSTOMER_NUM IN (SELECT CUSTOMER_NUM FROM INVOICE)\nORDER BY CUSTOMER_NUM;",
-       "solution": "SELECT CUSTOMER_NUM, CUSTOMER_NAME\nFROM CUSTOMER\nWHERE CUSTOMER_NUM IN (SELECT CUSTOMER_NUM FROM INVOICE)\nORDER BY CUSTOMER_NUM;\n\nSELECT ITEM_ID, DESCRIPTION, PRICE\nFROM ITEM\nWHERE ITEM_ID IN\n    (SELECT ITEM_ID FROM INVOICE_LINE WHERE INVOICE_NUM = '50710')\nORDER BY ITEM_ID;",
+       "solution": "SELECT CUSTOMER_NUM, CUSTOMER_NAME\nFROM CUSTOMER\n-- The inner SELECT runs first and returns a list of customer numbers. IN then\n-- tests each customer once against that list, so no duplicate can appear and\n-- DISTINCT is unnecessary.\nWHERE CUSTOMER_NUM IN (SELECT CUSTOMER_NUM FROM INVOICE)\nORDER BY CUSTOMER_NUM;\n\n-- The same shape aimed at a different question: which items are on invoice 50710.\nSELECT ITEM_ID, DESCRIPTION, PRICE\nFROM ITEM\n-- Run the inner query alone first and you get CF21 and DG04 - the list IN tests against.\nWHERE ITEM_ID IN\n    (SELECT ITEM_ID FROM INVOICE_LINE WHERE INVOICE_NUM = '50710')\nORDER BY ITEM_ID;",
        "hint": "Your task: leave the starter alone and write a second statement below it that lists the ITEM_ID, DESCRIPTION and PRICE of every item ordered on invoice 50710, using the same `IN` shape. Run the inner query by itself first - `SELECT ITEM_ID FROM INVOICE_LINE WHERE INVOICE_NUM = '50710';` returns CF21 and DG04. Those two values are the list the outer query checks against, so expect two rows."
       },
       {
@@ -493,7 +493,7 @@
       },
       {
        "type": "code",
-       "text": "SELECT CUSTOMER_NUM, CUSTOMER_NAME\nFROM CUSTOMER\nWHERE EXISTS\n    (SELECT *\n     FROM INVOICE\n     WHERE INVOICE.CUSTOMER_NUM = CUSTOMER.CUSTOMER_NUM)\nORDER BY CUSTOMER_NUM;"
+       "text": "-- GOAL: customers with at least one invoice - the third way, using EXISTS.\n-- SELECT: the two columns to print. Nothing from inside the subquery can ever\n--   appear in this list.\nSELECT CUSTOMER_NUM, CUSTOMER_NAME\n\n-- FROM: the outer query walks CUSTOMER one row at a time.\nFROM CUSTOMER\n\n-- WHERE: EXISTS is a yes-or-no test applied to the customer currently being\n--   examined - did the inner query find at least one row? It answers true or\n--   false and produces no values of its own.\nWHERE EXISTS\n\n    -- SELECT *: the column list is irrelevant, since no value from it is used.\n    --   The * reads as \"anything at all\", which is the question EXISTS asks.\n    (SELECT *\n\n     -- FROM: the table being searched for a match.\n     FROM INVOICE\n\n     -- WHERE: this line names CUSTOMER, a table of the OUTER query, and that\n     --   reference is what makes the subquery correlated: it cannot run on its\n     --   own, and it is re-executed for each customer with that customer's\n     --   number filled in. Customer 1310 finds no invoice, so EXISTS is false\n     --   and that row is dropped.\n     WHERE INVOICE.CUSTOMER_NUM = CUSTOMER.CUSTOMER_NUM)\n\n-- ORDER BY: sorts the three kept customers by number.\nORDER BY CUSTOMER_NUM;"
       },
       {
        "type": "callout",
@@ -538,7 +538,7 @@
       },
       {
        "type": "code",
-       "text": "SELECT CUSTOMER_NUM, CUSTOMER_NAME\nFROM CUSTOMER\nWHERE NOT EXISTS\n    (SELECT *\n     FROM INVOICE\n     WHERE INVOICE.CUSTOMER_NUM = CUSTOMER.CUSTOMER_NUM)\nORDER BY CUSTOMER_NUM;"
+       "text": "-- GOAL: the opposite question - which customers have never been invoiced.\n-- SELECT: the two columns to print.\nSELECT CUSTOMER_NUM, CUSTOMER_NAME\n\n-- FROM: the outer query walks CUSTOMER one row at a time, as before.\nFROM CUSTOMER\n\n-- WHERE: NOT EXISTS flips the test. The customer is kept only when the inner\n--   query finds NOTHING. This is the standard pattern for finding rows that have\n--   no match at all on the other side.\nWHERE NOT EXISTS\n\n    -- SELECT *: again the column list does not matter; only whether a row exists.\n    (SELECT *\n\n     -- FROM: the table searched for a match.\n     FROM INVOICE\n\n     -- WHERE: the correlation back to the outer row. For each customer in turn\n     --   the engine asks \"is there an invoice carrying this customer number?\"\n     --   Only 1310 comes back empty, so only 1310 survives NOT EXISTS.\n     WHERE INVOICE.CUSTOMER_NUM = CUSTOMER.CUSTOMER_NUM)\n\n-- ORDER BY: sorts the result, which here is a single row.\nORDER BY CUSTOMER_NUM;"
       },
       {
        "type": "table",
@@ -593,7 +593,7 @@
        "type": "sandbox",
        "seed": "kimtay_full",
        "starter": "SELECT CUSTOMER_NUM, CUSTOMER_NAME\nFROM CUSTOMER\nWHERE EXISTS\n    (SELECT *\n     FROM INVOICE\n     WHERE INVOICE.CUSTOMER_NUM = CUSTOMER.CUSTOMER_NUM)\nORDER BY CUSTOMER_NUM;",
-       "solution": "SELECT CUSTOMER_NUM, CUSTOMER_NAME\nFROM CUSTOMER\nWHERE EXISTS\n    (SELECT *\n     FROM INVOICE\n     WHERE INVOICE.CUSTOMER_NUM = CUSTOMER.CUSTOMER_NUM)\nORDER BY CUSTOMER_NUM;\n\nSELECT CUSTOMER_NUM, CUSTOMER_NAME\nFROM CUSTOMER\nWHERE NOT EXISTS\n    (SELECT *\n     FROM INVOICE\n     WHERE INVOICE.CUSTOMER_NUM = CUSTOMER.CUSTOMER_NUM)\nORDER BY CUSTOMER_NUM;",
+       "solution": "SELECT CUSTOMER_NUM, CUSTOMER_NAME\nFROM CUSTOMER\n-- EXISTS is a yes-or-no test on the customer being examined: did the inner query\n-- find at least one row? It returns true or false and no values of its own.\nWHERE EXISTS\n    -- SELECT * because the column list is irrelevant - only whether a row exists.\n    (SELECT *\n     FROM INVOICE\n     -- Naming CUSTOMER here makes the subquery correlated: it is re-run once per\n     -- customer, with that customer's number filled in.\n     WHERE INVOICE.CUSTOMER_NUM = CUSTOMER.CUSTOMER_NUM)\nORDER BY CUSTOMER_NUM;\n\n-- The same query with the test reversed.\nSELECT CUSTOMER_NUM, CUSTOMER_NAME\nFROM CUSTOMER\n-- NOT EXISTS keeps the customer only when the inner query finds NOTHING. This is\n-- the standard pattern for finding rows with no match on the other side.\nWHERE NOT EXISTS\n    (SELECT *\n     FROM INVOICE\n     WHERE INVOICE.CUSTOMER_NUM = CUSTOMER.CUSTOMER_NUM)\nORDER BY CUSTOMER_NUM;",
        "hint": "Run the `EXISTS` version as given, then copy it underneath and add `NOT` in front of `EXISTS` in the copy. Three rows from the first, one from the second - between them the two statements account for all four customers."
       },
       {
@@ -623,7 +623,7 @@
       },
       {
        "type": "code",
-       "text": "SELECT CUSTOMER_NUM, CUSTOMER_NAME\nFROM CUSTOMER\nWHERE CUSTOMER_NUM IN\n    (SELECT CUSTOMER_NUM\n     FROM INVOICE\n     WHERE INVOICE_NUM IN\n         (SELECT INVOICE_NUM\n          FROM INVOICE_LINE\n          WHERE ITEM_ID = 'CF21'))\nORDER BY CUSTOMER_NUM;"
+       "text": "-- GOAL: which customers ordered item CF21? The path runs INVOICE_LINE to INVOICE\n-- to CUSTOMER, so one IN subquery is nested inside another. SQL evaluates them\n-- from the inside out, and so should you when reading.\n-- SELECT: the two columns printed at the end. Only CUSTOMER columns are output;\n--   the subqueries supply values for testing, never for display.\nSELECT CUSTOMER_NUM, CUSTOMER_NAME\n\n-- FROM: the outer query reads CUSTOMER.\nFROM CUSTOMER\n\n-- WHERE: step 3, the last test to run. Keep a customer whose number appears in\n--   the list the middle subquery returns (1120 and 1420).\nWHERE CUSTOMER_NUM IN\n\n    -- SELECT: step 2 returns one column, the customer number on each matching\n    --   invoice. This is the list the outer IN tests against.\n    (SELECT CUSTOMER_NUM\n\n     -- FROM: the middle query reads INVOICE.\n     FROM INVOICE\n\n     -- WHERE: keep an invoice whose number is in the list step 1 returns.\n     WHERE INVOICE_NUM IN\n\n         -- SELECT: step 1, the innermost query, runs FIRST. It returns the\n         --   invoice numbers that contain item CF21: 50710 and 50711.\n         (SELECT INVOICE_NUM\n\n          -- FROM: the innermost query reads the line-item table.\n          FROM INVOICE_LINE\n\n          -- WHERE: the only literal value in the whole statement. Both closing\n          --   parentheses land here, one for each subquery being closed.\n          WHERE ITEM_ID = 'CF21'))\n\n-- ORDER BY: sorts the two customers that survive.\nORDER BY CUSTOMER_NUM;"
       },
       {
        "type": "table",
@@ -657,7 +657,7 @@
        "type": "sandbox",
        "seed": "kimtay_full",
        "starter": "SELECT INVOICE_NUM\nFROM INVOICE_LINE\nWHERE ITEM_ID = 'CF21';",
-       "solution": "SELECT CUSTOMER_NUM, CUSTOMER_NAME\nFROM CUSTOMER\nWHERE CUSTOMER_NUM IN\n    (SELECT CUSTOMER_NUM\n     FROM INVOICE\n     WHERE INVOICE_NUM IN\n         (SELECT INVOICE_NUM\n          FROM INVOICE_LINE\n          WHERE ITEM_ID = 'CF21'))\nORDER BY CUSTOMER_NUM;",
+       "solution": "SELECT CUSTOMER_NUM, CUSTOMER_NAME\nFROM CUSTOMER\n-- Step 3, the last test to run: keep customers whose number is in the middle list.\nWHERE CUSTOMER_NUM IN\n    -- Step 2: the customer number on each matching invoice.\n    (SELECT CUSTOMER_NUM\n     FROM INVOICE\n     WHERE INVOICE_NUM IN\n         -- Step 1 runs FIRST: the invoices that contain item CF21.\n         (SELECT INVOICE_NUM\n          FROM INVOICE_LINE\n          -- Both closing parentheses land here, one per subquery.\n          WHERE ITEM_ID = 'CF21'))\nORDER BY CUSTOMER_NUM;",
        "hint": "The starter is the innermost layer, and it returns 50710 and 50711. Wrap it in the `INVOICE` query and run that - two customer numbers. Then wrap that in the `CUSTOMER` query. Two rows at the end."
       },
       {
@@ -691,19 +691,19 @@
       },
       {
        "type": "code",
-       "text": "SELECT INVOICE_LINE.INVOICE_NUM, ITEM.DESCRIPTION, INVOICE_LINE.NUM_ORDERED\nFROM INVOICE_LINE, ITEM\nWHERE INVOICE_LINE.ITEM_ID = ITEM.ITEM_ID\nORDER BY INVOICE_LINE.INVOICE_NUM, ITEM.DESCRIPTION;"
+       "text": "-- GOAL: stage 1 of the order detail report - put a readable description on every\n-- invoice line, instead of the item id the line actually stores.\n-- SELECT: the invoice number and quantity come from INVOICE_LINE; the wording of\n--   the item comes from ITEM.\nSELECT INVOICE_LINE.INVOICE_NUM, ITEM.DESCRIPTION, INVOICE_LINE.NUM_ORDERED\n\n-- FROM: two tables, so exactly one matching condition will be needed.\nFROM INVOICE_LINE, ITEM\n\n-- WHERE: the matching condition on the shared item id. Because every line item\n--   points at a real item, the six line items come back as six rows - a join\n--   along a foreign key neither invents rows nor loses any.\nWHERE INVOICE_LINE.ITEM_ID = ITEM.ITEM_ID\n\n-- ORDER BY: by invoice, then by description within each invoice.\nORDER BY INVOICE_LINE.INVOICE_NUM, ITEM.DESCRIPTION;"
       },
       {
        "type": "code",
-       "text": "SELECT CUSTOMER.CUSTOMER_NAME, INVOICE.INVOICE_NUM, INVOICE.INVOICE_DATE,\n       ITEM.DESCRIPTION, INVOICE_LINE.NUM_ORDERED\nFROM CUSTOMER, INVOICE, INVOICE_LINE, ITEM\nWHERE CUSTOMER.CUSTOMER_NUM = INVOICE.CUSTOMER_NUM\n  AND INVOICE.INVOICE_NUM = INVOICE_LINE.INVOICE_NUM\n  AND INVOICE_LINE.ITEM_ID = ITEM.ITEM_ID\nORDER BY INVOICE.INVOICE_NUM, ITEM.DESCRIPTION;"
+       "text": "-- GOAL: stage 2 - carry the customer and the invoice date onto every line. Four\n-- tables in FROM means three matching conditions, one per link in the chain\n-- CUSTOMER to INVOICE to INVOICE_LINE to ITEM.\n-- SELECT: five columns drawn from four different tables. This is the reason a\n--   join is unavoidable here - a subquery could not put them side by side.\nSELECT CUSTOMER.CUSTOMER_NAME, INVOICE.INVOICE_NUM, INVOICE.INVOICE_DATE,\n\n-- SELECT (continued): the column list simply wraps onto a second line; SQL does\n--   not care where the line breaks fall, only where the commas are.\n       ITEM.DESCRIPTION, INVOICE_LINE.NUM_ORDERED\n\n-- FROM: all four tables. Count them, then count the conditions below: four\n--   tables always need three links, and one link short makes the count explode.\nFROM CUSTOMER, INVOICE, INVOICE_LINE, ITEM\n\n-- WHERE: link 1 - ties each customer to the invoices belonging to it.\nWHERE CUSTOMER.CUSTOMER_NUM = INVOICE.CUSTOMER_NUM\n\n-- AND: link 2 - ties each invoice to its own line items.\n  AND INVOICE.INVOICE_NUM = INVOICE_LINE.INVOICE_NUM\n\n-- AND: link 3 - ties each line item to the item it refers to. Still six rows,\n--   because following foreign keys does not change the number of lines.\n  AND INVOICE_LINE.ITEM_ID = ITEM.ITEM_ID\n\n-- ORDER BY: by invoice, then by description within each invoice.\nORDER BY INVOICE.INVOICE_NUM, ITEM.DESCRIPTION;"
       },
       {
        "type": "code",
-       "text": "SELECT CUSTOMER.CUSTOMER_NAME, INVOICE.INVOICE_NUM, ITEM.DESCRIPTION,\n       INVOICE_LINE.NUM_ORDERED * INVOICE_LINE.QUOTED_PRICE AS LINE_TOTAL\nFROM CUSTOMER, INVOICE, INVOICE_LINE, ITEM\nWHERE CUSTOMER.CUSTOMER_NUM = INVOICE.CUSTOMER_NUM\n  AND INVOICE.INVOICE_NUM = INVOICE_LINE.INVOICE_NUM\n  AND INVOICE_LINE.ITEM_ID = ITEM.ITEM_ID\nORDER BY INVOICE.INVOICE_NUM, ITEM.DESCRIPTION;"
+       "text": "-- GOAL: stage 3 - the same four-table join, with the money worked out per line.\n-- SELECT: three plain columns first, one from each of three tables.\nSELECT CUSTOMER.CUSTOMER_NAME, INVOICE.INVOICE_NUM, ITEM.DESCRIPTION,\n\n-- SELECT (continued): a calculated column. The multiplication is performed once\n--   for each row, and AS names the result so the heading reads LINE_TOTAL rather\n--   than the arithmetic itself. Nothing is stored - it exists in the output only.\n       INVOICE_LINE.NUM_ORDERED * INVOICE_LINE.QUOTED_PRICE AS LINE_TOTAL\n\n-- FROM: the same four tables as before.\nFROM CUSTOMER, INVOICE, INVOICE_LINE, ITEM\n\n-- WHERE: link 1 - customer to invoice.\nWHERE CUSTOMER.CUSTOMER_NUM = INVOICE.CUSTOMER_NUM\n\n-- AND: link 2 - invoice to line item.\n  AND INVOICE.INVOICE_NUM = INVOICE_LINE.INVOICE_NUM\n\n-- AND: link 3 - line item to item.\n  AND INVOICE_LINE.ITEM_ID = ITEM.ITEM_ID\n\n-- ORDER BY: by invoice, then by description.\nORDER BY INVOICE.INVOICE_NUM, ITEM.DESCRIPTION;"
       },
       {
        "type": "code",
-       "text": "SELECT CUSTOMER.CUSTOMER_NAME, INVOICE.INVOICE_NUM, ITEM.DESCRIPTION,\n       INVOICE_LINE.NUM_ORDERED * INVOICE_LINE.QUOTED_PRICE AS LINE_TOTAL\nFROM CUSTOMER, INVOICE, INVOICE_LINE, ITEM\nWHERE CUSTOMER.CUSTOMER_NUM = INVOICE.CUSTOMER_NUM\n  AND INVOICE.INVOICE_NUM = INVOICE_LINE.INVOICE_NUM\n  AND INVOICE_LINE.ITEM_ID = ITEM.ITEM_ID\n  AND CUSTOMER.REP_NUM IN\n      (SELECT REP_NUM FROM REP WHERE CITY = 'Maple Grove')\nORDER BY INVOICE.INVOICE_NUM, ITEM.DESCRIPTION;"
+       "text": "-- GOAL: stage 4 - the finished report, restricted to the customers whose rep\n-- works out of Maple Grove. Note that the restriction is about reps, yet no rep\n-- column appears in the output: that is the situation a subquery is made for.\n-- SELECT: the three display columns.\nSELECT CUSTOMER.CUSTOMER_NAME, INVOICE.INVOICE_NUM, ITEM.DESCRIPTION,\n\n-- SELECT (continued): the calculated line total, named with AS.\n       INVOICE_LINE.NUM_ORDERED * INVOICE_LINE.QUOTED_PRICE AS LINE_TOTAL\n\n-- FROM: the four tables the output columns come from.\nFROM CUSTOMER, INVOICE, INVOICE_LINE, ITEM\n\n-- WHERE: link 1 - customer to invoice.\nWHERE CUSTOMER.CUSTOMER_NUM = INVOICE.CUSTOMER_NUM\n\n-- AND: link 2 - invoice to line item.\n  AND INVOICE.INVOICE_NUM = INVOICE_LINE.INVOICE_NUM\n\n-- AND: link 3 - line item to item.\n  AND INVOICE_LINE.ITEM_ID = ITEM.ITEM_ID\n\n-- AND: NOT a link - this is the business restriction. The subquery returns the\n--   numbers of the reps based in Maple Grove (20 and 35), and IN keeps only the\n--   customers whose REP_NUM appears in that list. Six rows become four.\n  AND CUSTOMER.REP_NUM IN\n\n-- The subquery reads CITY from REP, not from CUSTOMER. Downtown Aquarium is in\n-- Northfield and still qualifies, because its rep is in Maple Grove.\n      (SELECT REP_NUM FROM REP WHERE CITY = 'Maple Grove')\n\n-- ORDER BY: by invoice, then by description.\nORDER BY INVOICE.INVOICE_NUM, ITEM.DESCRIPTION;"
       },
       {
        "type": "table",
@@ -761,7 +761,7 @@
        "type": "sandbox",
        "seed": "kimtay_full",
        "starter": "SELECT INVOICE_LINE.INVOICE_NUM, ITEM.DESCRIPTION, INVOICE_LINE.NUM_ORDERED\nFROM INVOICE_LINE, ITEM\nWHERE INVOICE_LINE.ITEM_ID = ITEM.ITEM_ID\nORDER BY INVOICE_LINE.INVOICE_NUM, ITEM.DESCRIPTION;",
-       "solution": "SELECT CUSTOMER.CUSTOMER_NAME, INVOICE.INVOICE_NUM, ITEM.DESCRIPTION,\n       INVOICE_LINE.NUM_ORDERED * INVOICE_LINE.QUOTED_PRICE AS LINE_TOTAL\nFROM CUSTOMER, INVOICE, INVOICE_LINE, ITEM\nWHERE CUSTOMER.CUSTOMER_NUM = INVOICE.CUSTOMER_NUM\n  AND INVOICE.INVOICE_NUM = INVOICE_LINE.INVOICE_NUM\n  AND INVOICE_LINE.ITEM_ID = ITEM.ITEM_ID\n  AND CUSTOMER.REP_NUM IN\n      (SELECT REP_NUM FROM REP WHERE CITY = 'Maple Grove')\nORDER BY INVOICE.INVOICE_NUM, ITEM.DESCRIPTION;",
+       "solution": "-- Three display columns drawn from three different tables...\nSELECT CUSTOMER.CUSTOMER_NAME, INVOICE.INVOICE_NUM, ITEM.DESCRIPTION,\n-- ...plus a calculated one. The multiplication runs once per row; AS names it.\n       INVOICE_LINE.NUM_ORDERED * INVOICE_LINE.QUOTED_PRICE AS LINE_TOTAL\n-- Four tables in FROM always need three matching conditions.\nFROM CUSTOMER, INVOICE, INVOICE_LINE, ITEM\n-- Link 1: customer to invoice.\nWHERE CUSTOMER.CUSTOMER_NUM = INVOICE.CUSTOMER_NUM\n-- Link 2: invoice to line item.\n  AND INVOICE.INVOICE_NUM = INVOICE_LINE.INVOICE_NUM\n-- Link 3: line item to item.\n  AND INVOICE_LINE.ITEM_ID = ITEM.ITEM_ID\n-- NOT a link - the business restriction. The subquery returns the Maple Grove\n-- reps, and IN keeps only the customers those reps serve.\n  AND CUSTOMER.REP_NUM IN\n      -- Note whose city is tested: the REP's, not the customer's.\n      (SELECT REP_NUM FROM REP WHERE CITY = 'Maple Grove')\nORDER BY INVOICE.INVOICE_NUM, ITEM.DESCRIPTION;",
        "hint": "Work up one stage at a time and run after each. Six rows through stage 3, four rows once the `IN` restriction goes on."
       },
       {
@@ -770,7 +770,7 @@
       },
       {
        "type": "code",
-       "text": "SELECT CUSTOMER.CUSTOMER_NAME, INVOICE.INVOICE_NUM,\n       SUM(INVOICE_LINE.NUM_ORDERED * INVOICE_LINE.QUOTED_PRICE) AS INVOICE_TOTAL\nFROM CUSTOMER, INVOICE, INVOICE_LINE\nWHERE CUSTOMER.CUSTOMER_NUM = INVOICE.CUSTOMER_NUM\n  AND INVOICE.INVOICE_NUM = INVOICE_LINE.INVOICE_NUM\nGROUP BY CUSTOMER.CUSTOMER_NAME, INVOICE.INVOICE_NUM\nORDER BY INVOICE.INVOICE_NUM;"
+       "text": "-- GOAL: turn the detail report into a summary - one total per invoice. Only three\n-- tables are needed now, because no item description appears in the output, so\n-- there are two matching conditions rather than three.\n-- SELECT: the two columns that identify each group.\nSELECT CUSTOMER.CUSTOMER_NAME, INVOICE.INVOICE_NUM,\n\n-- SELECT (continued): the same multiplication as before, wrapped in SUM so the\n--   line totals inside one group are added into a single invoice total.\n       SUM(INVOICE_LINE.NUM_ORDERED * INVOICE_LINE.QUOTED_PRICE) AS INVOICE_TOTAL\n\n-- FROM: three tables, so two links.\nFROM CUSTOMER, INVOICE, INVOICE_LINE\n\n-- WHERE: link 1 - customer to invoice.\nWHERE CUSTOMER.CUSTOMER_NUM = INVOICE.CUSTOMER_NUM\n\n-- AND: link 2 - invoice to line item. Both links are applied before grouping.\n  AND INVOICE.INVOICE_NUM = INVOICE_LINE.INVOICE_NUM\n\n-- GROUP BY: collapses the six joined rows into one row per invoice. Every column\n--   in SELECT that is not inside an aggregate has to be listed here, which is\n--   why CUSTOMER_NAME appears as well as INVOICE_NUM.\nGROUP BY CUSTOMER.CUSTOMER_NAME, INVOICE.INVOICE_NUM\n\n-- ORDER BY: sorts the three summary rows by invoice number.\nORDER BY INVOICE.INVOICE_NUM;"
       },
       {
        "type": "table",
@@ -1249,7 +1249,7 @@
       },
       {
        "type": "code",
-       "text": "SELECT C.CUSTOMER_NAME\nFROM CUSTOMER AS C\nWHERE C.REP_NUM = '65';"
+       "text": "-- GOAL: show the smallest possible use of an alias - a short, temporary name for\n-- a table that lives only as long as this one statement.\n-- SELECT: C.CUSTOMER_NAME means exactly what CUSTOMER.CUSTOMER_NAME means. The\n--   alias is already usable here even though it is defined on the next line.\nSELECT C.CUSTOMER_NAME\n\n-- FROM: this is where the alias is created - table name, then the short name.\n--   The word AS is optional and most people leave it out.\nFROM CUSTOMER AS C\n\n-- WHERE: an ordinary condition, written through the alias. One row comes back,\n--   Whiskers & Wags Boutique, the only customer of rep 65.\nWHERE C.REP_NUM = '65';"
       },
       {
        "type": "p",
@@ -1259,7 +1259,7 @@
        "type": "sandbox",
        "seed": "kimtay_full",
        "starter": "SELECT C.CUSTOMER_NUM, C.CUSTOMER_NAME, R.LAST_NAME, R.RATE\nFROM CUSTOMER C, REP ___\nWHERE C.REP_NUM = ___.REP_NUM\nORDER BY C.CUSTOMER_NUM;",
-       "solution": "SELECT C.CUSTOMER_NUM, C.CUSTOMER_NAME, R.LAST_NAME, R.RATE\nFROM CUSTOMER C, REP R\nWHERE C.REP_NUM = R.REP_NUM\nORDER BY C.CUSTOMER_NUM;",
+       "solution": "-- Columns qualified with the SHORT aliases defined below, not the full table names.\nSELECT C.CUSTOMER_NUM, C.CUSTOMER_NAME, R.LAST_NAME, R.RATE\n-- The aliases are created here: table name, a space, then the short name. Once C\n-- and R exist, CUSTOMER and REP are no longer usable names in this statement.\nFROM CUSTOMER C, REP R\n-- The matching condition, now short enough to read at a glance.\nWHERE C.REP_NUM = R.REP_NUM\nORDER BY C.CUSTOMER_NUM;",
        "hint": "Give REP the alias R in the FROM clause, then use R on both sides of the matching condition."
       },
       {
@@ -1274,7 +1274,7 @@
       },
       {
        "type": "code",
-       "text": "-- This one fails. SQLite answers: no such column: CUSTOMER.CUSTOMER_NUM\n-- (MySQL and Oracle raise their own version of the same unknown-table error.)\nSELECT CUSTOMER.CUSTOMER_NUM\nFROM CUSTOMER C, REP R\nWHERE C.REP_NUM = R.REP_NUM;"
+       "text": "-- GOAL: a deliberate error. Once a table has an alias, the full table name is no\n-- longer available anywhere in that statement.\n-- SELECT: WRONG. C is defined below, so CUSTOMER is no longer a usable name and\n--   the engine has no table by that name to look the column up in. SQLite says\n--   \"no such column: CUSTOMER.CUSTOMER_NUM\"; MySQL and Oracle raise their own\n--   version of the same unknown-table error. The fix is to write C.CUSTOMER_NUM.\nSELECT CUSTOMER.CUSTOMER_NUM\n\n-- FROM: two aliases are defined here, C and R. From this point on they are the\n--   only names by which the two tables can be reached.\nFROM CUSTOMER C, REP R\n\n-- WHERE: this line is correct - it uses the aliases on both sides. It is only\n--   the SELECT list above that breaks the statement.\nWHERE C.REP_NUM = R.REP_NUM;"
       },
       {
        "type": "h4",
@@ -1300,7 +1300,7 @@
       },
       {
        "type": "code",
-       "text": "-- This one fails too. SQLite answers: ambiguous column name: CUSTOMER_NUM\n-- (MySQL and Oracle report the same ambiguity in their own wording.)\nSELECT CUSTOMER_NUM\nFROM CUSTOMER A, CUSTOMER B\nWHERE A.REP_NUM = B.REP_NUM;"
+       "text": "-- GOAL: a second deliberate error, the one that makes aliases compulsory in a\n-- self-join rather than merely convenient.\n-- SELECT: WRONG. With two copies of CUSTOMER in play, a bare CUSTOMER_NUM could\n--   mean the one from copy A or the one from copy B, and the engine refuses to\n--   guess. SQLite says \"ambiguous column name: CUSTOMER_NUM\"; MySQL and Oracle\n--   report the same ambiguity in their own wording. Write A.CUSTOMER_NUM.\nSELECT CUSTOMER_NUM\n\n-- FROM: the same table opened twice, under two different names. This is all a\n--   self-join is - an ordinary join whose two sides happen to be one table.\nFROM CUSTOMER A, CUSTOMER B\n\n-- WHERE: the matching condition between the two copies, correctly qualified.\nWHERE A.REP_NUM = B.REP_NUM;"
       },
       {
        "type": "steps",
@@ -1323,7 +1323,7 @@
        "type": "sandbox",
        "seed": "kimtay_full",
        "starter": "SELECT A.CUSTOMER_NUM, B.CUSTOMER_NUM, A.REP_NUM\nFROM CUSTOMER A, CUSTOMER B\nWHERE A.REP_NUM = B.REP_NUM\nORDER BY A.CUSTOMER_NUM, B.CUSTOMER_NUM;",
-       "solution": "SELECT A.CUSTOMER_NUM, B.CUSTOMER_NUM, A.REP_NUM\nFROM CUSTOMER A, CUSTOMER B\nWHERE A.REP_NUM = B.REP_NUM\nORDER BY A.CUSTOMER_NUM, B.CUSTOMER_NUM;",
+       "solution": "-- Both copies must be qualified: a bare CUSTOMER_NUM would be ambiguous.\nSELECT A.CUSTOMER_NUM, B.CUSTOMER_NUM, A.REP_NUM\n-- The same table opened TWICE under two names. That is all a self-join is - an\n-- ordinary join whose two sides happen to be one table.\nFROM CUSTOMER A, CUSTOMER B\n-- Match the copies on the shared rep. With nothing else, this also pairs every\n-- row with itself and reports each real pair twice - six rows, not one.\nWHERE A.REP_NUM = B.REP_NUM\nORDER BY A.CUSTOMER_NUM, B.CUSTOMER_NUM;",
        "hint": "Run it as written and count the rows before you read on. Six is more than you wanted."
       },
       {
@@ -1407,7 +1407,7 @@
        "type": "sandbox",
        "seed": "kimtay_full",
        "starter": "SELECT A.CUSTOMER_NUM, A.CUSTOMER_NAME, B.CUSTOMER_NUM, B.CUSTOMER_NAME\nFROM CUSTOMER A, CUSTOMER B\nWHERE A.REP_NUM = B.REP_NUM\nAND A.CUSTOMER_NUM ___ B.CUSTOMER_NUM;",
-       "solution": "SELECT A.CUSTOMER_NUM, A.CUSTOMER_NAME, B.CUSTOMER_NUM, B.CUSTOMER_NAME\nFROM CUSTOMER A, CUSTOMER B\nWHERE A.REP_NUM = B.REP_NUM\nAND A.CUSTOMER_NUM < B.CUSTOMER_NUM;",
+       "solution": "SELECT A.CUSTOMER_NUM, A.CUSTOMER_NAME, B.CUSTOMER_NUM, B.CUSTOMER_NAME\nFROM CUSTOMER A, CUSTOMER B\n-- The relationship you care about: the two customers share a rep.\nWHERE A.REP_NUM = B.REP_NUM\n-- The fix, on the PRIMARY KEY. < throws out the self-paired rows (nothing is\n-- less than itself) AND picks one direction for each real pair, so each pair is\n-- reported exactly once. Six rows collapse to one.\nAND A.CUSTOMER_NUM < B.CUSTOMER_NUM;",
        "hint": "Put a less-than sign between the two primary key columns, then try <> instead and compare the row counts."
       },
       {
@@ -1422,7 +1422,7 @@
        "type": "sandbox",
        "seed": "kimtay_full",
        "starter": "SELECT A.ITEM_ID, B.ITEM_ID, A.CATEGORY\nFROM ITEM A, ITEM B\nWHERE A.CATEGORY = B.CATEGORY\nAND A.ITEM_ID < B.ITEM_ID;",
-       "solution": "SELECT A.ITEM_ID, B.ITEM_ID, A.CATEGORY\nFROM ITEM A, ITEM B\nWHERE A.CATEGORY = B.CATEGORY\nAND A.ITEM_ID < B.ITEM_ID;",
+       "solution": "-- The same pattern pointed at a different shared attribute.\nSELECT A.ITEM_ID, B.ITEM_ID, A.CATEGORY\nFROM ITEM A, ITEM B\n-- Match on the column that describes the relationship - here, the category.\nWHERE A.CATEGORY = B.CATEGORY\n-- Then restrict on the primary key so each pair appears once.\nAND A.ITEM_ID < B.ITEM_ID;",
        "hint": "One row comes back, AV07 with FT88, because Habitat is the only category holding two items."
       },
       {
@@ -1433,7 +1433,7 @@
        "type": "sandbox",
        "seed": "kimtay_full",
        "starter": "SELECT R.LAST_NAME, A.CUSTOMER_NAME, B.CUSTOMER_NAME\nFROM CUSTOMER A, CUSTOMER B, REP R\nWHERE A.REP_NUM = B.REP_NUM\nAND A.REP_NUM = R.REP_NUM\nAND A.CUSTOMER_NUM < B.CUSTOMER_NUM;",
-       "solution": "SELECT R.LAST_NAME, A.CUSTOMER_NAME, B.CUSTOMER_NAME\nFROM CUSTOMER A, CUSTOMER B, REP R\nWHERE A.REP_NUM = B.REP_NUM\nAND A.REP_NUM = R.REP_NUM\nAND A.CUSTOMER_NUM < B.CUSTOMER_NUM;",
+       "solution": "-- A self-join can sit alongside other tables: three names, two of them the same table.\nSELECT R.LAST_NAME, A.CUSTOMER_NAME, B.CUSTOMER_NAME\nFROM CUSTOMER A, CUSTOMER B, REP R\n-- The two customer copies share a rep.\nWHERE A.REP_NUM = B.REP_NUM\n-- REP is linked to either copy - both carry the same rep number, so it does not matter which.\nAND A.REP_NUM = R.REP_NUM\n-- And the primary key condition still keeps each pair to one row.\nAND A.CUSTOMER_NUM < B.CUSTOMER_NUM;",
        "hint": "Three aliases, three conditions: match the copies, attach the rep, restrict the pair."
       },
       {
@@ -1499,7 +1499,7 @@
        "type": "sandbox",
        "seed": "kimtay_full",
        "starter": "SELECT I.INVOICE_NUM, C.CUSTOMER_NAME, IT.DESCRIPTION, IL.NUM_ORDERED\nFROM CUSTOMER C, INVOICE I, INVOICE_LINE IL, ITEM IT\nWHERE C.CUSTOMER_NUM = I.CUSTOMER_NUM\nAND I.INVOICE_NUM = IL.INVOICE_NUM\nAND IL.ITEM_ID = ___.ITEM_ID\nORDER BY I.INVOICE_NUM, IT.ITEM_ID;",
-       "solution": "SELECT I.INVOICE_NUM, C.CUSTOMER_NAME, IT.DESCRIPTION, IL.NUM_ORDERED\nFROM CUSTOMER C, INVOICE I, INVOICE_LINE IL, ITEM IT\nWHERE C.CUSTOMER_NUM = I.CUSTOMER_NUM\nAND I.INVOICE_NUM = IL.INVOICE_NUM\nAND IL.ITEM_ID = IT.ITEM_ID\nORDER BY I.INVOICE_NUM, IT.ITEM_ID;",
+       "solution": "SELECT I.INVOICE_NUM, C.CUSTOMER_NAME, IT.DESCRIPTION, IL.NUM_ORDERED\n-- Four tables, all aliased, so the conditions below stay short.\nFROM CUSTOMER C, INVOICE I, INVOICE_LINE IL, ITEM IT\n-- Link 1 of 3: customer to invoice.\nWHERE C.CUSTOMER_NUM = I.CUSTOMER_NUM\n-- Link 2: invoice to line item.\nAND I.INVOICE_NUM = IL.INVOICE_NUM\n-- Link 3: line item to item. Four tables, three links - always one fewer.\nAND IL.ITEM_ID = IT.ITEM_ID\nORDER BY I.INVOICE_NUM, IT.ITEM_ID;",
        "hint": "The last link joins INVOICE_LINE to ITEM, so the missing alias is IT."
       },
       {
@@ -1520,7 +1520,7 @@
        "type": "sandbox",
        "seed": "kimtay_full",
        "starter": "SELECT I.INVOICE_NUM, C.CUSTOMER_NAME, IT.DESCRIPTION\nFROM CUSTOMER C, INVOICE I, INVOICE_LINE IL, ITEM IT\nWHERE C.CUSTOMER_NUM = I.CUSTOMER_NUM\nAND I.INVOICE_NUM = IL.INVOICE_NUM\nAND IL.ITEM_ID = IT.ITEM_ID\nAND IT.CATEGORY = ___\nORDER BY IT.ITEM_ID;",
-       "solution": "SELECT I.INVOICE_NUM, C.CUSTOMER_NAME, IT.DESCRIPTION\nFROM CUSTOMER C, INVOICE I, INVOICE_LINE IL, ITEM IT\nWHERE C.CUSTOMER_NUM = I.CUSTOMER_NUM\nAND I.INVOICE_NUM = IL.INVOICE_NUM\nAND IL.ITEM_ID = IT.ITEM_ID\nAND IT.CATEGORY = 'Habitat'\nORDER BY IT.ITEM_ID;",
+       "solution": "SELECT I.INVOICE_NUM, C.CUSTOMER_NAME, IT.DESCRIPTION\nFROM CUSTOMER C, INVOICE I, INVOICE_LINE IL, ITEM IT\n-- The three links that hold the chain together.\nWHERE C.CUSTOMER_NUM = I.CUSTOMER_NUM\nAND I.INVOICE_NUM = IL.INVOICE_NUM\nAND IL.ITEM_ID = IT.ITEM_ID\n-- A fourth condition that is NOT a link: an ordinary filter on the joined rows.\nAND IT.CATEGORY = 'Habitat'\nORDER BY IT.ITEM_ID;",
        "hint": "Put the category in single quotes: 'Habitat'. Two rows come back, both on invoice 50712."
       },
       {
@@ -1535,7 +1535,7 @@
        "type": "sandbox",
        "seed": "kimtay_full",
        "starter": "SELECT R.LAST_NAME, C.CUSTOMER_NAME, IT.DESCRIPTION,\n       IL.NUM_ORDERED * IL.QUOTED_PRICE AS EXTENDED\nFROM REP R, CUSTOMER C, INVOICE I, INVOICE_LINE IL, ITEM IT\nWHERE R.REP_NUM = C.REP_NUM\nAND C.CUSTOMER_NUM = I.CUSTOMER_NUM\nAND I.INVOICE_NUM = IL.INVOICE_NUM\nAND IL.ITEM_ID = IT.ITEM_ID\nORDER BY R.LAST_NAME, IT.DESCRIPTION;",
-       "solution": "SELECT R.LAST_NAME, C.CUSTOMER_NAME, IT.DESCRIPTION,\n       IL.NUM_ORDERED * IL.QUOTED_PRICE AS EXTENDED\nFROM REP R, CUSTOMER C, INVOICE I, INVOICE_LINE IL, ITEM IT\nWHERE R.REP_NUM = C.REP_NUM\nAND C.CUSTOMER_NUM = I.CUSTOMER_NUM\nAND I.INVOICE_NUM = IL.INVOICE_NUM\nAND IL.ITEM_ID = IT.ITEM_ID\nORDER BY R.LAST_NAME, IT.DESCRIPTION;",
+       "solution": "SELECT R.LAST_NAME, C.CUSTOMER_NAME, IT.DESCRIPTION,\n       -- The calculated line value, named with AS.\n       IL.NUM_ORDERED * IL.QUOTED_PRICE AS EXTENDED\n-- FIVE tables this time, so four links are needed.\nFROM REP R, CUSTOMER C, INVOICE I, INVOICE_LINE IL, ITEM IT\n-- Link 1: rep to customer.\nWHERE R.REP_NUM = C.REP_NUM\n-- Link 2: customer to invoice.\nAND C.CUSTOMER_NUM = I.CUSTOMER_NUM\n-- Link 3: invoice to line item.\nAND I.INVOICE_NUM = IL.INVOICE_NUM\n-- Link 4: line item to item. Count them against the tables: five and four.\nAND IL.ITEM_ID = IT.ITEM_ID\nORDER BY R.LAST_NAME, IT.DESCRIPTION;",
        "hint": "Five tables, four conditions. Kaiser's two lines extend to 127.50 and 23.98."
       },
       {
@@ -1546,7 +1546,7 @@
        "type": "sandbox",
        "seed": "kimtay_full",
        "starter": "SELECT I.INVOICE_NUM, C.CUSTOMER_NAME, SUM(IL.NUM_ORDERED * IL.QUOTED_PRICE) AS INVOICE_TOTAL\nFROM CUSTOMER C, INVOICE I, INVOICE_LINE IL\nWHERE C.CUSTOMER_NUM = I.CUSTOMER_NUM\nAND I.INVOICE_NUM = IL.INVOICE_NUM\nGROUP BY ___, C.CUSTOMER_NAME\nORDER BY I.INVOICE_NUM;",
-       "solution": "SELECT I.INVOICE_NUM, C.CUSTOMER_NAME, SUM(IL.NUM_ORDERED * IL.QUOTED_PRICE) AS INVOICE_TOTAL\nFROM CUSTOMER C, INVOICE I, INVOICE_LINE IL\nWHERE C.CUSTOMER_NUM = I.CUSTOMER_NUM\nAND I.INVOICE_NUM = IL.INVOICE_NUM\nGROUP BY I.INVOICE_NUM, C.CUSTOMER_NAME\nORDER BY I.INVOICE_NUM;",
+       "solution": "-- Two grouping columns and one aggregate over the joined rows.\nSELECT I.INVOICE_NUM, C.CUSTOMER_NAME, SUM(IL.NUM_ORDERED * IL.QUOTED_PRICE) AS INVOICE_TOTAL\n-- Only three tables: no item description is displayed, so ITEM is not needed.\nFROM CUSTOMER C, INVOICE I, INVOICE_LINE IL\n-- Three tables, two links.\nWHERE C.CUSTOMER_NUM = I.CUSTOMER_NUM\nAND I.INVOICE_NUM = IL.INVOICE_NUM\n-- One output row per invoice. Every non-aggregated column above is listed here,\n-- which is why CUSTOMER_NAME appears as well as INVOICE_NUM.\nGROUP BY I.INVOICE_NUM, C.CUSTOMER_NAME\nORDER BY I.INVOICE_NUM;",
        "hint": "Group by the invoice number, qualified with its alias. Totals are 151.48, 100.25 and 120.49."
       },
       {
@@ -1856,7 +1856,7 @@
       },
       {
        "type": "code",
-       "text": "SELECT CUSTOMER_NUM, CUSTOMER_NAME\nFROM CUSTOMER\nWHERE REP_NUM = '20'\nUNION\nSELECT CUSTOMER_NUM, CUSTOMER_NAME\nFROM CUSTOMER\nWHERE CUSTOMER_NUM IN (SELECT CUSTOMER_NUM FROM INVOICE)\nORDER BY CUSTOMER_NUM;"
+       "text": "-- GOAL: one combined list - every customer served by rep 20, together with every\n-- customer that has an invoice, each appearing only once.\n-- SELECT: the first of two complete SELECT statements. Its two columns fix the\n--   shape of the answer, and its headings are the headings of the whole result.\nSELECT CUSTOMER_NUM, CUSTOMER_NAME\n\n-- FROM: the first statement reads CUSTOMER.\nFROM CUSTOMER\n\n-- WHERE: first set - the customers of rep 20. That is 1120 and 1310.\nWHERE REP_NUM = '20'\n\n-- UNION: folds the two results into one and removes duplicate rows. Both sides\n--   must be union compatible: same number of columns, same order, compatible\n--   types. The names do not have to match.\nUNION\n\n-- SELECT: the second complete statement begins here. Two columns again.\nSELECT CUSTOMER_NUM, CUSTOMER_NAME\n\n-- FROM: it happens to read the same table, but it does not have to.\nFROM CUSTOMER\n\n-- WHERE: second set - the customers that appear in INVOICE. That is 1120, 1225\n--   and 1420. Customer 1120 is on both lists, and UNION keeps one copy of it,\n--   so the combined answer is four rows rather than five.\nWHERE CUSTOMER_NUM IN (SELECT CUSTOMER_NUM FROM INVOICE)\n\n-- ORDER BY: a set operation is ONE statement, so it gets ONE ORDER BY, and it\n--   belongs after the last SELECT. Sorting the first half on its own is an error.\nORDER BY CUSTOMER_NUM;"
       },
       {
        "type": "p",
@@ -1904,7 +1904,7 @@
       },
       {
        "type": "code",
-       "text": "SELECT CITY FROM CUSTOMER\nUNION ALL\nSELECT CITY FROM REP;"
+       "text": "-- GOAL: every city named in either table, with nothing removed.\n-- SELECT / FROM: the first list - the four city values stored in CUSTOMER.\nSELECT CITY FROM CUSTOMER\n\n-- UNION ALL: stacks the two lists and stops there. Nothing is compared and\n--   nothing is discarded, so a city held by several rows is listed several times.\nUNION ALL\n\n-- SELECT / FROM: the second list - the three city values stored in REP. Seven\n--   rows come back in all: Maple Grove, Northfield, Maple Grove, Brookville,\n--   then Maple Grove, Maple Grove, Brookville.\nSELECT CITY FROM REP;"
       },
       {
        "type": "p",
@@ -1912,7 +1912,7 @@
       },
       {
        "type": "code",
-       "text": "SELECT CITY FROM CUSTOMER\nUNION\nSELECT CITY FROM REP\nORDER BY CITY;"
+       "text": "-- GOAL: the same two lists, with the one keyword changed, to see what duplicate\n-- removal costs and buys.\n-- SELECT / FROM: the first list - the cities in CUSTOMER.\nSELECT CITY FROM CUSTOMER\n\n-- UNION: same stacking as UNION ALL, plus a duplicate check. Seven rows shrink\n--   to the three distinct cities. That check is real work, which is the reason\n--   UNION ALL exists at all.\nUNION\n\n-- SELECT / FROM: the second list - the cities in REP.\nSELECT CITY FROM REP\n\n-- ORDER BY: sorts the combined three-row result. It sits at the very end of the\n--   whole statement, never inside either half.\nORDER BY CITY;"
       },
       {
        "type": "table",
@@ -1955,7 +1955,7 @@
       },
       {
        "type": "code",
-       "text": "SELECT CUSTOMER_NUM, CUSTOMER_NAME\nFROM CUSTOMER\nWHERE REP_NUM = '20'\nINTERSECT\nSELECT CUSTOMER_NUM, CUSTOMER_NAME\nFROM CUSTOMER\nWHERE CUSTOMER_NUM IN (SELECT CUSTOMER_NUM FROM INVOICE);"
+       "text": "-- GOAL: the overlap - customers who are served by rep 20 AND have an invoice.\n-- SELECT: the first statement, two columns.\nSELECT CUSTOMER_NUM, CUSTOMER_NAME\n\n-- FROM: it reads CUSTOMER.\nFROM CUSTOMER\n\n-- WHERE: first set - rep 20's customers, 1120 and 1310.\nWHERE REP_NUM = '20'\n\n-- INTERSECT: keeps only rows produced by BOTH sides, and removes duplicates.\n--   Order does not matter here: swapping the two halves asks the same question.\nINTERSECT\n\n-- SELECT: the second statement, the same two columns in the same order.\nSELECT CUSTOMER_NUM, CUSTOMER_NAME\n\n-- FROM: it reads CUSTOMER too.\nFROM CUSTOMER\n\n-- WHERE: second set - the invoiced customers, 1120, 1225 and 1420. Only 1120 is\n--   on both lists, so one row comes back. 1310 belongs to rep 20 but has never\n--   been billed, and 1225 and 1420 have invoices but belong to other reps.\nWHERE CUSTOMER_NUM IN (SELECT CUSTOMER_NUM FROM INVOICE);"
       },
       {
        "type": "p",
@@ -1971,7 +1971,7 @@
       },
       {
        "type": "code",
-       "text": "SELECT CUSTOMER_NUM, CUSTOMER_NAME\nFROM CUSTOMER\nWHERE REP_NUM = '20'\nEXCEPT\nSELECT CUSTOMER_NUM, CUSTOMER_NAME\nFROM CUSTOMER\nWHERE CUSTOMER_NUM IN (SELECT CUSTOMER_NUM FROM INVOICE);"
+       "text": "-- GOAL: the subtraction - rep 20's customers who have never been billed.\n-- SELECT: the first statement, two columns.\nSELECT CUSTOMER_NUM, CUSTOMER_NAME\n\n-- FROM: it reads CUSTOMER.\nFROM CUSTOMER\n\n-- WHERE: first set - rep 20's customers, 1120 and 1310.\nWHERE REP_NUM = '20'\n\n-- EXCEPT: keeps the rows the first statement produced that the second did not\n--   also produce. Order matters here in a way it never does for UNION or\n--   INTERSECT: reverse the halves and you are asking which invoiced customers do\n--   not belong to rep 20, which answers 1225 and 1420 instead. Oracle spells\n--   this operation MINUS.\nEXCEPT\n\n-- SELECT: the second statement, matching shape.\nSELECT CUSTOMER_NUM, CUSTOMER_NAME\n\n-- FROM: it reads CUSTOMER as well.\nFROM CUSTOMER\n\n-- WHERE: second set - the invoiced customers. Removing them from the first set\n--   leaves one row, 1310 Companion Care Clinic.\nWHERE CUSTOMER_NUM IN (SELECT CUSTOMER_NUM FROM INVOICE);"
       },
       {
        "type": "p",
@@ -1993,7 +1993,7 @@
       },
       {
        "type": "code",
-       "text": "SELECT CUSTOMER_NUM, CUSTOMER_NAME\nFROM CUSTOMER\nUNION\nSELECT REP_NUM\nFROM REP;"
+       "text": "-- GOAL: a deliberate error - the mistake you are most likely to make with a set\n-- operation, so that you recognise the message instead of guessing at it.\n-- SELECT: the first statement returns TWO columns.\nSELECT CUSTOMER_NUM, CUSTOMER_NAME\n\n-- FROM: it reads CUSTOMER.\nFROM CUSTOMER\n\n-- UNION: the two halves are not union compatible, and the engine rejects the\n--   statement here without executing anything. SQLite says \"SELECTs to the left\n--   and right of UNION do not have the same number of result columns\".\nUNION\n\n-- SELECT: the second statement returns ONE column, and that is the whole problem.\n--   The fix is always the same - add or remove a column until the counts agree.\nSELECT REP_NUM\n\n-- FROM: it reads REP.\nFROM REP;"
       },
       {
        "type": "p",
@@ -2009,7 +2009,7 @@
       },
       {
        "type": "code",
-       "text": "SELECT CUSTOMER_NUM AS ID_NUM, CUSTOMER_NAME AS NAME\nFROM CUSTOMER\nWHERE CITY = 'Brookville'\nUNION\nSELECT REP_NUM, LAST_NAME\nFROM REP\nWHERE CITY = 'Brookville'\nORDER BY ID_NUM;"
+       "text": "-- GOAL: a single Brookville contact list, drawn from two different tables. The\n-- halves of a union do not have to read the same table - only to match in shape.\n-- SELECT: two columns, each renamed with AS. Headings always come from the FIRST\n--   SELECT, which is why it is worth putting the aliases here.\nSELECT CUSTOMER_NUM AS ID_NUM, CUSTOMER_NAME AS NAME\n\n-- FROM: the first half reads CUSTOMER.\nFROM CUSTOMER\n\n-- WHERE: restricts the first half to Brookville - customer 1420.\nWHERE CITY = 'Brookville'\n\n-- UNION: stacks the two lists and drops duplicates. Two columns on each side,\n--   and a number lines up with a number, text with text, so the two are\n--   union compatible.\nUNION\n\n-- SELECT: the second half returns a rep number and a last name. It never mentions\n--   ID_NUM or NAME, and does not need to - only the count, order and types matter.\nSELECT REP_NUM, LAST_NAME\n\n-- FROM: the second half reads REP.\nFROM REP\n\n-- WHERE: restricts the second half to Brookville - rep 65, Perez.\nWHERE CITY = 'Brookville'\n\n-- ORDER BY: sorts the combined result, and must use the heading the first SELECT\n--   established. ORDER BY CUSTOMER_NUM would be an error here.\nORDER BY ID_NUM;"
       },
       {
        "type": "p",
@@ -2019,21 +2019,21 @@
        "type": "sandbox",
        "seed": "kimtay_full",
        "starter": "-- Invoice 50710 lists CF21 and DG04. Invoice 50711 lists CF21 and GR15.\n-- Step 1: run this and count the rows.\nSELECT ITEM_ID FROM INVOICE_LINE WHERE INVOICE_NUM = '50710'\nUNION ALL\nSELECT ITEM_ID FROM INVOICE_LINE WHERE INVOICE_NUM = '50711';\n\n-- Step 2: change UNION ALL to UNION, run it again, and explain the difference.",
-       "solution": "SELECT ITEM_ID FROM INVOICE_LINE WHERE INVOICE_NUM = '50710'\nUNION\nSELECT ITEM_ID FROM INVOICE_LINE WHERE INVOICE_NUM = '50711';",
+       "solution": "-- First set: the items on invoice 50710.\nSELECT ITEM_ID FROM INVOICE_LINE WHERE INVOICE_NUM = '50710'\n-- UNION stacks the two results and removes duplicates. Both sides return one\n-- column of the same kind, which is what union compatible means.\nUNION\n-- Second set: the items on invoice 50711. CF21 is on both and appears once.\nSELECT ITEM_ID FROM INVOICE_LINE WHERE INVOICE_NUM = '50711';",
        "hint": "CF21 is the only item that appears on both invoices, so it is the only row `UNION` collapses. Four rows becomes three: CF21, DG04, GR15."
       },
       {
        "type": "sandbox",
        "seed": "kimtay_full",
        "starter": "-- List 1 (already written): customers served by rep 20.\n-- List 2: customers that have at least one invoice.\n-- Finish this as an INTERSECT to find customers on BOTH lists,\n-- then change INTERSECT to EXCEPT and run it again.\n\nSELECT CUSTOMER_NUM, CUSTOMER_NAME\nFROM CUSTOMER\nWHERE REP_NUM = '20'",
-       "solution": "SELECT CUSTOMER_NUM, CUSTOMER_NAME\nFROM CUSTOMER\nWHERE REP_NUM = '20'\nINTERSECT\nSELECT CUSTOMER_NUM, CUSTOMER_NAME\nFROM CUSTOMER\nWHERE CUSTOMER_NUM IN (SELECT CUSTOMER_NUM FROM INVOICE);",
+       "solution": "-- The first of two complete SELECT statements. Its columns fix the shape.\nSELECT CUSTOMER_NUM, CUSTOMER_NAME\nFROM CUSTOMER\n-- First set: rep 20's customers.\nWHERE REP_NUM = '20'\n-- INTERSECT keeps only rows produced by BOTH sides. Order does not matter here.\nINTERSECT\n-- The second statement: same number of columns, same order, same types.\nSELECT CUSTOMER_NUM, CUSTOMER_NAME\nFROM CUSTOMER\n-- Second set: the customers that have an invoice. Only the overlap survives.\nWHERE CUSTOMER_NUM IN (SELECT CUSTOMER_NUM FROM INVOICE);",
        "hint": "`INTERSECT` returns Access Pet Center (1120) on its own. Swap in `EXCEPT` and you get Companion Care Clinic (1310) on its own, because 1310 belongs to rep 20 and has no invoice."
       },
       {
        "type": "sandbox",
        "seed": "staywell_full",
        "starter": "-- StayWell wants to compare two lists of students:\n--   A: students whose HOME_STATE is 'OH'\n--   B: students who lease a room at property P200\n-- Write all three: A UNION B, A INTERSECT B, and A EXCEPT B.\n-- List A is started for you, with no semicolon yet, so you can add\n-- the keyword and List B straight onto the end of it.\n\nSELECT STUDENT_ID, LAST_NAME\nFROM STUDENT\nWHERE HOME_STATE = 'OH'",
-       "solution": "SELECT STUDENT_ID, LAST_NAME\nFROM STUDENT\nWHERE HOME_STATE = 'OH'\nUNION\nSELECT STUDENT_ID, LAST_NAME\nFROM STUDENT\nWHERE STUDENT_ID IN (SELECT STUDENT_ID FROM LEASE WHERE PROPERTY_ID = 'P200')\nORDER BY STUDENT_ID;",
+       "solution": "-- First set: the Ohio students.\nSELECT STUDENT_ID, LAST_NAME\nFROM STUDENT\nWHERE HOME_STATE = 'OH'\n-- UNION combines and drops duplicates, so a student who qualifies on both counts\n-- is still listed once.\nUNION\nSELECT STUDENT_ID, LAST_NAME\nFROM STUDENT\n-- Second set: the students leasing at property P200.\nWHERE STUDENT_ID IN (SELECT STUDENT_ID FROM LEASE WHERE PROPERTY_ID = 'P200')\n-- A set operation is ONE statement, so it gets ONE ORDER BY, at the very end.\nORDER BY STUDENT_ID;",
        "hint": "`UNION` gives S001, S003 and S004. `INTERSECT` gives S004 alone, the one student who is from Ohio and leases at P200. `EXCEPT` gives S001 alone, from Ohio but leasing at P100."
       },
       {
@@ -2074,7 +2074,7 @@
       },
       {
        "type": "code",
-       "text": "-- MySQL or Oracle. This is a syntax error in SQLite.\nSELECT CUSTOMER_NUM, CUSTOMER_NAME, BALANCE\nFROM CUSTOMER\nWHERE BALANCE > ALL (SELECT BALANCE FROM CUSTOMER WHERE REP_NUM = '20');"
+       "text": "-- GOAL: the customers whose balance beats the balance of EVERY customer rep 20\n-- handles. Written the MySQL or Oracle way; this is a syntax error in SQLite.\n-- SELECT: three columns, including the balance being tested, so you can check the\n--   comparison by eye.\nSELECT CUSTOMER_NUM, CUSTOMER_NAME, BALANCE\n\n-- FROM: one table - the subquery reads the same table again, separately.\nFROM CUSTOMER\n\n-- WHERE: the subquery returns rep 20's balances, 3512.50 and 0.00. \"Greater than\n--   ALL\" means the row's balance must beat every value in that list, which is\n--   the same as beating the largest one. Read it out loud as \"balance greater\n--   than all of these\".\nWHERE BALANCE > ALL (SELECT BALANCE FROM CUSTOMER WHERE REP_NUM = '20');"
       },
       {
        "type": "p",
@@ -2088,7 +2088,7 @@
       },
       {
        "type": "code",
-       "text": "SELECT CUSTOMER_NUM, CUSTOMER_NAME, BALANCE\nFROM CUSTOMER\nWHERE BALANCE > (SELECT MAX(BALANCE) FROM CUSTOMER WHERE REP_NUM = '20')\nORDER BY CUSTOMER_NUM;"
+       "text": "-- GOAL: the same question, rewritten so it runs everywhere, SQLite included.\n-- SELECT: the same three columns.\nSELECT CUSTOMER_NUM, CUSTOMER_NAME, BALANCE\n\n-- FROM: the outer query reads CUSTOMER.\nFROM CUSTOMER\n\n-- WHERE: because \"greater than ALL\" only ever tests the top of the list, MAX\n--   collapses the subquery to the single number 3512.50, and an ordinary\n--   comparison does the rest. One row clears it - 1420, at 4820.75.\nWHERE BALANCE > (SELECT MAX(BALANCE) FROM CUSTOMER WHERE REP_NUM = '20')\n\n-- ORDER BY: sorts whatever survives by customer number.\nORDER BY CUSTOMER_NUM;"
       },
       {
        "type": "table",
@@ -2116,7 +2116,7 @@
       },
       {
        "type": "code",
-       "text": "-- MySQL or Oracle. This is a syntax error in SQLite.\nSELECT CUSTOMER_NUM, CUSTOMER_NAME, BALANCE\nFROM CUSTOMER\nWHERE BALANCE > ANY (SELECT BALANCE FROM CUSTOMER WHERE REP_NUM = '20');"
+       "text": "-- GOAL: change one keyword and the bar drops a long way - now a balance need only\n-- beat the WEAKEST value in the list. MySQL or Oracle; a syntax error in SQLite.\n-- SELECT: the same three columns as the ALL version.\nSELECT CUSTOMER_NUM, CUSTOMER_NAME, BALANCE\n\n-- FROM: the outer query reads CUSTOMER.\nFROM CUSTOMER\n\n-- WHERE: the subquery returns the same two balances, 3512.50 and 0.00. \"Greater\n--   than ANY\" means greater than at least one of them, which is the same as\n--   greater than the smallest. SOME is an exact synonym for ANY.\nWHERE BALANCE > ANY (SELECT BALANCE FROM CUSTOMER WHERE REP_NUM = '20');"
       },
       {
        "type": "p",
@@ -2124,7 +2124,7 @@
       },
       {
        "type": "code",
-       "text": "SELECT CUSTOMER_NUM, CUSTOMER_NAME, BALANCE\nFROM CUSTOMER\nWHERE BALANCE > (SELECT MIN(BALANCE) FROM CUSTOMER WHERE REP_NUM = '20')\nORDER BY CUSTOMER_NUM;"
+       "text": "-- GOAL: the ANY version rewritten to run everywhere.\n-- SELECT: the same three columns.\nSELECT CUSTOMER_NUM, CUSTOMER_NAME, BALANCE\n\n-- FROM: the outer query reads CUSTOMER.\nFROM CUSTOMER\n\n-- WHERE: \"greater than ANY\" only ever tests the bottom of the list, so MIN\n--   collapses the subquery to 0.00 and the test becomes \"balance greater than\n--   0.00\". Three customers clear it. Companion Care Clinic does not, because\n--   0.00 is not greater than 0.00.\nWHERE BALANCE > (SELECT MIN(BALANCE) FROM CUSTOMER WHERE REP_NUM = '20')\n\n-- ORDER BY: sorts the three surviving rows by customer number.\nORDER BY CUSTOMER_NUM;"
       },
       {
        "type": "table",
@@ -2221,21 +2221,21 @@
        "type": "sandbox",
        "seed": "kimtay_full",
        "starter": "-- The MySQL/Oracle version would be:\n--   WHERE PRICE > ALL (SELECT PRICE FROM ITEM WHERE CATEGORY = 'Accessory')\n-- Rewrite it with MAX so it runs here: which items cost more than\n-- every Accessory item?\n\nSELECT ITEM_ID, DESCRIPTION, PRICE\nFROM ITEM\nWHERE PRICE >",
-       "solution": "SELECT ITEM_ID, DESCRIPTION, PRICE\nFROM ITEM\nWHERE PRICE > (SELECT MAX(PRICE) FROM ITEM WHERE CATEGORY = 'Accessory')\nORDER BY ITEM_ID;",
+       "solution": "SELECT ITEM_ID, DESCRIPTION, PRICE\nFROM ITEM\n-- The SQLite-friendly rewrite of > ALL. Beating every accessory price is the same\n-- as beating the largest one, and MAX collapses the subquery to a single number\n-- so an ordinary comparison works.\nWHERE PRICE > (SELECT MAX(PRICE) FROM ITEM WHERE CATEGORY = 'Accessory')\nORDER BY ITEM_ID;",
        "hint": "There is one Accessory item, the Nylon Dog Leash at 11.99, so `MAX` is 11.99 and the other four items all clear it: AV07, CF21, FT88 and GR15."
       },
       {
        "type": "sandbox",
        "seed": "kimtay_full",
        "starter": "-- Translate these two on sight, then run them.\n-- 1. WHERE CUSTOMER_NUM = ANY (SELECT CUSTOMER_NUM FROM INVOICE)\n-- 2. WHERE CUSTOMER_NUM <> ALL (SELECT CUSTOMER_NUM FROM INVOICE)\n-- Write version 1 first using the keyword that runs in SQLite.\n\nSELECT CUSTOMER_NUM, CUSTOMER_NAME\nFROM CUSTOMER",
-       "solution": "SELECT CUSTOMER_NUM, CUSTOMER_NAME\nFROM CUSTOMER\nWHERE CUSTOMER_NUM IN (SELECT CUSTOMER_NUM FROM INVOICE)\nORDER BY CUSTOMER_NUM;",
+       "solution": "SELECT CUSTOMER_NUM, CUSTOMER_NAME\nFROM CUSTOMER\n-- = ANY means the same thing as IN: match any value in the list. IN is the\n-- spelling that runs everywhere, SQLite included.\nWHERE CUSTOMER_NUM IN (SELECT CUSTOMER_NUM FROM INVOICE)\nORDER BY CUSTOMER_NUM;",
        "hint": "`= ANY` is `IN` and returns the three invoiced customers 1120, 1225 and 1420. `<> ALL` is `NOT IN` and returns Companion Care Clinic (1310) on its own."
       },
       {
        "type": "sandbox",
        "seed": "staywell_full",
        "starter": "-- StayWell is repricing. Property P100 has rooms at 595.00 and 450.00.\n-- a) Which rooms rent for more than EVERY room at P100?  (ALL -> MAX)\n-- b) Which rooms rent for more than ANY room at P100?    (ANY -> MIN)\n-- Write part (a) here, then edit it into part (b).\n\nSELECT PROPERTY_ID, ROOM_NUM, ROOM_TYPE, MONTHLY_RENT\nFROM ROOM",
-       "solution": "SELECT PROPERTY_ID, ROOM_NUM, ROOM_TYPE, MONTHLY_RENT\nFROM ROOM\nWHERE MONTHLY_RENT > (SELECT MAX(MONTHLY_RENT) FROM ROOM WHERE PROPERTY_ID = 'P100')\nORDER BY PROPERTY_ID, ROOM_NUM;",
+       "solution": "SELECT PROPERTY_ID, ROOM_NUM, ROOM_TYPE, MONTHLY_RENT\nFROM ROOM\n-- Beat the dearest room at P100. MAX turns the subquery into one number, which\n-- is what makes > legal - a bare subquery returning several rows would not be.\nWHERE MONTHLY_RENT > (SELECT MAX(MONTHLY_RENT) FROM ROOM WHERE PROPERTY_ID = 'P100')\nORDER BY PROPERTY_ID, ROOM_NUM;",
        "hint": "Part (a) clears the bar at 595.00 and returns two rooms, P200 101 and P200 201. Part (b) drops the bar to 450.00 and returns four rooms: P100 101, P200 101, P200 201 and P200 202."
       },
       {
@@ -2269,7 +2269,7 @@
       },
       {
        "type": "code",
-       "text": "SELECT CUSTOMER.CUSTOMER_NUM, CUSTOMER.CUSTOMER_NAME, REP.LAST_NAME\nFROM CUSTOMER INNER JOIN REP ON CUSTOMER.REP_NUM = REP.REP_NUM\nORDER BY CUSTOMER.CUSTOMER_NUM;"
+       "text": "-- GOAL: the very first join of this module, rewritten in the modern INNER JOIN\n-- ... ON form. Same four rows, different words.\n-- SELECT: the three output columns, qualified as always.\nSELECT CUSTOMER.CUSTOMER_NUM, CUSTOMER.CUSTOMER_NAME, REP.LAST_NAME\n\n-- FROM: the two tables and the matching condition now sit on one line. INNER JOIN\n--   names the second table and ON carries the condition, so the WHERE clause is\n--   left free for real business filters. Forgetting ON is a syntax error you\n--   cannot miss, which is why this form is worth preferring.\nFROM CUSTOMER INNER JOIN REP ON CUSTOMER.REP_NUM = REP.REP_NUM\n\n-- ORDER BY: sorts the four rows by customer number.\nORDER BY CUSTOMER.CUSTOMER_NUM;"
       },
       {
        "type": "table",
@@ -2312,7 +2312,7 @@
       },
       {
        "type": "code",
-       "text": "SELECT INVOICE.INVOICE_NUM, ITEM.DESCRIPTION, INVOICE_LINE.NUM_ORDERED\nFROM INVOICE INNER JOIN INVOICE_LINE ON INVOICE.INVOICE_NUM = INVOICE_LINE.INVOICE_NUM\nINNER JOIN ITEM ON INVOICE_LINE.ITEM_ID = ITEM.ITEM_ID\nORDER BY INVOICE.INVOICE_NUM, ITEM.DESCRIPTION;"
+       "text": "-- GOAL: put a description on every invoice line by walking INVOICE to\n-- INVOICE_LINE to ITEM. Inner joins chain - one JOIN ... ON per hop.\n-- SELECT: one column from each of the three tables.\nSELECT INVOICE.INVOICE_NUM, ITEM.DESCRIPTION, INVOICE_LINE.NUM_ORDERED\n\n-- FROM: link 1 - each invoice is joined to its own line items. Everything to the\n--   left of the next INNER JOIN behaves as a single combined table.\nFROM INVOICE INNER JOIN INVOICE_LINE ON INVOICE.INVOICE_NUM = INVOICE_LINE.INVOICE_NUM\n\n-- Link 2 - that combined result is then joined to ITEM. Three tables need two\n-- JOIN ... ON clauses, the same count as the two matching conditions the older\n-- comma-and-WHERE form would have needed. Six rows come back.\nINNER JOIN ITEM ON INVOICE_LINE.ITEM_ID = ITEM.ITEM_ID\n\n-- ORDER BY: by invoice, then by description within each invoice.\nORDER BY INVOICE.INVOICE_NUM, ITEM.DESCRIPTION;"
       },
       {
        "type": "p",
@@ -2334,7 +2334,7 @@
       },
       {
        "type": "code",
-       "text": "SELECT CUSTOMER.CUSTOMER_NUM, CUSTOMER.CUSTOMER_NAME, INVOICE.INVOICE_NUM\nFROM CUSTOMER INNER JOIN INVOICE ON CUSTOMER.CUSTOMER_NUM = INVOICE.CUSTOMER_NUM\nORDER BY CUSTOMER.CUSTOMER_NUM;"
+       "text": "-- GOAL: ask an inner join for every customer and its invoices, and watch what\n-- silently goes missing.\n-- SELECT: two customer columns and the invoice number.\nSELECT CUSTOMER.CUSTOMER_NUM, CUSTOMER.CUSTOMER_NAME, INVOICE.INVOICE_NUM\n\n-- FROM: INNER JOIN keeps only the pairs that match on both sides. Customer 1310\n--   has no row in INVOICE, so it has no partner and is dropped - with no warning\n--   of any kind. Four customers go in, three rows come out.\nFROM CUSTOMER INNER JOIN INVOICE ON CUSTOMER.CUSTOMER_NUM = INVOICE.CUSTOMER_NUM\n\n-- ORDER BY: sorts the three surviving rows by customer number.\nORDER BY CUSTOMER.CUSTOMER_NUM;"
       },
       {
        "type": "table",
@@ -2368,7 +2368,7 @@
       },
       {
        "type": "code",
-       "text": "SELECT CUSTOMER.CUSTOMER_NUM, CUSTOMER.CUSTOMER_NAME, INVOICE.INVOICE_NUM\nFROM CUSTOMER LEFT JOIN INVOICE ON CUSTOMER.CUSTOMER_NUM = INVOICE.CUSTOMER_NUM\nORDER BY CUSTOMER.CUSTOMER_NUM;"
+       "text": "-- GOAL: the same question, with the unmatched customer kept in the answer.\n-- SELECT: the same three columns as the inner join above.\nSELECT CUSTOMER.CUSTOMER_NUM, CUSTOMER.CUSTOMER_NAME, INVOICE.INVOICE_NUM\n\n-- FROM: LEFT JOIN keeps every row of the table written on the LEFT of the\n--   keyword, matched or not. CUSTOMER is on the left, so CUSTOMER is the table\n--   being protected. Where a customer has no invoice, SQL invents one row's\n--   worth of NULLs for the columns that came from the right-hand table, so 1310\n--   comes back with a null invoice number. Four rows this time.\nFROM CUSTOMER LEFT JOIN INVOICE ON CUSTOMER.CUSTOMER_NUM = INVOICE.CUSTOMER_NUM\n\n-- ORDER BY: sorts all four rows by customer number.\nORDER BY CUSTOMER.CUSTOMER_NUM;"
       },
       {
        "type": "table",
@@ -2428,7 +2428,7 @@
       },
       {
        "type": "code",
-       "text": "SELECT CUSTOMER.CUSTOMER_NUM, CUSTOMER.CUSTOMER_NAME\nFROM CUSTOMER LEFT JOIN INVOICE ON CUSTOMER.CUSTOMER_NUM = INVOICE.CUSTOMER_NUM\nWHERE INVOICE.INVOICE_NUM IS NULL;"
+       "text": "-- GOAL: find the gaps - the rows that have no match at all - in two steps.\n-- SELECT: only the customer columns. The invoice column is used for testing and\n--   would be null on every row that survives anyway.\nSELECT CUSTOMER.CUSTOMER_NUM, CUSTOMER.CUSTOMER_NAME\n\n-- FROM: step 1 - LEFT JOIN keeps all four customers, filling the INVOICE columns\n--   with NULL wherever no invoice matched.\nFROM CUSTOMER LEFT JOIN INVOICE ON CUSTOMER.CUSTOMER_NUM = INVOICE.CUSTOMER_NUM\n\n-- WHERE: step 2 - keep only the rows the join had to fill in. IS NULL is the only\n--   way to test for a null; = NULL never matches anything, not even another null.\n--   Here the test can be true only for a customer the join failed to match, so\n--   the whole query reads as \"customers with no invoice\". One row: 1310.\nWHERE INVOICE.INVOICE_NUM IS NULL;"
       },
       {
        "type": "p",
@@ -2450,7 +2450,7 @@
       },
       {
        "type": "code",
-       "text": "SELECT CUSTOMER.CUSTOMER_NUM, REP.REP_NUM\nFROM CUSTOMER, REP\nORDER BY CUSTOMER.CUSTOMER_NUM, REP.REP_NUM;"
+       "text": "-- GOAL: see the product - what SQL does when you never say how two tables relate.\n-- SELECT: one identifying column from each table, so the pattern is easy to read.\nSELECT CUSTOMER.CUSTOMER_NUM, REP.REP_NUM\n\n-- FROM: two tables listed with a comma and nothing else. There is no WHERE clause\n--   anywhere, so nothing restricts the pairings and every customer is paired with\n--   every rep: 4 x 3 = 12 rows, eight of them nonsense. This is the accident you\n--   cause by adding a table to FROM and forgetting its matching condition.\nFROM CUSTOMER, REP\n\n-- ORDER BY: sorting by both columns makes the regular repeating pattern - the\n--   symptom of an accidental product - obvious on sight.\nORDER BY CUSTOMER.CUSTOMER_NUM, REP.REP_NUM;"
       },
       {
        "type": "p",
@@ -2472,7 +2472,7 @@
       },
       {
        "type": "code",
-       "text": "SELECT CUSTOMER.CUSTOMER_NUM, CUSTOMER.CUSTOMER_NAME, REP.LAST_NAME\nFROM CUSTOMER, REP\nWHERE CUSTOMER.REP_NUM = REP.REP_NUM\nORDER BY CUSTOMER.CUSTOMER_NUM;"
+       "text": "-- GOAL: supply the missing condition and watch the product collapse back into an\n-- inner join. This is the first query of the lesson wearing different clothes.\n-- SELECT: two customer columns and the rep's last name.\nSELECT CUSTOMER.CUSTOMER_NUM, CUSTOMER.CUSTOMER_NAME, REP.LAST_NAME\n\n-- FROM: the same comma-separated pair of tables that produced the 12-row product.\nFROM CUSTOMER, REP\n\n-- WHERE: this single line is the entire difference. It throws away the eight\n--   pairings where the customer's rep number does not equal the rep's, leaving\n--   the same four rows the INNER JOIN ... ON version returned.\nWHERE CUSTOMER.REP_NUM = REP.REP_NUM\n\n-- ORDER BY: sorts the four rows by customer number.\nORDER BY CUSTOMER.CUSTOMER_NUM;"
       },
       {
        "type": "p",
@@ -2503,28 +2503,28 @@
        "type": "sandbox",
        "seed": "kimtay_full",
        "starter": "-- Run these three one at a time and compare the row counts.\n-- 1. Inner join: which customers drop out, and why?\nSELECT CUSTOMER.CUSTOMER_NUM, CUSTOMER.CUSTOMER_NAME, INVOICE.INVOICE_NUM\nFROM CUSTOMER INNER JOIN INVOICE ON CUSTOMER.CUSTOMER_NUM = INVOICE.CUSTOMER_NUM\nORDER BY CUSTOMER.CUSTOMER_NUM;\n\n-- 2. Now change INNER JOIN to LEFT JOIN and run it again.\n-- 3. Then put this line just before the ORDER BY and run it a third time:\n--      WHERE INVOICE.INVOICE_NUM IS NULL",
-       "solution": "SELECT CUSTOMER.CUSTOMER_NUM, CUSTOMER.CUSTOMER_NAME, INVOICE.INVOICE_NUM\nFROM CUSTOMER LEFT JOIN INVOICE ON CUSTOMER.CUSTOMER_NUM = INVOICE.CUSTOMER_NUM\nORDER BY CUSTOMER.CUSTOMER_NUM;",
+       "solution": "SELECT CUSTOMER.CUSTOMER_NUM, CUSTOMER.CUSTOMER_NAME, INVOICE.INVOICE_NUM\n-- LEFT JOIN keeps every row of the table on the LEFT, matched or not. Where a\n-- customer has no invoice, SQL fills the INVOICE columns with NULL - so all four\n-- customers come back, not the three an INNER JOIN would return.\nFROM CUSTOMER LEFT JOIN INVOICE ON CUSTOMER.CUSTOMER_NUM = INVOICE.CUSTOMER_NUM\nORDER BY CUSTOMER.CUSTOMER_NUM;",
        "hint": "The inner join returns three rows and hides Companion Care Clinic. The `LEFT JOIN` returns four, with an empty `INVOICE_NUM` on row 1310. Adding `WHERE INVOICE.INVOICE_NUM IS NULL` narrows it to that one row. `WHERE` always goes before `ORDER BY`."
       },
       {
        "type": "sandbox",
        "seed": "kimtay_full",
        "starter": "-- FULL OUTER JOIN keeps unmatched rows from BOTH sides. The shipped data\n-- has no orphan invoice, so this INSERT makes one first: invoice 50713\n-- points at customer 9999, which does not exist.\n-- The DELETE on the first line clears any 50713 left over from a previous\n-- run, so you can run the whole box as many times as you like.\n-- Press Reset when you are done to restore the shipped data.\n\nDELETE FROM INVOICE WHERE INVOICE_NUM = '50713';\n\nINSERT INTO INVOICE (INVOICE_NUM, CUSTOMER_NUM, INVOICE_DATE)\nVALUES ('50713', '9999', '2026-06-16');\n\nSELECT CUSTOMER.CUSTOMER_NUM, CUSTOMER.CUSTOMER_NAME, INVOICE.INVOICE_NUM\nFROM CUSTOMER FULL OUTER JOIN INVOICE ON CUSTOMER.CUSTOMER_NUM = INVOICE.CUSTOMER_NUM\nORDER BY CUSTOMER.CUSTOMER_NUM, INVOICE.INVOICE_NUM;",
-       "solution": "DELETE FROM INVOICE WHERE INVOICE_NUM = '50713';\n\nINSERT INTO INVOICE (INVOICE_NUM, CUSTOMER_NUM, INVOICE_DATE)\nVALUES ('50713', '9999', '2026-06-16');\n\nSELECT CUSTOMER.CUSTOMER_NUM, CUSTOMER.CUSTOMER_NAME, INVOICE.INVOICE_NUM\nFROM CUSTOMER FULL OUTER JOIN INVOICE ON CUSTOMER.CUSTOMER_NUM = INVOICE.CUSTOMER_NUM\nORDER BY CUSTOMER.CUSTOMER_NUM, INVOICE.INVOICE_NUM;",
+       "solution": "-- Housekeeping, so this box survives a second Run.\nDELETE FROM INVOICE WHERE INVOICE_NUM = '50713';\n\n-- Add an ORPHAN invoice on purpose: customer 9999 does not exist. Without one,\n-- a full outer join would look identical to a left join on this data.\nINSERT INTO INVOICE (INVOICE_NUM, CUSTOMER_NUM, INVOICE_DATE)\nVALUES ('50713', '9999', '2026-06-16');\n\nSELECT CUSTOMER.CUSTOMER_NUM, CUSTOMER.CUSTOMER_NAME, INVOICE.INVOICE_NUM\n-- FULL OUTER JOIN protects BOTH sides: the customer with no invoice AND the\n-- invoice with no customer both survive, each padded with nulls.\nFROM CUSTOMER FULL OUTER JOIN INVOICE ON CUSTOMER.CUSTOMER_NUM = INVOICE.CUSTOMER_NUM\nORDER BY CUSTOMER.CUSTOMER_NUM, INVOICE.INVOICE_NUM;",
        "hint": "Five rows. One has an empty customer and invoice 50713, the orphan invoice. One has Companion Care Clinic and an empty invoice. Both unmatched sides survive, which is what makes the join full. Without the `DELETE` on the first line, a second run would fail on the primary key."
       },
       {
        "type": "sandbox",
        "seed": "kimtay_full",
        "starter": "-- No join condition anywhere. Predict the row count before you run it:\n-- CUSTOMER has 4 rows, REP has 3.\nSELECT COUNT(*) AS ROW_COUNT FROM CUSTOMER, REP;\n\n-- Then run the rows themselves, and finally add the missing condition\n--      WHERE CUSTOMER.REP_NUM = REP.REP_NUM\n-- to collapse the product into the inner join you actually wanted.",
-       "solution": "SELECT CUSTOMER.CUSTOMER_NUM, CUSTOMER.CUSTOMER_NAME, REP.LAST_NAME\nFROM CUSTOMER, REP\nWHERE CUSTOMER.REP_NUM = REP.REP_NUM\nORDER BY CUSTOMER.CUSTOMER_NUM;",
+       "solution": "SELECT CUSTOMER.CUSTOMER_NUM, CUSTOMER.CUSTOMER_NAME, REP.LAST_NAME\n-- The older comma-and-WHERE form. Listing two tables with no condition would\n-- produce the twelve-row product...\nFROM CUSTOMER, REP\n-- ...and this single line is the whole difference between that and a real join.\nWHERE CUSTOMER.REP_NUM = REP.REP_NUM\nORDER BY CUSTOMER.CUSTOMER_NUM;",
        "hint": "The product is twelve rows, 4 times 3. Adding the `WHERE` condition cuts it to the four rows that are true, one per customer. `FROM CUSTOMER CROSS JOIN REP` also returns twelve and states the intent openly."
       },
       {
        "type": "sandbox",
        "seed": "staywell_full",
        "starter": "-- Two gap-finding questions for StayWell. Use LEFT JOIN for both.\n-- a) Every room, with its lease id, including rooms nobody leases.\n-- b) Every lease, with its payments, including leases with no payment.\n-- Part (a) is started for you: ROOM's key is two columns, so the ON\n-- clause needs both, joined with AND.\n\nSELECT ROOM.PROPERTY_ID, ROOM.ROOM_NUM, LEASE.LEASE_ID\nFROM ROOM LEFT JOIN LEASE ON",
-       "solution": "SELECT ROOM.PROPERTY_ID, ROOM.ROOM_NUM, LEASE.LEASE_ID\nFROM ROOM LEFT JOIN LEASE\n  ON ROOM.PROPERTY_ID = LEASE.PROPERTY_ID AND ROOM.ROOM_NUM = LEASE.ROOM_NUM\nORDER BY ROOM.PROPERTY_ID, ROOM.ROOM_NUM;",
+       "solution": "SELECT ROOM.PROPERTY_ID, ROOM.ROOM_NUM, LEASE.LEASE_ID\n-- ROOM is on the left, so every room is kept whether or not it has been leased.\nFROM ROOM LEFT JOIN LEASE\n  -- The ON condition needs BOTH key columns, because a room is identified by the\n  -- property and the room number together. One of them alone would over-match.\n  ON ROOM.PROPERTY_ID = LEASE.PROPERTY_ID AND ROOM.ROOM_NUM = LEASE.ROOM_NUM\nORDER BY ROOM.PROPERTY_ID, ROOM.ROOM_NUM;",
        "hint": "Part (a) gives five rows and P200 room 101 has an empty `LEASE_ID`, so it is the vacant one. Part (b) also gives five rows, but for the opposite reason: L001 appears twice because it has two payments, and L004 appears once with an empty payment."
       },
       {
@@ -3098,7 +3098,7 @@
        "type": "sandbox",
        "seed": "kimtay_full",
        "starter": "-- List every KimTay customer with the number of invoices they have,\n-- including the customer who has never been invoiced.\n-- Four rows come back, and one of the counts is 0.\n",
-       "solution": "SELECT C.CUSTOMER_NAME, COUNT(I.INVOICE_NUM) AS INVOICE_COUNT\nFROM CUSTOMER C\nLEFT JOIN INVOICE I ON C.CUSTOMER_NUM = I.CUSTOMER_NUM\nGROUP BY C.CUSTOMER_NUM, C.CUSTOMER_NAME\nORDER BY C.CUSTOMER_NAME;",
+       "solution": "-- COUNT(I.INVOICE_NUM) counts VALUES, so an unmatched customer scores 0.\n-- COUNT(*) would count the null-padded row and wrongly report 1.\nSELECT C.CUSTOMER_NAME, COUNT(I.INVOICE_NUM) AS INVOICE_COUNT\nFROM CUSTOMER C\n-- LEFT JOIN keeps the customers with no invoices in the answer at all.\nLEFT JOIN INVOICE I ON C.CUSTOMER_NUM = I.CUSTOMER_NUM\n-- Group by the key as well as the name, so two customers sharing a name stay apart.\nGROUP BY C.CUSTOMER_NUM, C.CUSTOMER_NAME\nORDER BY C.CUSTOMER_NAME;",
        "hint": "Companion Care Clinic has no invoice, so an inner join drops it and a `LEFT JOIN` keeps it. Count `I.INVOICE_NUM` rather than `*`: the padded row is still a row, so `COUNT(*)` would report 1 for the clinic instead of 0."
       },
       {
@@ -3206,7 +3206,7 @@
        "type": "sandbox",
        "seed": "kimtay_full",
        "starter": "-- Alias plus self-join: two KimTay customers that share a city.\nSELECT F.CUSTOMER_NAME AS FIRST_ONE, S.CUSTOMER_NAME AS SECOND_ONE, F.CITY\nFROM CUSTOMER F, CUSTOMER S\nWHERE F.CITY = S.CITY\n  AND F.CUSTOMER_NUM < S.CUSTOMER_NUM;",
-       "solution": "-- Alias plus self-join: two KimTay customers that share a city.\nSELECT F.CUSTOMER_NAME AS FIRST_ONE, S.CUSTOMER_NAME AS SECOND_ONE, F.CITY\nFROM CUSTOMER F, CUSTOMER S\nWHERE F.CITY = S.CITY\n  AND F.CUSTOMER_NUM < S.CUSTOMER_NUM;\n\n-- Union compatible: one column of city text on each side.\nSELECT CITY FROM REP\nUNION\nSELECT CITY FROM CUSTOMER\nORDER BY CITY;\n\n-- Correlated subquery: the inner query names C.CUSTOMER_NUM from the outer row.\nSELECT C.CUSTOMER_NAME\nFROM CUSTOMER C\nWHERE EXISTS (SELECT 1 FROM INVOICE I WHERE I.CUSTOMER_NUM = C.CUSTOMER_NUM);",
+       "solution": "-- Alias plus self-join: two KimTay customers that share a city.\n-- Both copies are aliased and both output columns are renamed for readability.\nSELECT F.CUSTOMER_NAME AS FIRST_ONE, S.CUSTOMER_NAME AS SECOND_ONE, F.CITY\n-- One table, opened twice under two names.\nFROM CUSTOMER F, CUSTOMER S\n-- The shared attribute that defines the pair.\nWHERE F.CITY = S.CITY\n  -- The primary key condition that removes self-pairs and reversed duplicates.\n  AND F.CUSTOMER_NUM < S.CUSTOMER_NUM;\n\n-- Union compatible: one column of city text on each side.\nSELECT CITY FROM REP\n-- UNION removes duplicates, so a city both tables use appears once.\nUNION\nSELECT CITY FROM CUSTOMER\n-- One ORDER BY for the whole statement, at the end.\nORDER BY CITY;\n\n-- Correlated subquery: the inner query names C.CUSTOMER_NUM from the outer row.\nSELECT C.CUSTOMER_NAME\nFROM CUSTOMER C\n-- SELECT 1 rather than SELECT * - EXISTS never uses the value, so anything does.\nWHERE EXISTS (SELECT 1 FROM INVOICE I WHERE I.CUSTOMER_NUM = C.CUSTOMER_NUM);",
        "hint": "The self-join returns one row, Access Pet Center paired with Companion Care Clinic in Maple Grove. The union returns three cities. The correlated `EXISTS` returns the three customers that have an invoice, leaving out Companion Care Clinic."
       },
       {
@@ -3238,7 +3238,7 @@
        "type": "sandbox",
        "seed": "both_full",
        "starter": "-- Scratch pad. Predict the answer, then check it here.\n-- Start with the row counts you should be able to state from memory:\nSELECT 'REP' AS TABLE_NAME, COUNT(*) AS ROW_COUNT FROM REP\nUNION ALL SELECT 'CUSTOMER', COUNT(*) FROM CUSTOMER\nUNION ALL SELECT 'INVOICE', COUNT(*) FROM INVOICE\nUNION ALL SELECT 'INVOICE_LINE', COUNT(*) FROM INVOICE_LINE\nUNION ALL SELECT 'ITEM', COUNT(*) FROM ITEM;",
-       "solution": "SELECT 'REP' AS TABLE_NAME, COUNT(*) AS ROW_COUNT FROM REP\nUNION ALL SELECT 'CUSTOMER', COUNT(*) FROM CUSTOMER\nUNION ALL SELECT 'INVOICE', COUNT(*) FROM INVOICE\nUNION ALL SELECT 'INVOICE_LINE', COUNT(*) FROM INVOICE_LINE\nUNION ALL SELECT 'ITEM', COUNT(*) FROM ITEM;\n\nSELECT 'MANAGER' AS TABLE_NAME, COUNT(*) AS ROW_COUNT FROM MANAGER\nUNION ALL SELECT 'PROPERTY', COUNT(*) FROM PROPERTY\nUNION ALL SELECT 'ROOM', COUNT(*) FROM ROOM\nUNION ALL SELECT 'STUDENT', COUNT(*) FROM STUDENT\nUNION ALL SELECT 'LEASE', COUNT(*) FROM LEASE\nUNION ALL SELECT 'PAYMENT', COUNT(*) FROM PAYMENT;",
+       "solution": "-- A row-count audit built entirely out of UNION ALL. Each SELECT invents a label\n-- column and counts one table; UNION ALL stacks them without checking duplicates,\n-- which is what you want when every row is deliberately different.\nSELECT 'REP' AS TABLE_NAME, COUNT(*) AS ROW_COUNT FROM REP\n-- Only the FIRST SELECT needs the AS aliases - the headings come from it.\nUNION ALL SELECT 'CUSTOMER', COUNT(*) FROM CUSTOMER\nUNION ALL SELECT 'INVOICE', COUNT(*) FROM INVOICE\nUNION ALL SELECT 'INVOICE_LINE', COUNT(*) FROM INVOICE_LINE\nUNION ALL SELECT 'ITEM', COUNT(*) FROM ITEM;\n\n-- The same audit for the StayWell database.\nSELECT 'MANAGER' AS TABLE_NAME, COUNT(*) AS ROW_COUNT FROM MANAGER\nUNION ALL SELECT 'PROPERTY', COUNT(*) FROM PROPERTY\nUNION ALL SELECT 'ROOM', COUNT(*) FROM ROOM\nUNION ALL SELECT 'STUDENT', COUNT(*) FROM STUDENT\nUNION ALL SELECT 'LEASE', COUNT(*) FROM LEASE\nUNION ALL SELECT 'PAYMENT', COUNT(*) FROM PAYMENT;",
        "hint": "KimTay: 3 reps, 4 customers, 3 invoices, 6 invoice lines, 5 items. StayWell: 2 managers, 2 properties, 5 rooms, 4 students, 4 leases, 4 payments. Those eleven numbers let you predict most row counts in your head."
       },
       {
@@ -3314,7 +3314,7 @@
        "type": "sandbox",
        "seed": "both_full",
        "starter": "-- Both databases are loaded. Write each answer under its comment,\n-- run it, then compare the row count with the one you predicted.\n\n-- 1. Every invoice with its date, customer name and rep last name.\n\n\n-- 2. The distinct items on invoices belonging to rep 20's customers.\n\n\n-- 3. Every student and the total paid so far, including one who has paid nothing.\n\n\n-- 4. Rooms that have never appeared on a lease.\n\n\n-- 5. Cities where KimTay has a customer but no rep.\n",
-       "solution": "-- 1. Three rows, one per invoice.\nSELECT I.INVOICE_NUM, I.INVOICE_DATE, C.CUSTOMER_NAME, R.LAST_NAME\nFROM INVOICE I, CUSTOMER C, REP R\nWHERE I.CUSTOMER_NUM = C.CUSTOMER_NUM\n  AND C.REP_NUM = R.REP_NUM\nORDER BY I.INVOICE_NUM;\n\n-- 2. Two rows: the dry food and the leash. Rep 20's only invoiced customer\n-- is Access Pet Center, and it has a single invoice, so DISTINCT has nothing\n-- to collapse today; it is here to keep the query right tomorrow.\nSELECT DISTINCT T.DESCRIPTION\nFROM ITEM T, INVOICE_LINE L, INVOICE I, CUSTOMER C\nWHERE T.ITEM_ID = L.ITEM_ID\n  AND L.INVOICE_NUM = I.INVOICE_NUM\n  AND I.CUSTOMER_NUM = C.CUSTOMER_NUM\n  AND C.REP_NUM = '20'\nORDER BY T.DESCRIPTION;\n\n-- 3. Four rows. Jason Park's total is null, not zero: SUM over no rows\n-- has nothing to add up. COALESCE(SUM(P.AMOUNT), 0) would print 0 instead.\nSELECT S.LAST_NAME, S.FIRST_NAME, SUM(P.AMOUNT) AS PAID\nFROM STUDENT S\nLEFT JOIN LEASE L ON S.STUDENT_ID = L.STUDENT_ID\nLEFT JOIN PAYMENT P ON L.LEASE_ID = P.LEASE_ID\nGROUP BY S.STUDENT_ID, S.LAST_NAME, S.FIRST_NAME\nORDER BY S.LAST_NAME;\n\n-- 4. One row: P200 room 101, Single.\nSELECT R.PROPERTY_ID, R.ROOM_NUM, R.ROOM_TYPE\nFROM ROOM R\nWHERE NOT EXISTS (SELECT 1 FROM LEASE L\n                  WHERE L.PROPERTY_ID = R.PROPERTY_ID\n                    AND L.ROOM_NUM = R.ROOM_NUM);\n\n-- 4 again, written as a difference. Same room, but only the two columns\n-- ROOM and LEASE have in common: adding ROOM_TYPE to the left side would\n-- break union compatibility and the statement would not run at all.\nSELECT PROPERTY_ID, ROOM_NUM FROM ROOM\nEXCEPT\nSELECT PROPERTY_ID, ROOM_NUM FROM LEASE;\n\n-- 5. One row: Northfield.\nSELECT CITY FROM CUSTOMER\nEXCEPT\nSELECT CITY FROM REP;",
+       "solution": "-- 1. Three rows, one per invoice.\nSELECT I.INVOICE_NUM, I.INVOICE_DATE, C.CUSTOMER_NAME, R.LAST_NAME\n-- Three tables, so two links.\nFROM INVOICE I, CUSTOMER C, REP R\n-- Link 1: invoice to the customer it belongs to.\nWHERE I.CUSTOMER_NUM = C.CUSTOMER_NUM\n  -- Link 2: that customer to the rep who serves it.\n  AND C.REP_NUM = R.REP_NUM\nORDER BY I.INVOICE_NUM;\n\n-- 2. Two rows: the dry food and the leash. Rep 20's only invoiced customer\n-- is Access Pet Center, and it has a single invoice, so DISTINCT has nothing\n-- to collapse today; it is here to keep the query right tomorrow.\nSELECT DISTINCT T.DESCRIPTION\n-- Four tables to travel from a rep number all the way to an item description.\nFROM ITEM T, INVOICE_LINE L, INVOICE I, CUSTOMER C\n-- The three links, walked backwards: item to line, line to invoice, invoice to customer.\nWHERE T.ITEM_ID = L.ITEM_ID\n  AND L.INVOICE_NUM = I.INVOICE_NUM\n  AND I.CUSTOMER_NUM = C.CUSTOMER_NUM\n  -- The restriction, on a column that never appears in the output.\n  AND C.REP_NUM = '20'\nORDER BY T.DESCRIPTION;\n\n-- 3. Four rows. Jason Park's total is null, not zero: SUM over no rows\n-- has nothing to add up. COALESCE(SUM(P.AMOUNT), 0) would print 0 instead.\nSELECT S.LAST_NAME, S.FIRST_NAME, SUM(P.AMOUNT) AS PAID\nFROM STUDENT S\n-- Two LEFT JOINs chained: a student with no lease survives the first, and then\n-- survives the second as well, because a null carries straight through.\nLEFT JOIN LEASE L ON S.STUDENT_ID = L.STUDENT_ID\nLEFT JOIN PAYMENT P ON L.LEASE_ID = P.LEASE_ID\n-- Group by the key as well as the names, so two students sharing a name stay apart.\nGROUP BY S.STUDENT_ID, S.LAST_NAME, S.FIRST_NAME\nORDER BY S.LAST_NAME;\n\n-- 4. One row: P200 room 101, Single.\nSELECT R.PROPERTY_ID, R.ROOM_NUM, R.ROOM_TYPE\nFROM ROOM R\n-- NOT EXISTS: keep the room only when the inner search comes back empty. The\n-- inner query is correlated - it names R from the outer row.\nWHERE NOT EXISTS (SELECT 1 FROM LEASE L\n                  -- Both key columns are needed to identify one room.\n                  WHERE L.PROPERTY_ID = R.PROPERTY_ID\n                    AND L.ROOM_NUM = R.ROOM_NUM);\n\n-- 4 again, written as a difference. Same room, but only the two columns\n-- ROOM and LEASE have in common: adding ROOM_TYPE to the left side would\n-- break union compatibility and the statement would not run at all.\nSELECT PROPERTY_ID, ROOM_NUM FROM ROOM\n-- EXCEPT keeps rows from the first result that the second did not also produce.\nEXCEPT\nSELECT PROPERTY_ID, ROOM_NUM FROM LEASE;\n\n-- 5. One row: Northfield.\nSELECT CITY FROM CUSTOMER\n-- Order matters for EXCEPT: swapping the halves asks a different question.\nEXCEPT\nSELECT CITY FROM REP;",
        "hint": "Expected counts: 3 rows, 2 rows, 4 rows, 1 row, 1 row. Rep 20 has one invoiced customer and therefore one invoice, so exercise 2 returns two descriptions with or without `DISTINCT`; more than two means the rep 20 filter is missing or a linking condition is. In exercise 3 every student already has a lease, so the join that can drop Jason Park is the one to `PAYMENT`: if you get three rows, make that join `LEFT`."
       },
       {
