@@ -3690,6 +3690,8 @@ SELECT &#39;7. Your tables rebuild the sheet exactly&#39;,
              AND NOT EXISTS (SELECT * FROM SHEET   EXCEPT SELECT * FROM REBUILT)
        THEN &#39;PASS&#39; ELSE &#39;FAIL&#39; END,
        &#39;nothing lost and nothing invented by the split&#39;;" data-solution="-- These lines make the box safe to run again after a mistake.
+-- Children are dropped before parents, because a table cannot go while another
+-- still points at it. IF EXISTS means a missing table is not an error.
 DROP TABLE IF EXISTS MY_AMENITY;
 DROP TABLE IF EXISTS MY_ROOM;
 DROP TABLE IF EXISTS MY_PROPERTY;
@@ -3704,11 +3706,16 @@ DROP TABLE IF EXISTS MY_MANAGER;
 -- Create referenced parent tables before child tables so the inserts also work
 -- when foreign-key enforcement is enabled.
 -- ===== 3NF: MANAGER_NAME and MANAGER_PHONE depend on MANAGER_ID =====
+-- A transitive dependency: these facts describe the manager, not the property,
+-- so they belong in a table of their own.
 CREATE TABLE MY_MANAGER (
+    -- One row per manager, identified by the id the sheet already carries.
     MANAGER_ID     CHAR(3)      PRIMARY KEY,
     MANAGER_NAME   VARCHAR(30)  NOT NULL,
     MANAGER_PHONE  CHAR(12)
 );
+-- SELECT DISTINCT is what performs the decomposition: the sheet repeats each
+-- manager on every row, and DISTINCT collapses those repeats to one row each.
 INSERT INTO MY_MANAGER
 SELECT DISTINCT MANAGER_ID, MANAGER_NAME, MANAGER_PHONE FROM PROPERTY_SHEET;
 
@@ -3716,12 +3723,18 @@ SELECT DISTINCT MANAGER_ID, MANAGER_NAME, MANAGER_PHONE FROM PROPERTY_SHEET;
 -- The sheet key is (PROPERTY_ID, ROOM_NUM). PROPERTY_NAME, PROPERTY_CITY and
 -- MANAGER_ID are fixed by PROPERTY_ID by itself: partial dependencies.
 CREATE TABLE MY_PROPERTY (
+    -- Only half the sheet&#39;s key is needed here, which is the definition of the
+    -- partial dependency being removed.
     PROPERTY_ID    CHAR(4)      PRIMARY KEY,
     PROPERTY_NAME  VARCHAR(30)  NOT NULL,
     PROPERTY_CITY  VARCHAR(15),
+    -- The manager is now referenced by id instead of being repeated by name.
     MANAGER_ID     CHAR(3),
+    -- The foreign key is what puts the split-apart tables back in touch.
     FOREIGN KEY (MANAGER_ID) REFERENCES MY_MANAGER(MANAGER_ID)
 );
+-- DISTINCT again: the sheet has one row per ROOM, so each property appears
+-- several times and only one copy is wanted.
 INSERT INTO MY_PROPERTY
 SELECT DISTINCT PROPERTY_ID, PROPERTY_NAME, PROPERTY_CITY, MANAGER_ID
 FROM PROPERTY_SHEET;
@@ -3733,9 +3746,12 @@ CREATE TABLE MY_ROOM (
     ROOM_TYPE      VARCHAR(10),
     MONTHLY_RENT   DECIMAL(7,2),
     MAX_OCCUPANTS  SMALLINT,
+    -- The composite key: a room number only means something within a property.
     PRIMARY KEY (PROPERTY_ID, ROOM_NUM),
     FOREIGN KEY (PROPERTY_ID) REFERENCES MY_PROPERTY(PROPERTY_ID)
 );
+-- No DISTINCT this time: the sheet already has exactly one row per room, so
+-- every row is wanted.
 INSERT INTO MY_ROOM
 SELECT PROPERTY_ID, ROOM_NUM, ROOM_TYPE, MONTHLY_RENT, MAX_OCCUPANTS
 FROM PROPERTY_SHEET;
@@ -3744,15 +3760,26 @@ FROM PROPERTY_SHEET;
 CREATE TABLE MY_AMENITY (
     PROPERTY_ID  CHAR(4),
     AMENITY      VARCHAR(15),
+    -- Both columns together form the key, which also stops the same amenity
+    -- being listed twice for one property.
     PRIMARY KEY (PROPERTY_ID, AMENITY),
     FOREIGN KEY (PROPERTY_ID) REFERENCES MY_PROPERTY(PROPERTY_ID)
 );
+-- These are typed out rather than selected, because the source stored them as
+-- one comma-separated string - the repeating group 1NF exists to break up.
 INSERT INTO MY_AMENITY VALUES (&#39;P100&#39;, &#39;Laundry&#39;);
 INSERT INTO MY_AMENITY VALUES (&#39;P100&#39;, &#39;Parking&#39;);
 INSERT INTO MY_AMENITY VALUES (&#39;P200&#39;, &#39;Laundry&#39;);
 INSERT INTO MY_AMENITY VALUES (&#39;P200&#39;, &#39;Gym&#39;);
 INSERT INTO MY_AMENITY VALUES (&#39;P200&#39;, &#39;Parking&#39;);
 
+-- How the self-check below works, so it is not a black box: two WITH clauses
+-- define named temporary results - the amenities you should have, and your four
+-- tables joined back into one wide table. Each numbered SELECT then compares one
+-- fact against expectation and prints PASS or FAIL, and UNION ALL stacks those
+-- verdicts into a single results grid. Check 7 is the real test: EXCEPT run in
+-- both directions proves your rebuilt rows and the original sheet match exactly,
+-- with nothing missing and nothing invented.
 -- ============================================================
 -- SELF-CHECK -- one statement, one results table. Do not edit.
 -- ============================================================
@@ -4837,19 +4864,28 @@ CREATE TABLE REP (
     <div class="sandbox" data-sandbox data-seed="empty" data-starter="-- Create the REP table: REP_NUM (2-char primary key), LAST_NAME,
 -- FIRST_NAME, STREET, CITY, STATE, ZIP, COMMISSION, RATE.
 
-" data-solution="CREATE TABLE REP (
+" data-solution="-- CREATE TABLE: name the table, then describe every column inside the parentheses.
+CREATE TABLE REP (
+    -- PRIMARY KEY: unique across the table, and never left empty.
     REP_NUM      CHAR(2)      PRIMARY KEY,
+    -- NOT NULL: the row is refused if this is left blank.
     LAST_NAME    VARCHAR(15)  NOT NULL,
     FIRST_NAME   VARCHAR(15)  NOT NULL,
+    -- No rule attached, so these may be left unknown for now.
     STREET       VARCHAR(20),
     CITY         VARCHAR(15),
+    -- CHAR, because a state code is always exactly two characters.
     STATE        CHAR(2),
+    -- CHAR(5) and not a number, so a leading zero survives.
     ZIP          CHAR(5),
+    -- DECIMAL is exact money: 8 digits, 2 of them after the point.
     COMMISSION   DECIMAL(8,2),
+    -- The last column takes no comma.
     RATE         DECIMAL(4,2)
 );
 
 -- Confirm it worked:
+-- SELECT * returns every column. Zero rows is correct - the table is new and empty.
 SELECT * FROM REP;">
       <div class="sandbox-toolbar">
         <span class="sandbox-label">SQL Sandbox &middot; SQLite engine</span>
@@ -5267,10 +5303,15 @@ VALUES (&#x27;20&#x27;, &#x27;Kaiser&#x27;, &#x27;Valerie&#x27;, &#x27;624 Randa
 
 
 SELECT * FROM REP;" data-solution="-- REP already exists in this sandbox. Reset before rerunning this script.
+-- INSERT INTO: name the table, then the columns you are supplying.
+-- VALUES: the data in the same order as that column list. Text is quoted,
+-- numbers are not, and REP_NUM is quoted because the column is CHAR(2).
 INSERT INTO REP (REP_NUM, LAST_NAME, FIRST_NAME, STREET, CITY, STATE, ZIP, COMMISSION, RATE) VALUES (&#x27;20&#x27;, &#x27;Kaiser&#x27;, &#x27;Valerie&#x27;, &#x27;624 Randall Dr.&#x27;, &#x27;Maple Grove&#x27;, &#x27;OH&#x27;, &#x27;44601&#x27;, 21560.00, 0.05);
+-- One statement per row. Each is independent: if one fails the others still run.
 INSERT INTO REP (REP_NUM, LAST_NAME, FIRST_NAME, STREET, CITY, STATE, ZIP, COMMISSION, RATE) VALUES (&#x27;35&#x27;, &#x27;Hull&#x27;, &#x27;Richard&#x27;, &#x27;313 Palma Dr.&#x27;, &#x27;Maple Grove&#x27;, &#x27;OH&#x27;, &#x27;44601&#x27;, 39355.00, 0.07);
 INSERT INTO REP (REP_NUM, LAST_NAME, FIRST_NAME, STREET, CITY, STATE, ZIP, COMMISSION, RATE) VALUES (&#x27;65&#x27;, &#x27;Perez&#x27;, &#x27;Juan&#x27;, &#x27;2632 Marshall Ave.&#x27;, &#x27;Brookville&#x27;, &#x27;OH&#x27;, &#x27;44403&#x27;, 23764.00, 0.05);
 
+-- Read the rows back. Three rows means all three inserts landed.
 SELECT * FROM REP;">
       <div class="sandbox-toolbar">
         <span class="sandbox-label">SQL Sandbox &middot; SQLite engine</span>
@@ -5417,9 +5458,13 @@ JOIN REP r ON c.REP_NUM = r.REP_NUM;
 
 -- Now extend it: also show r.RATE, and sort by CUSTOMER_NAME.
 
-" data-solution="SELECT c.CUSTOMER_NAME, r.LAST_NAME AS REP_LAST_NAME, r.RATE
+" data-solution="-- SELECT: one column from CUSTOMER, two from REP. AS renames one heading.
+SELECT c.CUSTOMER_NAME, r.LAST_NAME AS REP_LAST_NAME, r.RATE
+-- FROM: the first table, given the short alias c.
 FROM CUSTOMER c
+-- JOIN ... ON: bring in REP as r, matched on the rep number the two share.
 JOIN REP r ON c.REP_NUM = r.REP_NUM
+-- ORDER BY: sort the finished result by customer name.
 ORDER BY c.CUSTOMER_NAME;">
       <div class="sandbox-toolbar">
         <span class="sandbox-label">SQL Sandbox &middot; SQLite engine</span>
@@ -5915,6 +5960,7 @@ FROM sqlite_master
 WHERE type = &#x27;table&#x27;
   AND name NOT LIKE &#x27;sqlite_%&#x27;
 ORDER BY name;" data-solution="-- Reset this sandbox before rerunning the complete build script.
+-- CREATE TABLE: the product catalogue - one row per item.
 CREATE TABLE ITEM (
     ITEM_ID        CHAR(4)      PRIMARY KEY,
     DESCRIPTION    VARCHAR(30)  NOT NULL,
@@ -5923,28 +5969,35 @@ CREATE TABLE ITEM (
     PRICE          DECIMAL(7,2),
     REORDER_LEVEL  SMALLINT
 );
+-- Five INSERTs load the catalogue. Tables come before the rows that go in them.
 INSERT INTO ITEM (ITEM_ID, DESCRIPTION, CATEGORY, ON_HAND, PRICE, REORDER_LEVEL) VALUES (&#x27;AV07&#x27;, &#x27;Aviary Starter Cage&#x27;, &#x27;Habitat&#x27;, 15, 64.99, 5);
 INSERT INTO ITEM (ITEM_ID, DESCRIPTION, CATEGORY, ON_HAND, PRICE, REORDER_LEVEL) VALUES (&#x27;CF21&#x27;, &#x27;Grain-Free Dry Food 30lb&#x27;, &#x27;Food&#x27;, 48, 42.50, 15);
 INSERT INTO ITEM (ITEM_ID, DESCRIPTION, CATEGORY, ON_HAND, PRICE, REORDER_LEVEL) VALUES (&#x27;DG04&#x27;, &#x27;Nylon Dog Leash 6ft&#x27;, &#x27;Accessory&#x27;, 120, 11.99, 25);
 INSERT INTO ITEM (ITEM_ID, DESCRIPTION, CATEGORY, ON_HAND, PRICE, REORDER_LEVEL) VALUES (&#x27;FT88&#x27;, &#x27;Fish Tank Filter Kit&#x27;, &#x27;Habitat&#x27;, 30, 27.75, 10);
 INSERT INTO ITEM (ITEM_ID, DESCRIPTION, CATEGORY, ON_HAND, PRICE, REORDER_LEVEL) VALUES (&#x27;GR15&#x27;, &#x27;Small Animal Grooming Kit&#x27;, &#x27;Grooming&#x27;, 22, 15.25, 8);
 
+-- CREATE TABLE: the invoice header. It points at CUSTOMER, which must already exist.
 CREATE TABLE INVOICE (
     INVOICE_NUM    CHAR(5)   PRIMARY KEY,
     CUSTOMER_NUM   CHAR(4),
     INVOICE_DATE   DATE,
+    -- FOREIGN KEY: refuse any invoice whose customer is not already on file.
     FOREIGN KEY (CUSTOMER_NUM) REFERENCES CUSTOMER(CUSTOMER_NUM)
 );
 INSERT INTO INVOICE (INVOICE_NUM, CUSTOMER_NUM, INVOICE_DATE) VALUES (&#x27;50710&#x27;, &#x27;1120&#x27;, &#x27;2026-06-14&#x27;);
 INSERT INTO INVOICE (INVOICE_NUM, CUSTOMER_NUM, INVOICE_DATE) VALUES (&#x27;50711&#x27;, &#x27;1420&#x27;, &#x27;2026-06-14&#x27;);
 INSERT INTO INVOICE (INVOICE_NUM, CUSTOMER_NUM, INVOICE_DATE) VALUES (&#x27;50712&#x27;, &#x27;1225&#x27;, &#x27;2026-06-15&#x27;);
 
+-- CREATE TABLE: the line items, and the last table built because it depends on two others.
 CREATE TABLE INVOICE_LINE (
     INVOICE_NUM    CHAR(5),
     ITEM_ID        CHAR(4),
     NUM_ORDERED    SMALLINT,
+    -- The price charged on the day, kept here so a later catalogue change cannot rewrite history.
     QUOTED_PRICE   DECIMAL(7,2),
+    -- A composite key: neither column identifies a row alone, the pair does.
     PRIMARY KEY (INVOICE_NUM, ITEM_ID),
+    -- One foreign key per parent table.
     FOREIGN KEY (INVOICE_NUM) REFERENCES INVOICE(INVOICE_NUM),
     FOREIGN KEY (ITEM_ID) REFERENCES ITEM(ITEM_ID)
 );
@@ -5955,9 +6008,12 @@ INSERT INTO INVOICE_LINE (INVOICE_NUM, ITEM_ID, NUM_ORDERED, QUOTED_PRICE) VALUE
 INSERT INTO INVOICE_LINE (INVOICE_NUM, ITEM_ID, NUM_ORDERED, QUOTED_PRICE) VALUES (&#x27;50712&#x27;, &#x27;AV07&#x27;, 1, 64.99);
 INSERT INTO INVOICE_LINE (INVOICE_NUM, ITEM_ID, NUM_ORDERED, QUOTED_PRICE) VALUES (&#x27;50712&#x27;, &#x27;FT88&#x27;, 2, 27.75);
 
+-- The check: sqlite_master is SQLite&#x27;s catalogue of what exists.
 SELECT name
 FROM sqlite_master
+-- type = table filters out indexes and views.
 WHERE type = &#x27;table&#x27;
+  -- NOT LIKE hides SQLite&#x27;s own internal tables.
   AND name NOT LIKE &#x27;sqlite_%&#x27;
 ORDER BY name;">
       <div class="sandbox-toolbar">
@@ -6158,8 +6214,12 @@ CREATE TABLE INVOICE_LINE (
       </tbody>
     </table></div>
     <p>The full KimTay schema is loaded below &mdash; describe a couple of tables:</p>
-    <div class="sandbox" data-sandbox data-seed="kimtay_full" data-starter="PRAGMA table_info(CUSTOMER);" data-solution="PRAGMA table_info(CUSTOMER);
+    <div class="sandbox" data-sandbox data-seed="kimtay_full" data-starter="PRAGMA table_info(CUSTOMER);" data-solution="-- PRAGMA table_info: SQLite&#x27;s way of describing a table - one row per column,
+-- showing its name, type, whether it is NOT NULL, and whether it is part of the key.
+PRAGMA table_info(CUSTOMER);
 
+-- The same question about the line-item table. Two columns come back marked as
+-- key parts, because INVOICE_LINE has a composite primary key.
 PRAGMA table_info(INVOICE_LINE);">
       <div class="sandbox-toolbar">
         <span class="sandbox-label">SQL Sandbox &middot; SQLite engine</span>
@@ -6586,22 +6646,29 @@ PRAGMA table_info(INVOICE_LINE);">
 
 -- 3. Safely delete unreferenced KimTay customer 1310 and verify the count
 " data-solution="-- 1. KimTay customer name + assigned rep last name
+-- SELECT: one column from each table, the second renamed with AS.
 SELECT c.CUSTOMER_NAME, r.LAST_NAME AS REP_LAST_NAME
+-- FROM: the first table, aliased c.
 FROM CUSTOMER c
+-- JOIN ... ON: add REP as r and say how the two line up.
 JOIN REP r ON c.REP_NUM = r.REP_NUM
 ORDER BY c.CUSTOMER_NAME;
 
 -- 2. StayWell leases over $500, cheapest first
 SELECT s.FIRST_NAME, s.LAST_NAME, l.MONTHLY_RENT
 FROM STUDENT s
+-- The join makes LEASE columns available to the WHERE clause below.
 JOIN LEASE l ON s.STUDENT_ID = l.STUDENT_ID
+-- WHERE filters the joined rows; ASC means smallest first.
 WHERE l.MONTHLY_RENT &gt; 500
 ORDER BY l.MONTHLY_RENT ASC;
 
 -- 3. Customer 1310 is unreferenced, so delete it and verify
+-- DELETE removes whole rows. The WHERE clause is the only thing limiting it to one.
 DELETE FROM CUSTOMER
 WHERE CUSTOMER_NUM = &#x27;1310&#x27;;
 
+-- Counting with the same condition is how you prove the delete did what you meant.
 SELECT COUNT(*) AS STILL_THERE
 FROM CUSTOMER
 WHERE CUSTOMER_NUM = &#x27;1310&#x27;;">
@@ -6743,7 +6810,9 @@ FROM ITEM;</pre>
 SELECT ITEM_ID, DESCRIPTION, PRICE
 FROM ITEM;
 
--- Your turn: change it so that every column comes back, then run it again." data-solution="SELECT *
+-- Your turn: change it so that every column comes back, then run it again." data-solution="-- SELECT *: every column, in the order the table declares them.
+SELECT *
+-- FROM: the table read. No WHERE clause, so all five rows come back.
 FROM ITEM;">
         <div class="sandbox-toolbar">
           <span class="sandbox-label">SQL Sandbox &middot; SQLite engine</span>
@@ -6865,8 +6934,12 @@ SELECT ITEM_ID, CATEGORY, PRICE
 FROM ITEM
 WHERE CATEGORY = &#39;Habitat&#39; OR CATEGORY = &#39;Food&#39; AND PRICE &lt; 30;
 
--- Now add parentheses so that the price test applies to both categories." data-solution="SELECT ITEM_ID, CATEGORY, PRICE
+-- Now add parentheses so that the price test applies to both categories." data-solution="-- SELECT: the id plus the two columns being tested, so the filter is checkable by eye.
+SELECT ITEM_ID, CATEGORY, PRICE
 FROM ITEM
+-- The parentheses matter: OR is evaluated first, then AND applies to the whole
+-- bracket. Without them, AND would bind tighter and the query would mean
+-- something quite different.
 WHERE (CATEGORY = &#39;Habitat&#39; OR CATEGORY = &#39;Food&#39;) AND PRICE &lt; 30;">
         <div class="sandbox-toolbar">
           <span class="sandbox-label">SQL Sandbox &middot; SQLite engine</span>
@@ -6915,8 +6988,11 @@ SELECT PROPERTY_ID, ROOM_NUM, ROOM_TYPE, MONTHLY_RENT
 FROM ROOM
 WHERE MONTHLY_RENT BETWEEN 450 AND 610;
 
--- Your turn: rewrite the condition using &gt;= and &lt;= and confirm you get the same rooms." data-solution="SELECT PROPERTY_ID, ROOM_NUM, ROOM_TYPE, MONTHLY_RENT
+-- Your turn: rewrite the condition using &gt;= and &lt;= and confirm you get the same rooms." data-solution="-- SELECT: four columns from StayWell&#39;s room table.
+SELECT PROPERTY_ID, ROOM_NUM, ROOM_TYPE, MONTHLY_RENT
 FROM ROOM
+-- Two comparisons joined by AND, each using &gt;= or &lt;= so both endpoints count.
+-- BETWEEN 450 AND 610 would say exactly the same thing in fewer characters.
 WHERE MONTHLY_RENT &gt;= 450 AND MONTHLY_RENT &lt;= 610;">
         <div class="sandbox-toolbar">
           <span class="sandbox-label">SQL Sandbox &middot; SQLite engine</span>
@@ -6979,8 +7055,11 @@ FROM ITEM;
 
 -- Your turn: write a query on CUSTOMER that shows CUSTOMER_NUM and
 -- the credit still available (CREDIT_LIMIT minus BALANCE), keeping only
--- the customers with more than 3900 available." data-solution="SELECT CUSTOMER_NUM, CREDIT_LIMIT - BALANCE AS AVAILABLE_CREDIT
+-- the customers with more than 3900 available." data-solution="-- SELECT: a computed column. The subtraction runs once per row and AS names it.
+SELECT CUSTOMER_NUM, CREDIT_LIMIT - BALANCE AS AVAILABLE_CREDIT
 FROM CUSTOMER
+-- The calculation is repeated here rather than reusing AVAILABLE_CREDIT: WHERE is
+-- evaluated before the SELECT list, so the alias does not exist yet.
 WHERE CREDIT_LIMIT - BALANCE &gt; 3900;">
         <div class="sandbox-toolbar">
           <span class="sandbox-label">SQL Sandbox &middot; SQLite engine</span>
@@ -7055,6 +7134,8 @@ WHERE STREET LIKE &#39;%St.&#39;;
 
 -- Your turn: change the pattern to find streets that contain Ave. anywhere." data-solution="SELECT CUSTOMER_NUM, CUSTOMER_NAME, STREET
 FROM CUSTOMER
+-- LIKE matches a pattern. % stands for any run of characters, so a % on both
+-- sides means the word may appear anywhere inside the street.
 WHERE STREET LIKE &#39;%Ave.%&#39;;">
         <div class="sandbox-toolbar">
           <span class="sandbox-label">SQL Sandbox &middot; SQLite engine</span>
@@ -7117,6 +7198,8 @@ WHERE CATEGORY = &#39;Food&#39; OR CATEGORY = &#39;Grooming&#39;;
 
 -- Your turn: rewrite the condition with IN and confirm the rows are the same." data-solution="SELECT ITEM_ID, DESCRIPTION, CATEGORY
 FROM ITEM
+-- IN is a membership test - true when CATEGORY equals any value in the list.
+-- The same thing as CATEGORY = 'Food' OR CATEGORY = 'Grooming', but shorter.
 WHERE CATEGORY IN (&#39;Food&#39;, &#39;Grooming&#39;);">
         <div class="sandbox-toolbar">
           <span class="sandbox-label">SQL Sandbox &middot; SQLite engine</span>
@@ -7459,7 +7542,9 @@ FROM CUSTOMER
 WHERE BALANCE &gt; 1000
 ORDER BY BALANCE;" data-solution="SELECT CUSTOMER_NUM, CUSTOMER_NAME, BALANCE
 FROM CUSTOMER
+-- WHERE filters first...
 WHERE BALANCE &gt; 1000
+-- ...then ORDER BY sorts whatever survived. DESC puts the largest first.
 ORDER BY BALANCE DESC;">
         <div class="sandbox-toolbar">
           <span class="sandbox-label">SQL Sandbox &middot; SQLite engine</span>
@@ -7572,8 +7657,10 @@ ORDER BY 2, 3 DESC;</pre>
       </div>
       <div class="sandbox" data-sandbox data-seed="staywell_full" data-starter="SELECT PROPERTY_ID, ROOM_NUM, MONTHLY_RENT * 9 AS ACADEMIC_YEAR_RENT
 FROM ROOM
-ORDER BY PROPERTY_ID, ROOM_NUM;" data-solution="SELECT PROPERTY_ID, ROOM_NUM, MONTHLY_RENT * 9 AS ACADEMIC_YEAR_RENT
+ORDER BY PROPERTY_ID, ROOM_NUM;" data-solution="-- The multiplication happens once per row, and AS names the result.
+SELECT PROPERTY_ID, ROOM_NUM, MONTHLY_RENT * 9 AS ACADEMIC_YEAR_RENT
 FROM ROOM
+-- Sorting by the alias is allowed, because ORDER BY runs after the SELECT list.
 ORDER BY ACADEMIC_YEAR_RENT DESC;">
         <div class="sandbox-toolbar">
           <span class="sandbox-label">SQL Sandbox &middot; SQLite engine</span>
@@ -7729,7 +7816,10 @@ FROM CUSTOMER;</pre>
 --         and watch WITH_A_REP drop to 3 while ALL_ROWS stays at 4.
 -- UPDATE CUSTOMER SET REP_NUM = NULL WHERE CUSTOMER_NUM = &#39;1310&#39;;
 SELECT COUNT(*) AS ALL_ROWS, COUNT(REP_NUM) AS WITH_A_REP
-FROM CUSTOMER;" data-solution="UPDATE CUSTOMER SET REP_NUM = NULL WHERE CUSTOMER_NUM = &#39;1310&#39;;
+FROM CUSTOMER;" data-solution="-- Create a null to study: this clears one customer&#39;s rep, it does not delete the row.
+UPDATE CUSTOMER SET REP_NUM = NULL WHERE CUSTOMER_NUM = &#39;1310&#39;;
+-- COUNT(*) counts ROWS and COUNT(column) counts VALUES, skipping nulls. The gap
+-- between the two numbers is exactly how many rows have no rep recorded.
 SELECT COUNT(*) AS ALL_ROWS, COUNT(REP_NUM) AS WITH_A_REP
 FROM CUSTOMER;">
         <div class="sandbox-toolbar">
@@ -7890,13 +7980,18 @@ FROM INVOICE_LINE;</pre>
 -- 3. How many units are on hand across all items, and what are the highest
 --    and lowest prices in the catalog?
 SELECT COUNT(DISTINCT CATEGORY) AS DIFFERENT_CATEGORIES
-FROM ITEM;" data-solution="SELECT COUNT(DISTINCT CATEGORY) AS DIFFERENT_CATEGORIES
+FROM ITEM;" data-solution="-- COUNT(DISTINCT column): how many DIFFERENT values appear, not how many rows.
+SELECT COUNT(DISTINCT CATEGORY) AS DIFFERENT_CATEGORIES
 FROM ITEM;
 
+-- Two aggregates over the same filtered rows. The WHERE runs first, so both
+-- numbers describe the habitat items only.
 SELECT COUNT(*) AS HABITAT_ITEMS, AVG(PRICE) AS AVG_HABITAT_PRICE
 FROM ITEM
 WHERE CATEGORY = &#39;Habitat&#39;;
 
+-- SUM adds the values in a column; MAX and MIN simply pick the largest and
+-- smallest. All three collapse the whole table into one row.
 SELECT SUM(ON_HAND) AS UNITS_ON_HAND,
        MAX(PRICE) AS HIGHEST_PRICE,
        MIN(PRICE) AS LOWEST_PRICE
@@ -8126,6 +8221,9 @@ ORDER BY ITEM_ID;</pre>
 FROM CUSTOMER
 ORDER BY BALANCE DESC;" data-solution="SELECT CUSTOMER_NUM, CUSTOMER_NAME, BALANCE
 FROM CUSTOMER
+-- The subquery runs first and collapses to one number, the average balance.
+-- Being an aggregate over the whole table, it can only ever return one row,
+-- which is what makes the plain &gt; comparison safe here.
 WHERE BALANCE &gt; (SELECT AVG(BALANCE) FROM CUSTOMER)
 ORDER BY BALANCE DESC;">
         <div class="sandbox-toolbar">
@@ -8207,6 +8305,8 @@ WHERE ITEM_ID = (SELECT ITEM_ID FROM INVOICE_LINE WHERE NUM_ORDERED &gt;= 2);</p
 FROM ROOM
 WHERE ROOM_TYPE = &#39;Double&#39;;" data-solution="SELECT PROPERTY_ID, PROPERTY_NAME
 FROM PROPERTY
+-- The subquery returns MANY property ids, so the test has to be IN and not =.
+-- Read it as: keep this property if its id is one of the ids the inner query found.
 WHERE PROPERTY_ID IN (SELECT PROPERTY_ID FROM ROOM WHERE ROOM_TYPE = &#39;Double&#39;)
 ORDER BY PROPERTY_ID;">
         <div class="sandbox-toolbar">
@@ -8371,9 +8471,12 @@ GROUP BY CATEGORY;
 
 -- Your turn: keep the count, add the cheapest and the dearest price
 -- in each category, and sort so the biggest category comes first.
-" data-solution="SELECT CATEGORY, COUNT(*) AS ITEM_COUNT, MIN(PRICE) AS LOWEST, MAX(PRICE) AS HIGHEST
+" data-solution="-- The grouping column, then three aggregates computed once PER GROUP.
+SELECT CATEGORY, COUNT(*) AS ITEM_COUNT, MIN(PRICE) AS LOWEST, MAX(PRICE) AS HIGHEST
 FROM ITEM
+-- GROUP BY sorts the rows into piles, one pile per distinct category.
 GROUP BY CATEGORY
+-- Two sort keys: biggest count first, then category name to break ties.
 ORDER BY ITEM_COUNT DESC, CATEGORY;">
         <div class="sandbox-toolbar">
           <span class="sandbox-label">SQL Sandbox &middot; SQLite engine</span>
@@ -8583,8 +8686,12 @@ ORDER BY PROPERTY_ID;
 --   3. sort by average rent, highest first
 " data-solution="SELECT PROPERTY_ID, COUNT(*) AS ROOM_COUNT, AVG(MONTHLY_RENT) AS AVG_RENT
 FROM ROOM
+-- WHERE runs FIRST and discards individual rows before any grouping happens.
 WHERE MONTHLY_RENT &gt; 500.00
+-- GROUP BY piles up whatever survived, one pile per property.
 GROUP BY PROPERTY_ID
+-- HAVING runs LAST and discards whole piles. It is the only place an aggregate
+-- may appear in a condition, and it is what WHERE cannot do.
 HAVING COUNT(*) &gt; 1
 ORDER BY AVG_RENT DESC;">
         <div class="sandbox-toolbar">
@@ -8916,12 +9023,15 @@ WHERE STUDENT_ID = &#39;S003&#39;;
 -- because the condition below matches nothing. Then repair the condition.
 SELECT STUDENT_ID, LAST_NAME, HOME_STATE
 FROM STUDENT
-WHERE HOME_STATE = NULL;" data-solution="UPDATE STUDENT
+WHERE HOME_STATE = NULL;" data-solution="-- Clear one value so there is a null to look for. NULL is a keyword, not text.
+UPDATE STUDENT
 SET HOME_STATE = NULL
 WHERE STUDENT_ID = &#39;S003&#39;;
 
 SELECT STUDENT_ID, LAST_NAME, HOME_STATE
 FROM STUDENT
+-- IS NULL is the only test that finds a missing value. = NULL never matches
+-- anything, because comparing against an unknown gives unknown, not true.
 WHERE HOME_STATE IS NULL;">
         <div class="sandbox-toolbar">
           <span class="sandbox-label">SQL Sandbox &middot; SQLite engine</span>
@@ -9081,7 +9191,10 @@ GROUP BY CATEGORY
 HAVING COUNT(*) &gt; 1
 ORDER BY CATEGORY;" data-solution="SELECT CATEGORY, COUNT(*) AS ITEM_COUNT, AVG(PRICE) AS AVERAGE_PRICE
 FROM ITEM
+-- Filter rows first: only well-stocked items reach a pile.
 WHERE ON_HAND &gt; 10
+-- Then group what is left. Every column above is either grouped or aggregated,
+-- which is the rule a grouped query has to obey.
 GROUP BY CATEGORY
 ORDER BY CATEGORY;">
         <div class="sandbox-toolbar">
@@ -9155,8 +9268,11 @@ GROUP BY CATEGORY
 HAVING COUNT(*) &gt; 1
 ORDER BY AVG_PRICE DESC;" data-solution="SELECT CATEGORY, COUNT(*) AS NUM_ITEMS, AVG(PRICE) AS AVG_PRICE
 FROM ITEM
+-- BETWEEN is inclusive at both ends, so a price of exactly 10 or 70 is kept.
 WHERE PRICE BETWEEN 10 AND 70
 GROUP BY CATEGORY
+-- &gt;= 1 keeps every pile that exists, so it changes nothing here. It is written
+-- to show where the clause goes and that it belongs after GROUP BY.
 HAVING COUNT(*) &gt;= 1
 ORDER BY AVG_PRICE DESC;">
         <div class="sandbox-toolbar">
@@ -9197,6 +9313,7 @@ ORDER BY AVG_PRICE DESC;">
 FROM ITEM
 ORDER BY CATEGORY;" data-solution="SELECT CATEGORY, COUNT(*) AS NUM_ITEMS
 FROM ITEM
+-- One output row per distinct category, with COUNT(*) counting the rows in each.
 GROUP BY CATEGORY
 ORDER BY CATEGORY;">
         <div class="sandbox-toolbar">
@@ -9535,6 +9652,8 @@ SELECT ITEM_ID, DESCRIPTION, PRICE
 FROM ITEM
 ORDER BY PRICE DESC;" data-solution="SELECT ITEM_ID, DESCRIPTION, PRICE
 FROM ITEM
+-- BETWEEN tests a range and includes both endpoints. The smaller value must be
+-- written first; reversed, the condition matches nothing at all.
 WHERE PRICE BETWEEN 15 AND 50
 ORDER BY PRICE DESC;">
         <div class="sandbox-toolbar">
@@ -9641,9 +9760,14 @@ ORDER BY CUSTOMER.CUSTOMER_NUM;</pre>
       <div class="sandbox" data-sandbox data-seed="kimtay_full" data-starter="SELECT CUSTOMER.CUSTOMER_NUM, CUSTOMER.CUSTOMER_NAME
 FROM CUSTOMER, REP
 WHERE CUSTOMER.REP_NUM = REP.REP_NUM
-ORDER BY CUSTOMER.CUSTOMER_NUM;" data-solution="SELECT CUSTOMER.CUSTOMER_NUM, CUSTOMER.CUSTOMER_NAME, REP.LAST_NAME, REP.FIRST_NAME
+ORDER BY CUSTOMER.CUSTOMER_NUM;" data-solution="-- SELECT: four columns, two from each table, every one qualified as TABLE.COLUMN.
+SELECT CUSTOMER.CUSTOMER_NUM, CUSTOMER.CUSTOMER_NAME, REP.LAST_NAME, REP.FIRST_NAME
+-- FROM: both tables in play. On its own this pairs every customer with every rep.
 FROM CUSTOMER, REP
+-- WHERE: the matching condition, and the line that makes this a join - keep a
+-- pairing only when the two rep numbers agree.
 WHERE CUSTOMER.REP_NUM = REP.REP_NUM
+-- ORDER BY: sorts the result; it never affects which rows match.
 ORDER BY CUSTOMER.CUSTOMER_NUM;">
         <div class="sandbox-toolbar">
           <span class="sandbox-label">SQL Sandbox &middot; SQLite engine</span>
@@ -9692,7 +9816,10 @@ FROM CUSTOMER, REP
 WHERE CUSTOMER.REP_NUM = REP.REP_NUM
 ORDER BY CUSTOMER.CUSTOMER_NUM;" data-solution="SELECT CUSTOMER.CUSTOMER_NUM, CUSTOMER.CUSTOMER_NAME, REP.LAST_NAME
 FROM CUSTOMER, REP
+-- The matching condition: which customer row belongs with which rep row.
 WHERE CUSTOMER.REP_NUM = REP.REP_NUM
+-- An ordinary business restriction on top of it. Both must be true, so the four
+-- joined rows become the two whose credit limit clears 7500.
   AND CUSTOMER.CREDIT_LIMIT &gt;= 7500
 ORDER BY CUSTOMER.CUSTOMER_NUM;">
         <div class="sandbox-toolbar">
@@ -9752,9 +9879,13 @@ ORDER BY REP.LAST_NAME;</pre>
       <div class="sandbox" data-sandbox data-seed="kimtay_full" data-starter="SELECT REP.LAST_NAME, CUSTOMER.CUSTOMER_NAME, CUSTOMER.BALANCE
 FROM REP, CUSTOMER
 WHERE REP.REP_NUM = CUSTOMER.REP_NUM
-ORDER BY REP.LAST_NAME, CUSTOMER.CUSTOMER_NAME;" data-solution="SELECT REP.LAST_NAME, COUNT(*) AS NUM_CUSTOMERS, SUM(CUSTOMER.BALANCE) AS TOTAL_BALANCE
+ORDER BY REP.LAST_NAME, CUSTOMER.CUSTOMER_NAME;" data-solution="-- The grouping column, then two aggregates over the joined rows.
+SELECT REP.LAST_NAME, COUNT(*) AS NUM_CUSTOMERS, SUM(CUSTOMER.BALANCE) AS TOTAL_BALANCE
 FROM REP, CUSTOMER
+-- The matching condition is applied BEFORE the grouping, so the aggregates are
+-- computed over joined rows rather than over either raw table.
 WHERE REP.REP_NUM = CUSTOMER.REP_NUM
+-- One output row per rep last name.
 GROUP BY REP.LAST_NAME
 ORDER BY REP.LAST_NAME;">
         <div class="sandbox-toolbar">
@@ -9962,11 +10093,16 @@ FROM CUSTOMER
 WHERE CUSTOMER_NUM IN (SELECT CUSTOMER_NUM FROM INVOICE)
 ORDER BY CUSTOMER_NUM;" data-solution="SELECT CUSTOMER_NUM, CUSTOMER_NAME
 FROM CUSTOMER
+-- The inner SELECT runs first and returns a list of customer numbers. IN then
+-- tests each customer once against that list, so no duplicate can appear and
+-- DISTINCT is unnecessary.
 WHERE CUSTOMER_NUM IN (SELECT CUSTOMER_NUM FROM INVOICE)
 ORDER BY CUSTOMER_NUM;
 
+-- The same shape aimed at a different question: which items are on invoice 50710.
 SELECT ITEM_ID, DESCRIPTION, PRICE
 FROM ITEM
+-- Run the inner query alone first and you get CF21 and DG04 - the list IN tests against.
 WHERE ITEM_ID IN
     (SELECT ITEM_ID FROM INVOICE_LINE WHERE INVOICE_NUM = &#39;50710&#39;)
 ORDER BY ITEM_ID;">
@@ -10075,14 +10211,22 @@ WHERE EXISTS
      WHERE INVOICE.CUSTOMER_NUM = CUSTOMER.CUSTOMER_NUM)
 ORDER BY CUSTOMER_NUM;" data-solution="SELECT CUSTOMER_NUM, CUSTOMER_NAME
 FROM CUSTOMER
+-- EXISTS is a yes-or-no test on the customer being examined: did the inner query
+-- find at least one row? It returns true or false and no values of its own.
 WHERE EXISTS
+    -- SELECT * because the column list is irrelevant - only whether a row exists.
     (SELECT *
      FROM INVOICE
+     -- Naming CUSTOMER here makes the subquery correlated: it is re-run once per
+     -- customer, with that customer&#39;s number filled in.
      WHERE INVOICE.CUSTOMER_NUM = CUSTOMER.CUSTOMER_NUM)
 ORDER BY CUSTOMER_NUM;
 
+-- The same query with the test reversed.
 SELECT CUSTOMER_NUM, CUSTOMER_NAME
 FROM CUSTOMER
+-- NOT EXISTS keeps the customer only when the inner query finds NOTHING. This is
+-- the standard pattern for finding rows with no match on the other side.
 WHERE NOT EXISTS
     (SELECT *
      FROM INVOICE
@@ -10160,12 +10304,16 @@ ORDER BY CUSTOMER_NUM;</pre>
 FROM INVOICE_LINE
 WHERE ITEM_ID = &#39;CF21&#39;;" data-solution="SELECT CUSTOMER_NUM, CUSTOMER_NAME
 FROM CUSTOMER
+-- Step 3, the last test to run: keep customers whose number is in the middle list.
 WHERE CUSTOMER_NUM IN
+    -- Step 2: the customer number on each matching invoice.
     (SELECT CUSTOMER_NUM
      FROM INVOICE
      WHERE INVOICE_NUM IN
+         -- Step 1 runs FIRST: the invoices that contain item CF21.
          (SELECT INVOICE_NUM
           FROM INVOICE_LINE
+          -- Both closing parentheses land here, one per subquery.
           WHERE ITEM_ID = &#39;CF21&#39;))
 ORDER BY CUSTOMER_NUM;">
         <div class="sandbox-toolbar">
@@ -10305,13 +10453,22 @@ ORDER BY INVOICE.INVOICE_NUM, ITEM.DESCRIPTION;</pre>
       <div class="sandbox" data-sandbox data-seed="kimtay_full" data-starter="SELECT INVOICE_LINE.INVOICE_NUM, ITEM.DESCRIPTION, INVOICE_LINE.NUM_ORDERED
 FROM INVOICE_LINE, ITEM
 WHERE INVOICE_LINE.ITEM_ID = ITEM.ITEM_ID
-ORDER BY INVOICE_LINE.INVOICE_NUM, ITEM.DESCRIPTION;" data-solution="SELECT CUSTOMER.CUSTOMER_NAME, INVOICE.INVOICE_NUM, ITEM.DESCRIPTION,
+ORDER BY INVOICE_LINE.INVOICE_NUM, ITEM.DESCRIPTION;" data-solution="-- Three display columns drawn from three different tables...
+SELECT CUSTOMER.CUSTOMER_NAME, INVOICE.INVOICE_NUM, ITEM.DESCRIPTION,
+-- ...plus a calculated one. The multiplication runs once per row; AS names it.
        INVOICE_LINE.NUM_ORDERED * INVOICE_LINE.QUOTED_PRICE AS LINE_TOTAL
+-- Four tables in FROM always need three matching conditions.
 FROM CUSTOMER, INVOICE, INVOICE_LINE, ITEM
+-- Link 1: customer to invoice.
 WHERE CUSTOMER.CUSTOMER_NUM = INVOICE.CUSTOMER_NUM
+-- Link 2: invoice to line item.
   AND INVOICE.INVOICE_NUM = INVOICE_LINE.INVOICE_NUM
+-- Link 3: line item to item.
   AND INVOICE_LINE.ITEM_ID = ITEM.ITEM_ID
+-- NOT a link - the business restriction. The subquery returns the Maple Grove
+-- reps, and IN keeps only the customers those reps serve.
   AND CUSTOMER.REP_NUM IN
+      -- Note whose city is tested: the REP&#39;s, not the customer&#39;s.
       (SELECT REP_NUM FROM REP WHERE CITY = &#39;Maple Grove&#39;)
 ORDER BY INVOICE.INVOICE_NUM, ITEM.DESCRIPTION;">
         <div class="sandbox-toolbar">
@@ -10520,8 +10677,12 @@ WHERE C.REP_NUM = &#39;65&#39;;</pre>
       <div class="sandbox" data-sandbox data-seed="kimtay_full" data-starter="SELECT C.CUSTOMER_NUM, C.CUSTOMER_NAME, R.LAST_NAME, R.RATE
 FROM CUSTOMER C, REP ___
 WHERE C.REP_NUM = ___.REP_NUM
-ORDER BY C.CUSTOMER_NUM;" data-solution="SELECT C.CUSTOMER_NUM, C.CUSTOMER_NAME, R.LAST_NAME, R.RATE
+ORDER BY C.CUSTOMER_NUM;" data-solution="-- Columns qualified with the SHORT aliases defined below, not the full table names.
+SELECT C.CUSTOMER_NUM, C.CUSTOMER_NAME, R.LAST_NAME, R.RATE
+-- The aliases are created here: table name, a space, then the short name. Once C
+-- and R exist, CUSTOMER and REP are no longer usable names in this statement.
 FROM CUSTOMER C, REP R
+-- The matching condition, now short enough to read at a glance.
 WHERE C.REP_NUM = R.REP_NUM
 ORDER BY C.CUSTOMER_NUM;">
         <div class="sandbox-toolbar">
@@ -10588,8 +10749,13 @@ WHERE A.REP_NUM = B.REP_NUM;</pre>
       <div class="sandbox" data-sandbox data-seed="kimtay_full" data-starter="SELECT A.CUSTOMER_NUM, B.CUSTOMER_NUM, A.REP_NUM
 FROM CUSTOMER A, CUSTOMER B
 WHERE A.REP_NUM = B.REP_NUM
-ORDER BY A.CUSTOMER_NUM, B.CUSTOMER_NUM;" data-solution="SELECT A.CUSTOMER_NUM, B.CUSTOMER_NUM, A.REP_NUM
+ORDER BY A.CUSTOMER_NUM, B.CUSTOMER_NUM;" data-solution="-- Both copies must be qualified: a bare CUSTOMER_NUM would be ambiguous.
+SELECT A.CUSTOMER_NUM, B.CUSTOMER_NUM, A.REP_NUM
+-- The same table opened TWICE under two names. That is all a self-join is - an
+-- ordinary join whose two sides happen to be one table.
 FROM CUSTOMER A, CUSTOMER B
+-- Match the copies on the shared rep. With nothing else, this also pairs every
+-- row with itself and reports each real pair twice - six rows, not one.
 WHERE A.REP_NUM = B.REP_NUM
 ORDER BY A.CUSTOMER_NUM, B.CUSTOMER_NUM;">
         <div class="sandbox-toolbar">
@@ -10621,7 +10787,11 @@ FROM CUSTOMER A, CUSTOMER B
 WHERE A.REP_NUM = B.REP_NUM
 AND A.CUSTOMER_NUM ___ B.CUSTOMER_NUM;" data-solution="SELECT A.CUSTOMER_NUM, A.CUSTOMER_NAME, B.CUSTOMER_NUM, B.CUSTOMER_NAME
 FROM CUSTOMER A, CUSTOMER B
+-- The relationship you care about: the two customers share a rep.
 WHERE A.REP_NUM = B.REP_NUM
+-- The fix, on the PRIMARY KEY. &lt; throws out the self-paired rows (nothing is
+-- less than itself) AND picks one direction for each real pair, so each pair is
+-- reported exactly once. Six rows collapse to one.
 AND A.CUSTOMER_NUM &lt; B.CUSTOMER_NUM;">
         <div class="sandbox-toolbar">
           <span class="sandbox-label">SQL Sandbox &middot; SQLite engine</span>
@@ -10642,9 +10812,12 @@ AND A.CUSTOMER_NUM &lt; B.CUSTOMER_NUM;">
       <div class="sandbox" data-sandbox data-seed="kimtay_full" data-starter="SELECT A.ITEM_ID, B.ITEM_ID, A.CATEGORY
 FROM ITEM A, ITEM B
 WHERE A.CATEGORY = B.CATEGORY
-AND A.ITEM_ID &lt; B.ITEM_ID;" data-solution="SELECT A.ITEM_ID, B.ITEM_ID, A.CATEGORY
+AND A.ITEM_ID &lt; B.ITEM_ID;" data-solution="-- The same pattern pointed at a different shared attribute.
+SELECT A.ITEM_ID, B.ITEM_ID, A.CATEGORY
 FROM ITEM A, ITEM B
+-- Match on the column that describes the relationship - here, the category.
 WHERE A.CATEGORY = B.CATEGORY
+-- Then restrict on the primary key so each pair appears once.
 AND A.ITEM_ID &lt; B.ITEM_ID;">
         <div class="sandbox-toolbar">
           <span class="sandbox-label">SQL Sandbox &middot; SQLite engine</span>
@@ -10665,10 +10838,14 @@ AND A.ITEM_ID &lt; B.ITEM_ID;">
 FROM CUSTOMER A, CUSTOMER B, REP R
 WHERE A.REP_NUM = B.REP_NUM
 AND A.REP_NUM = R.REP_NUM
-AND A.CUSTOMER_NUM &lt; B.CUSTOMER_NUM;" data-solution="SELECT R.LAST_NAME, A.CUSTOMER_NAME, B.CUSTOMER_NAME
+AND A.CUSTOMER_NUM &lt; B.CUSTOMER_NUM;" data-solution="-- A self-join can sit alongside other tables: three names, two of them the same table.
+SELECT R.LAST_NAME, A.CUSTOMER_NAME, B.CUSTOMER_NAME
 FROM CUSTOMER A, CUSTOMER B, REP R
+-- The two customer copies share a rep.
 WHERE A.REP_NUM = B.REP_NUM
+-- REP is linked to either copy - both carry the same rep number, so it does not matter which.
 AND A.REP_NUM = R.REP_NUM
+-- And the primary key condition still keeps each pair to one row.
 AND A.CUSTOMER_NUM &lt; B.CUSTOMER_NUM;">
         <div class="sandbox-toolbar">
           <span class="sandbox-label">SQL Sandbox &middot; SQLite engine</span>
@@ -10704,9 +10881,13 @@ WHERE C.CUSTOMER_NUM = I.CUSTOMER_NUM
 AND I.INVOICE_NUM = IL.INVOICE_NUM
 AND IL.ITEM_ID = ___.ITEM_ID
 ORDER BY I.INVOICE_NUM, IT.ITEM_ID;" data-solution="SELECT I.INVOICE_NUM, C.CUSTOMER_NAME, IT.DESCRIPTION, IL.NUM_ORDERED
+-- Four tables, all aliased, so the conditions below stay short.
 FROM CUSTOMER C, INVOICE I, INVOICE_LINE IL, ITEM IT
+-- Link 1 of 3: customer to invoice.
 WHERE C.CUSTOMER_NUM = I.CUSTOMER_NUM
+-- Link 2: invoice to line item.
 AND I.INVOICE_NUM = IL.INVOICE_NUM
+-- Link 3: line item to item. Four tables, three links - always one fewer.
 AND IL.ITEM_ID = IT.ITEM_ID
 ORDER BY I.INVOICE_NUM, IT.ITEM_ID;">
         <div class="sandbox-toolbar">
@@ -10737,9 +10918,11 @@ AND IL.ITEM_ID = IT.ITEM_ID
 AND IT.CATEGORY = ___
 ORDER BY IT.ITEM_ID;" data-solution="SELECT I.INVOICE_NUM, C.CUSTOMER_NAME, IT.DESCRIPTION
 FROM CUSTOMER C, INVOICE I, INVOICE_LINE IL, ITEM IT
+-- The three links that hold the chain together.
 WHERE C.CUSTOMER_NUM = I.CUSTOMER_NUM
 AND I.INVOICE_NUM = IL.INVOICE_NUM
 AND IL.ITEM_ID = IT.ITEM_ID
+-- A fourth condition that is NOT a link: an ordinary filter on the joined rows.
 AND IT.CATEGORY = &#39;Habitat&#39;
 ORDER BY IT.ITEM_ID;">
         <div class="sandbox-toolbar">
@@ -10766,11 +10949,17 @@ AND C.CUSTOMER_NUM = I.CUSTOMER_NUM
 AND I.INVOICE_NUM = IL.INVOICE_NUM
 AND IL.ITEM_ID = IT.ITEM_ID
 ORDER BY R.LAST_NAME, IT.DESCRIPTION;" data-solution="SELECT R.LAST_NAME, C.CUSTOMER_NAME, IT.DESCRIPTION,
+       -- The calculated line value, named with AS.
        IL.NUM_ORDERED * IL.QUOTED_PRICE AS EXTENDED
+-- FIVE tables this time, so four links are needed.
 FROM REP R, CUSTOMER C, INVOICE I, INVOICE_LINE IL, ITEM IT
+-- Link 1: rep to customer.
 WHERE R.REP_NUM = C.REP_NUM
+-- Link 2: customer to invoice.
 AND C.CUSTOMER_NUM = I.CUSTOMER_NUM
+-- Link 3: invoice to line item.
 AND I.INVOICE_NUM = IL.INVOICE_NUM
+-- Link 4: line item to item. Count them against the tables: five and four.
 AND IL.ITEM_ID = IT.ITEM_ID
 ORDER BY R.LAST_NAME, IT.DESCRIPTION;">
         <div class="sandbox-toolbar">
@@ -10793,10 +10982,15 @@ FROM CUSTOMER C, INVOICE I, INVOICE_LINE IL
 WHERE C.CUSTOMER_NUM = I.CUSTOMER_NUM
 AND I.INVOICE_NUM = IL.INVOICE_NUM
 GROUP BY ___, C.CUSTOMER_NAME
-ORDER BY I.INVOICE_NUM;" data-solution="SELECT I.INVOICE_NUM, C.CUSTOMER_NAME, SUM(IL.NUM_ORDERED * IL.QUOTED_PRICE) AS INVOICE_TOTAL
+ORDER BY I.INVOICE_NUM;" data-solution="-- Two grouping columns and one aggregate over the joined rows.
+SELECT I.INVOICE_NUM, C.CUSTOMER_NAME, SUM(IL.NUM_ORDERED * IL.QUOTED_PRICE) AS INVOICE_TOTAL
+-- Only three tables: no item description is displayed, so ITEM is not needed.
 FROM CUSTOMER C, INVOICE I, INVOICE_LINE IL
+-- Three tables, two links.
 WHERE C.CUSTOMER_NUM = I.CUSTOMER_NUM
 AND I.INVOICE_NUM = IL.INVOICE_NUM
+-- One output row per invoice. Every non-aggregated column above is listed here,
+-- which is why CUSTOMER_NAME appears as well as INVOICE_NUM.
 GROUP BY I.INVOICE_NUM, C.CUSTOMER_NAME
 ORDER BY I.INVOICE_NUM;">
         <div class="sandbox-toolbar">
@@ -11143,8 +11337,12 @@ SELECT ITEM_ID FROM INVOICE_LINE WHERE INVOICE_NUM = &#39;50710&#39;
 UNION ALL
 SELECT ITEM_ID FROM INVOICE_LINE WHERE INVOICE_NUM = &#39;50711&#39;;
 
--- Step 2: change UNION ALL to UNION, run it again, and explain the difference." data-solution="SELECT ITEM_ID FROM INVOICE_LINE WHERE INVOICE_NUM = &#39;50710&#39;
+-- Step 2: change UNION ALL to UNION, run it again, and explain the difference." data-solution="-- First set: the items on invoice 50710.
+SELECT ITEM_ID FROM INVOICE_LINE WHERE INVOICE_NUM = &#39;50710&#39;
+-- UNION stacks the two results and removes duplicates. Both sides return one
+-- column of the same kind, which is what union compatible means.
 UNION
+-- Second set: the items on invoice 50711. CF21 is on both and appears once.
 SELECT ITEM_ID FROM INVOICE_LINE WHERE INVOICE_NUM = &#39;50711&#39;;">
         <div class="sandbox-toolbar">
           <span class="sandbox-label">SQL Sandbox &middot; SQLite engine</span>
@@ -11167,12 +11365,17 @@ SELECT ITEM_ID FROM INVOICE_LINE WHERE INVOICE_NUM = &#39;50711&#39;;">
 
 SELECT CUSTOMER_NUM, CUSTOMER_NAME
 FROM CUSTOMER
-WHERE REP_NUM = &#39;20&#39;" data-solution="SELECT CUSTOMER_NUM, CUSTOMER_NAME
-FROM CUSTOMER
-WHERE REP_NUM = &#39;20&#39;
-INTERSECT
+WHERE REP_NUM = &#39;20&#39;" data-solution="-- The first of two complete SELECT statements. Its columns fix the shape.
 SELECT CUSTOMER_NUM, CUSTOMER_NAME
 FROM CUSTOMER
+-- First set: rep 20&#39;s customers.
+WHERE REP_NUM = &#39;20&#39;
+-- INTERSECT keeps only rows produced by BOTH sides. Order does not matter here.
+INTERSECT
+-- The second statement: same number of columns, same order, same types.
+SELECT CUSTOMER_NUM, CUSTOMER_NAME
+FROM CUSTOMER
+-- Second set: the customers that have an invoice. Only the overlap survives.
 WHERE CUSTOMER_NUM IN (SELECT CUSTOMER_NUM FROM INVOICE);">
         <div class="sandbox-toolbar">
           <span class="sandbox-label">SQL Sandbox &middot; SQLite engine</span>
@@ -11197,13 +11400,18 @@ WHERE CUSTOMER_NUM IN (SELECT CUSTOMER_NUM FROM INVOICE);">
 
 SELECT STUDENT_ID, LAST_NAME
 FROM STUDENT
-WHERE HOME_STATE = &#39;OH&#39;" data-solution="SELECT STUDENT_ID, LAST_NAME
+WHERE HOME_STATE = &#39;OH&#39;" data-solution="-- First set: the Ohio students.
+SELECT STUDENT_ID, LAST_NAME
 FROM STUDENT
 WHERE HOME_STATE = &#39;OH&#39;
+-- UNION combines and drops duplicates, so a student who qualifies on both counts
+-- is still listed once.
 UNION
 SELECT STUDENT_ID, LAST_NAME
 FROM STUDENT
+-- Second set: the students leasing at property P200.
 WHERE STUDENT_ID IN (SELECT STUDENT_ID FROM LEASE WHERE PROPERTY_ID = &#39;P200&#39;)
+-- A set operation is ONE statement, so it gets ONE ORDER BY, at the very end.
 ORDER BY STUDENT_ID;">
         <div class="sandbox-toolbar">
           <span class="sandbox-label">SQL Sandbox &middot; SQLite engine</span>
@@ -11400,6 +11608,9 @@ SELECT ITEM_ID, DESCRIPTION, PRICE
 FROM ITEM
 WHERE PRICE &gt;" data-solution="SELECT ITEM_ID, DESCRIPTION, PRICE
 FROM ITEM
+-- The SQLite-friendly rewrite of &gt; ALL. Beating every accessory price is the same
+-- as beating the largest one, and MAX collapses the subquery to a single number
+-- so an ordinary comparison works.
 WHERE PRICE &gt; (SELECT MAX(PRICE) FROM ITEM WHERE CATEGORY = &#39;Accessory&#39;)
 ORDER BY ITEM_ID;">
         <div class="sandbox-toolbar">
@@ -11424,6 +11635,8 @@ ORDER BY ITEM_ID;">
 SELECT CUSTOMER_NUM, CUSTOMER_NAME
 FROM CUSTOMER" data-solution="SELECT CUSTOMER_NUM, CUSTOMER_NAME
 FROM CUSTOMER
+-- = ANY means the same thing as IN: match any value in the list. IN is the
+-- spelling that runs everywhere, SQLite included.
 WHERE CUSTOMER_NUM IN (SELECT CUSTOMER_NUM FROM INVOICE)
 ORDER BY CUSTOMER_NUM;">
         <div class="sandbox-toolbar">
@@ -11448,6 +11661,8 @@ ORDER BY CUSTOMER_NUM;">
 SELECT PROPERTY_ID, ROOM_NUM, ROOM_TYPE, MONTHLY_RENT
 FROM ROOM" data-solution="SELECT PROPERTY_ID, ROOM_NUM, ROOM_TYPE, MONTHLY_RENT
 FROM ROOM
+-- Beat the dearest room at P100. MAX turns the subquery into one number, which
+-- is what makes &gt; legal - a bare subquery returning several rows would not be.
 WHERE MONTHLY_RENT &gt; (SELECT MAX(MONTHLY_RENT) FROM ROOM WHERE PROPERTY_ID = &#39;P100&#39;)
 ORDER BY PROPERTY_ID, ROOM_NUM;">
         <div class="sandbox-toolbar">
@@ -11698,6 +11913,9 @@ ORDER BY CUSTOMER.CUSTOMER_NUM;
 -- 2. Now change INNER JOIN to LEFT JOIN and run it again.
 -- 3. Then put this line just before the ORDER BY and run it a third time:
 --      WHERE INVOICE.INVOICE_NUM IS NULL" data-solution="SELECT CUSTOMER.CUSTOMER_NUM, CUSTOMER.CUSTOMER_NAME, INVOICE.INVOICE_NUM
+-- LEFT JOIN keeps every row of the table on the LEFT, matched or not. Where a
+-- customer has no invoice, SQL fills the INVOICE columns with NULL - so all four
+-- customers come back, not the three an INNER JOIN would return.
 FROM CUSTOMER LEFT JOIN INVOICE ON CUSTOMER.CUSTOMER_NUM = INVOICE.CUSTOMER_NUM
 ORDER BY CUSTOMER.CUSTOMER_NUM;">
         <div class="sandbox-toolbar">
@@ -11728,12 +11946,17 @@ VALUES (&#39;50713&#39;, &#39;9999&#39;, &#39;2026-06-16&#39;);
 
 SELECT CUSTOMER.CUSTOMER_NUM, CUSTOMER.CUSTOMER_NAME, INVOICE.INVOICE_NUM
 FROM CUSTOMER FULL OUTER JOIN INVOICE ON CUSTOMER.CUSTOMER_NUM = INVOICE.CUSTOMER_NUM
-ORDER BY CUSTOMER.CUSTOMER_NUM, INVOICE.INVOICE_NUM;" data-solution="DELETE FROM INVOICE WHERE INVOICE_NUM = &#39;50713&#39;;
+ORDER BY CUSTOMER.CUSTOMER_NUM, INVOICE.INVOICE_NUM;" data-solution="-- Housekeeping, so this box survives a second Run.
+DELETE FROM INVOICE WHERE INVOICE_NUM = &#39;50713&#39;;
 
+-- Add an ORPHAN invoice on purpose: customer 9999 does not exist. Without one,
+-- a full outer join would look identical to a left join on this data.
 INSERT INTO INVOICE (INVOICE_NUM, CUSTOMER_NUM, INVOICE_DATE)
 VALUES (&#39;50713&#39;, &#39;9999&#39;, &#39;2026-06-16&#39;);
 
 SELECT CUSTOMER.CUSTOMER_NUM, CUSTOMER.CUSTOMER_NAME, INVOICE.INVOICE_NUM
+-- FULL OUTER JOIN protects BOTH sides: the customer with no invoice AND the
+-- invoice with no customer both survive, each padded with nulls.
 FROM CUSTOMER FULL OUTER JOIN INVOICE ON CUSTOMER.CUSTOMER_NUM = INVOICE.CUSTOMER_NUM
 ORDER BY CUSTOMER.CUSTOMER_NUM, INVOICE.INVOICE_NUM;">
         <div class="sandbox-toolbar">
@@ -11757,7 +11980,10 @@ SELECT COUNT(*) AS ROW_COUNT FROM CUSTOMER, REP;
 -- Then run the rows themselves, and finally add the missing condition
 --      WHERE CUSTOMER.REP_NUM = REP.REP_NUM
 -- to collapse the product into the inner join you actually wanted." data-solution="SELECT CUSTOMER.CUSTOMER_NUM, CUSTOMER.CUSTOMER_NAME, REP.LAST_NAME
+-- The older comma-and-WHERE form. Listing two tables with no condition would
+-- produce the twelve-row product...
 FROM CUSTOMER, REP
+-- ...and this single line is the whole difference between that and a real join.
 WHERE CUSTOMER.REP_NUM = REP.REP_NUM
 ORDER BY CUSTOMER.CUSTOMER_NUM;">
         <div class="sandbox-toolbar">
@@ -11782,7 +12008,10 @@ ORDER BY CUSTOMER.CUSTOMER_NUM;">
 
 SELECT ROOM.PROPERTY_ID, ROOM.ROOM_NUM, LEASE.LEASE_ID
 FROM ROOM LEFT JOIN LEASE ON" data-solution="SELECT ROOM.PROPERTY_ID, ROOM.ROOM_NUM, LEASE.LEASE_ID
+-- ROOM is on the left, so every room is kept whether or not it has been leased.
 FROM ROOM LEFT JOIN LEASE
+  -- The ON condition needs BOTH key columns, because a room is identified by the
+  -- property and the room number together. One of them alone would over-match.
   ON ROOM.PROPERTY_ID = LEASE.PROPERTY_ID AND ROOM.ROOM_NUM = LEASE.ROOM_NUM
 ORDER BY ROOM.PROPERTY_ID, ROOM.ROOM_NUM;">
         <div class="sandbox-toolbar">
@@ -11924,9 +12153,13 @@ ORDER BY ROOM.PROPERTY_ID, ROOM.ROOM_NUM;">
       <div class="sandbox" data-sandbox data-seed="kimtay_full" data-starter="-- List every KimTay customer with the number of invoices they have,
 -- including the customer who has never been invoiced.
 -- Four rows come back, and one of the counts is 0.
-" data-solution="SELECT C.CUSTOMER_NAME, COUNT(I.INVOICE_NUM) AS INVOICE_COUNT
+" data-solution="-- COUNT(I.INVOICE_NUM) counts VALUES, so an unmatched customer scores 0.
+-- COUNT(*) would count the null-padded row and wrongly report 1.
+SELECT C.CUSTOMER_NAME, COUNT(I.INVOICE_NUM) AS INVOICE_COUNT
 FROM CUSTOMER C
+-- LEFT JOIN keeps the customers with no invoices in the answer at all.
 LEFT JOIN INVOICE I ON C.CUSTOMER_NUM = I.CUSTOMER_NUM
+-- Group by the key as well as the name, so two customers sharing a name stay apart.
 GROUP BY C.CUSTOMER_NUM, C.CUSTOMER_NAME
 ORDER BY C.CUSTOMER_NAME;">
         <div class="sandbox-toolbar">
@@ -11967,20 +12200,27 @@ SELECT F.CUSTOMER_NAME AS FIRST_ONE, S.CUSTOMER_NAME AS SECOND_ONE, F.CITY
 FROM CUSTOMER F, CUSTOMER S
 WHERE F.CITY = S.CITY
   AND F.CUSTOMER_NUM &lt; S.CUSTOMER_NUM;" data-solution="-- Alias plus self-join: two KimTay customers that share a city.
+-- Both copies are aliased and both output columns are renamed for readability.
 SELECT F.CUSTOMER_NAME AS FIRST_ONE, S.CUSTOMER_NAME AS SECOND_ONE, F.CITY
+-- One table, opened twice under two names.
 FROM CUSTOMER F, CUSTOMER S
+-- The shared attribute that defines the pair.
 WHERE F.CITY = S.CITY
+  -- The primary key condition that removes self-pairs and reversed duplicates.
   AND F.CUSTOMER_NUM &lt; S.CUSTOMER_NUM;
 
 -- Union compatible: one column of city text on each side.
 SELECT CITY FROM REP
+-- UNION removes duplicates, so a city both tables use appears once.
 UNION
 SELECT CITY FROM CUSTOMER
+-- One ORDER BY for the whole statement, at the end.
 ORDER BY CITY;
 
 -- Correlated subquery: the inner query names C.CUSTOMER_NUM from the outer row.
 SELECT C.CUSTOMER_NAME
 FROM CUSTOMER C
+-- SELECT 1 rather than SELECT * - EXISTS never uses the value, so anything does.
 WHERE EXISTS (SELECT 1 FROM INVOICE I WHERE I.CUSTOMER_NUM = C.CUSTOMER_NUM);">
         <div class="sandbox-toolbar">
           <span class="sandbox-label">SQL Sandbox &middot; SQLite engine</span>
@@ -12029,12 +12269,17 @@ SELECT &#39;REP&#39; AS TABLE_NAME, COUNT(*) AS ROW_COUNT FROM REP
 UNION ALL SELECT &#39;CUSTOMER&#39;, COUNT(*) FROM CUSTOMER
 UNION ALL SELECT &#39;INVOICE&#39;, COUNT(*) FROM INVOICE
 UNION ALL SELECT &#39;INVOICE_LINE&#39;, COUNT(*) FROM INVOICE_LINE
-UNION ALL SELECT &#39;ITEM&#39;, COUNT(*) FROM ITEM;" data-solution="SELECT &#39;REP&#39; AS TABLE_NAME, COUNT(*) AS ROW_COUNT FROM REP
+UNION ALL SELECT &#39;ITEM&#39;, COUNT(*) FROM ITEM;" data-solution="-- A row-count audit built entirely out of UNION ALL. Each SELECT invents a label
+-- column and counts one table; UNION ALL stacks them without checking duplicates,
+-- which is what you want when every row is deliberately different.
+SELECT &#39;REP&#39; AS TABLE_NAME, COUNT(*) AS ROW_COUNT FROM REP
+-- Only the FIRST SELECT needs the AS aliases - the headings come from it.
 UNION ALL SELECT &#39;CUSTOMER&#39;, COUNT(*) FROM CUSTOMER
 UNION ALL SELECT &#39;INVOICE&#39;, COUNT(*) FROM INVOICE
 UNION ALL SELECT &#39;INVOICE_LINE&#39;, COUNT(*) FROM INVOICE_LINE
 UNION ALL SELECT &#39;ITEM&#39;, COUNT(*) FROM ITEM;
 
+-- The same audit for the StayWell database.
 SELECT &#39;MANAGER&#39; AS TABLE_NAME, COUNT(*) AS ROW_COUNT FROM MANAGER
 UNION ALL SELECT &#39;PROPERTY&#39;, COUNT(*) FROM PROPERTY
 UNION ALL SELECT &#39;ROOM&#39;, COUNT(*) FROM ROOM
@@ -12309,8 +12554,11 @@ UNION ALL SELECT &#39;PAYMENT&#39;, COUNT(*) FROM PAYMENT;">
 -- 5. Cities where KimTay has a customer but no rep.
 " data-solution="-- 1. Three rows, one per invoice.
 SELECT I.INVOICE_NUM, I.INVOICE_DATE, C.CUSTOMER_NAME, R.LAST_NAME
+-- Three tables, so two links.
 FROM INVOICE I, CUSTOMER C, REP R
+-- Link 1: invoice to the customer it belongs to.
 WHERE I.CUSTOMER_NUM = C.CUSTOMER_NUM
+  -- Link 2: that customer to the rep who serves it.
   AND C.REP_NUM = R.REP_NUM
 ORDER BY I.INVOICE_NUM;
 
@@ -12318,10 +12566,13 @@ ORDER BY I.INVOICE_NUM;
 -- is Access Pet Center, and it has a single invoice, so DISTINCT has nothing
 -- to collapse today; it is here to keep the query right tomorrow.
 SELECT DISTINCT T.DESCRIPTION
+-- Four tables to travel from a rep number all the way to an item description.
 FROM ITEM T, INVOICE_LINE L, INVOICE I, CUSTOMER C
+-- The three links, walked backwards: item to line, line to invoice, invoice to customer.
 WHERE T.ITEM_ID = L.ITEM_ID
   AND L.INVOICE_NUM = I.INVOICE_NUM
   AND I.CUSTOMER_NUM = C.CUSTOMER_NUM
+  -- The restriction, on a column that never appears in the output.
   AND C.REP_NUM = &#39;20&#39;
 ORDER BY T.DESCRIPTION;
 
@@ -12329,15 +12580,21 @@ ORDER BY T.DESCRIPTION;
 -- has nothing to add up. COALESCE(SUM(P.AMOUNT), 0) would print 0 instead.
 SELECT S.LAST_NAME, S.FIRST_NAME, SUM(P.AMOUNT) AS PAID
 FROM STUDENT S
+-- Two LEFT JOINs chained: a student with no lease survives the first, and then
+-- survives the second as well, because a null carries straight through.
 LEFT JOIN LEASE L ON S.STUDENT_ID = L.STUDENT_ID
 LEFT JOIN PAYMENT P ON L.LEASE_ID = P.LEASE_ID
+-- Group by the key as well as the names, so two students sharing a name stay apart.
 GROUP BY S.STUDENT_ID, S.LAST_NAME, S.FIRST_NAME
 ORDER BY S.LAST_NAME;
 
 -- 4. One row: P200 room 101, Single.
 SELECT R.PROPERTY_ID, R.ROOM_NUM, R.ROOM_TYPE
 FROM ROOM R
+-- NOT EXISTS: keep the room only when the inner search comes back empty. The
+-- inner query is correlated - it names R from the outer row.
 WHERE NOT EXISTS (SELECT 1 FROM LEASE L
+                  -- Both key columns are needed to identify one room.
                   WHERE L.PROPERTY_ID = R.PROPERTY_ID
                     AND L.ROOM_NUM = R.ROOM_NUM);
 
@@ -12345,11 +12602,13 @@ WHERE NOT EXISTS (SELECT 1 FROM LEASE L
 -- ROOM and LEASE have in common: adding ROOM_TYPE to the left side would
 -- break union compatibility and the statement would not run at all.
 SELECT PROPERTY_ID, ROOM_NUM FROM ROOM
+-- EXCEPT keeps rows from the first result that the second did not also produce.
 EXCEPT
 SELECT PROPERTY_ID, ROOM_NUM FROM LEASE;
 
 -- 5. One row: Northfield.
 SELECT CITY FROM CUSTOMER
+-- Order matters for EXCEPT: swapping the halves asks a different question.
 EXCEPT
 SELECT CITY FROM REP;">
         <div class="sandbox-toolbar">
@@ -12526,15 +12785,22 @@ DROP TABLE IF EXISTS ITEM_COPY;
 CREATE TABLE ITEM_COPY AS
 SELECT *
 FROM ITEM;
-" data-solution="DROP TABLE IF EXISTS ITEM_COPY;
+" data-solution="-- Housekeeping, so the whole box can be run more than once.
+DROP TABLE IF EXISTS ITEM_COPY;
 
+-- CREATE TABLE ... AS builds a new table AND fills it from a query. The column
+-- names and types come from the SELECT, so none are written by hand.
 CREATE TABLE ITEM_COPY AS
+-- SELECT * takes every column, so the copy has the same shape as the original.
 SELECT *
 FROM ITEM;
 
+-- A copy made this way carries the columns but NOT the primary key, which is why
+-- a second AV07 is accepted here without complaint.
 INSERT INTO ITEM_COPY
 VALUES (&#39;AV07&#39;, &#39;Second Aviary Starter Cage&#39;, &#39;Habitat&#39;, 9, 64.99, 5);
 
+-- Six rows, with AV07 twice - proof the duplicate went in.
 SELECT ITEM_ID, DESCRIPTION, ON_HAND
 FROM ITEM_COPY
 ORDER BY ITEM_ID, DESCRIPTION;">
@@ -12751,15 +13017,21 @@ SELECT *
 FROM ITEM;
 " data-solution="DROP TABLE IF EXISTS ITEM_COPY;
 
+-- Work on a scratch copy so the practice UPDATE cannot damage the real table.
 CREATE TABLE ITEM_COPY AS
 SELECT *
 FROM ITEM;
 
+-- UPDATE changes values inside rows that already exist; nothing is added or removed.
 UPDATE ITEM_COPY
+-- One SET clause can change several columns at once - commas between them, SET once.
 SET PRICE = 12.49,
     REORDER_LEVEL = 40
+-- The WHERE clause is the only thing limiting this to one row. Leave it off and
+-- every item in the table gets the new price.
 WHERE ITEM_ID = &#39;DG04&#39;;
 
+-- Always read the row back after a change.
 SELECT ITEM_ID, DESCRIPTION, PRICE, REORDER_LEVEL
 FROM ITEM_COPY
 ORDER BY ITEM_ID;">
@@ -13037,16 +13309,22 @@ FROM ITEM
 WHERE 1 = 0;
 " data-solution="DROP TABLE IF EXISTS BUDGET_ITEM;
 
+-- The empty-clone trick: copy a table&#39;s structure without any of its rows.
 CREATE TABLE BUDGET_ITEM AS
 SELECT *
 FROM ITEM
+-- 1 = 0 is false for every row, so the columns come across and the data does not.
 WHERE 1 = 0;
 
+-- INSERT ... SELECT: the values come from a query rather than a typed VALUES list.
+-- The column count, order and types must line up with the target table.
 INSERT INTO BUDGET_ITEM
 SELECT ITEM_ID, DESCRIPTION, CATEGORY, ON_HAND, PRICE, REORDER_LEVEL
 FROM ITEM
+-- One statement can move many rows; the WHERE decides which.
 WHERE PRICE &lt; 20.00;
 
+-- INSERT ... VALUES for a single hand-typed row. Both forms fill the same table.
 INSERT INTO BUDGET_ITEM
 VALUES (&#39;TY01&#39;, &#39;Rope Chew Toy&#39;, &#39;Accessory&#39;, 60, 7.25, 20);
 
@@ -13178,14 +13456,18 @@ WHERE CUSTOMER_NUM = &#39;1420&#39;;
 SELECT CUSTOMER_NAME, BALANCE AS BALANCE_AFTER
 FROM CUSTOMER
 WHERE CUSTOMER_NUM = &#39;1420&#39;;" data-solution="-- Autocommit is ON. There is no BEGIN and no COMMIT anywhere below.
+-- Read the balance first, so there is something to compare against.
 SELECT CUSTOMER_NAME, BALANCE AS BALANCE_BEFORE
 FROM CUSTOMER
 WHERE CUSTOMER_NUM = &#39;1420&#39;;
 
+-- With autocommit on, this statement is permanent the instant it finishes. There
+-- is no open transaction, so there is nothing left to roll back.
 UPDATE CUSTOMER
 SET BALANCE = BALANCE - 200.00
 WHERE CUSTOMER_NUM = &#39;1420&#39;;
 
+-- The new figure. Compare it with BALANCE_BEFORE above.
 SELECT CUSTOMER_NAME, BALANCE AS BALANCE_AFTER
 FROM CUSTOMER
 WHERE CUSTOMER_NUM = &#39;1420&#39;;">
@@ -13398,14 +13680,19 @@ COMMIT;
 SELECT CUSTOMER_NUM, CUSTOMER_NAME, BALANCE
 FROM CUSTOMER
 ORDER BY CUSTOMER_NUM;" data-solution="-- The 200.00 charge belongs on Access Pet Center (1120), not on Whiskers &amp; Wags (1420).
+-- The invariant, measured before anything changes: the books must still balance.
 SELECT SUM(BALANCE) AS TOTAL_OWED_BEFORE FROM CUSTOMER;
 
+-- BEGIN opens a transaction. From here changes are provisional - visible to you,
+-- not yet permanent, and undoable in one word.
 BEGIN;
 
+-- Half one of the transfer: take the charge off the wrong customer.
 UPDATE CUSTOMER
 SET BALANCE = BALANCE - 200.00
 WHERE CUSTOMER_NUM = &#39;1420&#39;;
 
+-- Half two: put it on the right one. Both halves must happen or neither should.
 UPDATE CUSTOMER
 SET BALANCE = BALANCE + 200.00
 WHERE CUSTOMER_NUM = &#39;1120&#39;;
@@ -13413,6 +13700,8 @@ WHERE CUSTOMER_NUM = &#39;1120&#39;;
 -- The proof: this total must still read 9533.25.
 SELECT SUM(BALANCE) AS TOTAL_OWED_INSIDE FROM CUSTOMER;
 
+-- COMMIT makes both changes permanent together, at the same instant, and closes
+-- the transaction. Check the invariant BEFORE you commit, not after.
 COMMIT;
 
 SELECT CUSTOMER_NUM, CUSTOMER_NAME, BALANCE
@@ -13655,8 +13944,10 @@ SELECT ITEM_ID, PRICE AS PRICE_RESTORED FROM ITEM ORDER BY ITEM_ID;" data-soluti
 SELECT ITEM_ID, DESCRIPTION, CATEGORY, PRICE FROM ITEM ORDER BY ITEM_ID;
 
 -- Step 2: open a transaction, then make the mistake on purpose. No WHERE.
+-- The safety net has to exist BEFORE the dangerous statement runs, not after.
 BEGIN;
 
+-- No WHERE clause, so every row changes. Perfectly legal SQL, and the classic accident.
 UPDATE ITEM
 SET PRICE = ROUND(PRICE * 1.10, 2);
 
@@ -13664,13 +13955,16 @@ SET PRICE = ROUND(PRICE * 1.10, 2);
 SELECT ITEM_ID, CATEGORY, PRICE AS PRICE_AFTER_MISTAKE FROM ITEM ORDER BY ITEM_ID;
 
 -- Step 4: take all of it back.
+-- ROLLBACK returns the database to its state at BEGIN, as though nothing ran.
 ROLLBACK;
 
 -- Step 5: now do it properly. Write the UPDATE that raises ONLY the Habitat prices.
 BEGIN;
 
 UPDATE ITEM
+-- The new value is computed from the old one, and ROUND keeps it to two decimals.
 SET PRICE = ROUND(PRICE * 1.10, 2)
+-- The one line that was missing. It is not on a key, so several rows change at once.
 WHERE CATEGORY = &#39;Habitat&#39;;
 
 SELECT ITEM_ID, CATEGORY, PRICE AS PRICE_AFTER_FIX FROM ITEM ORDER BY ITEM_ID;
@@ -13892,15 +14186,22 @@ SELECT COUNT(*)       AS customer_count,
 FROM CUSTOMER;
 
 -- Step 2: set Companion Care Clinic (1310) to a null balance,
--- then run those same three numbers again and compare." data-solution="SELECT COUNT(*)       AS customer_count,
+-- then run those same three numbers again and compare." data-solution="-- The three numbers before any null exists. COUNT(*) counts rows, COUNT(column)
+-- counts values, and AVG divides the total by the count of VALUES.
+SELECT COUNT(*)       AS customer_count,
        COUNT(BALANCE) AS balances_known,
        AVG(BALANCE)   AS average_balance
 FROM CUSTOMER;
 
+-- Clear one balance. NULL records that the amount is not known - very different
+-- from storing 0, which would claim the customer owes nothing.
 UPDATE CUSTOMER
 SET BALANCE = NULL
 WHERE CUSTOMER_NUM = &#39;1310&#39;;
 
+-- The same three numbers again. The row count is unchanged, but the value count
+-- drops by one and the average silently changes - it is now the average of the
+-- customers who HAVE a balance, which is a different question.
 SELECT COUNT(*)       AS customer_count,
        COUNT(BALANCE) AS balances_known,
        AVG(BALANCE)   AS average_balance
@@ -13945,20 +14246,26 @@ INSERT INTO CONTACT_LOG VALUES (&#39;1310&#39;, &#39;Owen Blake&#39;, &#39;555-8
 CREATE TABLE CONTACT_LOG (
   CUSTOMER_NUM  CHAR(4)     NOT NULL,
   CONTACT_NAME  VARCHAR(25) NOT NULL,
+  -- Left nullable on purpose: a phone number may genuinely be unknown.
   CONTACT_PHONE CHAR(12)
 );
 
 INSERT INTO CONTACT_LOG VALUES (&#39;1120&#39;, &#39;Dana Reyes&#39;, &#39;555-880-1200&#39;);
 INSERT INTO CONTACT_LOG VALUES (&#39;1310&#39;, &#39;Owen Blake&#39;, &#39;555-880-4417&#39;);
 
+-- Store a NULL: no value recorded at all.
 UPDATE CONTACT_LOG
 SET CONTACT_PHONE = NULL
 WHERE CUSTOMER_NUM = &#39;1310&#39;;
 
+-- Store an EMPTY STRING: a value that happens to be zero characters long. It
+-- looks identical on screen and is a completely different thing.
 UPDATE CONTACT_LOG
 SET CONTACT_PHONE = &#39;&#39;
 WHERE CUSTOMER_NUM = &#39;1120&#39;;
 
+-- LENGTH tells the two apart: the empty string measures 0, while the null
+-- measures null, because any function of an unknown is itself unknown.
 SELECT CUSTOMER_NUM,
        CONTACT_PHONE,
        LENGTH(CONTACT_PHONE) AS phone_length
@@ -14009,14 +14316,18 @@ WHERE CUSTOMER_NUM = &#39;1310&#39;;
 -- Run them and decide which is which before you read on.
 SELECT CUSTOMER_NUM, CUSTOMER_NAME FROM CUSTOMER WHERE BALANCE = NULL;
 
-SELECT CUSTOMER_NUM, CUSTOMER_NAME FROM CUSTOMER WHERE BALANCE IS NULL;" data-solution="UPDATE CUSTOMER
+SELECT CUSTOMER_NUM, CUSTOMER_NAME FROM CUSTOMER WHERE BALANCE IS NULL;" data-solution="-- Create a null to hunt for.
+UPDATE CUSTOMER
 SET BALANCE = NULL
 WHERE CUSTOMER_NUM = &#39;1310&#39;;
 
 -- Returns no rows: nothing is ever equal to null, not even null.
+-- The comparison answers unknown, WHERE keeps only what is true, so every row goes.
 SELECT CUSTOMER_NUM, CUSTOMER_NAME FROM CUSTOMER WHERE BALANCE = NULL;
 
 -- Returns customer 1310, Companion Care Clinic.
+-- IS NULL asks about the presence of a value instead of comparing values, which
+-- is why it is the only test that works. There is no = anywhere in it.
 SELECT CUSTOMER_NUM, CUSTOMER_NAME FROM CUSTOMER WHERE BALANCE IS NULL;">
         <div class="sandbox-toolbar">
           <span class="sandbox-label">SQL Sandbox &middot; SQLite engine</span>
@@ -14053,9 +14364,13 @@ ADD COLUMN EMAIL VARCHAR(40);</pre>
       <p>The word <code class="inline-code">COLUMN</code> is optional in SQLite, in MySQL, and in Oracle, so <code class="inline-code">ADD EMAIL VARCHAR(40)</code> does the same job; Oracle also accepts a parenthesized list, <code class="inline-code">ADD (EMAIL VARCHAR2(40))</code>. Spelling out <code class="inline-code">ADD COLUMN</code> is the safer habit because it reads unambiguously everywhere. The new column always lands at the end of the table. <code class="inline-code">CUSTOMER</code> ships with nine columns ending in <code class="inline-code">REP_NUM</code>, so <code class="inline-code">EMAIL</code> becomes the tenth. No engine lets you insert a column in the middle.</p>
       <div class="sandbox" data-sandbox data-seed="kimtay_full" data-starter="-- Give CUSTOMER an EMAIL column, then record the address for
 -- Access Pet Center (1120) and list all four customers with it.
-" data-solution="ALTER TABLE CUSTOMER
+" data-solution="-- ALTER TABLE changes a table&#39;s STRUCTURE; the rows stay where they are.
+ALTER TABLE CUSTOMER
+-- ADD COLUMN appends a column. Every existing row immediately has it, holding
+-- null, because no value was supplied for rows that were already there.
 ADD COLUMN EMAIL VARCHAR(40);
 
+-- Fill the new column in for one customer, leaving the rest null.
 UPDATE CUSTOMER
 SET EMAIL = &#39;orders@accesspet.example&#39;
 WHERE CUSTOMER_NUM = &#39;1120&#39;;
@@ -14096,8 +14411,12 @@ ALTER TABLE ITEM ADD COLUMN SUPPLIER VARCHAR(15) NOT NULL;
       <div class="sandbox" data-sandbox data-seed="kimtay_full" data-starter="-- Add a SUPPLIER column to ITEM that is required from now on.
 -- Existing items have no supplier on file, so default them to &#39;UNKNOWN&#39;.
 " data-solution="ALTER TABLE ITEM
+-- NOT NULL on a table that already holds rows is normally refused - the engine
+-- would have to store a null in every existing row. DEFAULT is what makes it
+-- legal: it gives the engine a real value to write into those rows instead.
 ADD COLUMN SUPPLIER VARCHAR(15) NOT NULL DEFAULT &#39;UNKNOWN&#39;;
 
+-- All five rows come back reading UNKNOWN, which is the default doing its work.
 SELECT ITEM_ID, DESCRIPTION, SUPPLIER
 FROM ITEM
 ORDER BY ITEM_ID;">
@@ -14148,16 +14467,21 @@ ALTER TABLE CUSTOMER
 DROP COLUMN EMAIL;</pre>
       <div class="sandbox" data-sandbox data-seed="kimtay_full" data-starter="-- Add EMAIL to CUSTOMER, look at the table, then take the column
 -- back off and confirm CUSTOMER is shaped the way it started.
-" data-solution="ALTER TABLE CUSTOMER
+" data-solution="-- Add a column...
+ALTER TABLE CUSTOMER
 ADD COLUMN EMAIL VARCHAR(40);
 
+-- ...confirm it exists, holding null on every row.
 SELECT CUSTOMER_NUM, CUSTOMER_NAME, EMAIL
 FROM CUSTOMER
 ORDER BY CUSTOMER_NUM;
 
 ALTER TABLE CUSTOMER
+-- DROP COLUMN removes the column and every value in it, from every row. Outside
+-- a transaction there is no undo and no warning about the data going with it.
 DROP COLUMN EMAIL;
 
+-- SELECT * proves the column is gone from the table&#39;s shape entirely.
 SELECT *
 FROM CUSTOMER
 WHERE CUSTOMER_NUM = &#39;1120&#39;;">
@@ -14194,8 +14518,13 @@ WHERE CUSTOMER_NUM = &#39;1120&#39;;">
 -- Use the four steps: create, copy, drop, rename.
 " data-solution="DROP TABLE IF EXISTS ITEM_NEW;
 
+-- The whole rebuild runs inside ONE transaction, so the table is never missing:
+-- either every step below succeeds or none of them do.
 BEGIN;
 
+-- Step 1: build the table you actually want, with the wider DESCRIPTION and the
+-- extra SUPPLIER column. SQLite cannot change a column&#39;s type in place, which is
+-- why the four-step dance exists.
 CREATE TABLE ITEM_NEW (
   ITEM_ID       CHAR(4)      PRIMARY KEY,
   DESCRIPTION   VARCHAR(40)  NOT NULL,
@@ -14206,14 +14535,20 @@ CREATE TABLE ITEM_NEW (
   SUPPLIER      VARCHAR(15)
 );
 
+-- Step 2: copy the data across. SUPPLIER is left out of both lists, so it comes
+-- out null on every row - the new column has no data to inherit.
 INSERT INTO ITEM_NEW (ITEM_ID, DESCRIPTION, CATEGORY, ON_HAND, PRICE, REORDER_LEVEL)
 SELECT ITEM_ID, DESCRIPTION, CATEGORY, ON_HAND, PRICE, REORDER_LEVEL
 FROM ITEM;
 
+-- Step 3: remove the old table.
 DROP TABLE ITEM;
 
+-- Step 4: rename the new one into its place. To everything else, ITEM simply
+-- gained a column.
 ALTER TABLE ITEM_NEW RENAME TO ITEM;
 
+-- Only now does any of it become permanent.
 COMMIT;
 
 SELECT ITEM_ID, DESCRIPTION, ON_HAND, SUPPLIER
@@ -14253,6 +14588,8 @@ DROP TABLE ITEM_ARCHIVE;</pre>
 -- confirm the database is back to five.
 " data-solution="DROP TABLE IF EXISTS ITEM_ARCHIVE;
 
+-- Build and fill in one statement, taking four of the six columns and only the
+-- habitat rows - the SELECT list decides the columns, the WHERE decides the rows.
 CREATE TABLE ITEM_ARCHIVE AS
 SELECT ITEM_ID, DESCRIPTION, CATEGORY, PRICE
 FROM ITEM
@@ -14260,10 +14597,14 @@ WHERE CATEGORY = &#39;Habitat&#39;;
 
 SELECT * FROM ITEM_ARCHIVE ORDER BY ITEM_ID;
 
+-- sqlite_master is the catalogue: ask it what tables exist right now.
 SELECT name FROM sqlite_master WHERE type = &#39;table&#39; ORDER BY name;
 
+-- DROP TABLE removes the table itself - definition, columns and rows together.
+-- Compare with DELETE FROM ITEM_ARCHIVE, which would empty it but leave it there.
 DROP TABLE ITEM_ARCHIVE;
 
+-- The same catalogue question, now one table shorter.
 SELECT name FROM sqlite_master WHERE type = &#39;table&#39; ORDER BY name;">
         <div class="sandbox-toolbar">
           <span class="sandbox-label">SQL Sandbox &middot; SQLite engine</span>
@@ -14323,8 +14664,12 @@ DROP TABLE ITEM;
       <p>Now see the consequence for yourself. The sandbox on this page does not enforce foreign keys, so it will let you drop the parent, which makes it the perfect place to look at the wreckage.</p>
       <div class="sandbox" data-sandbox data-seed="kimtay_full" data-starter="-- Drop ITEM, then list INVOICE_LINE. The six lines are all still
 -- there. Try to describe what invoice 50712 actually ordered.
-" data-solution="DROP TABLE ITEM;
+" data-solution="-- Dropping a parent table when foreign key enforcement is OFF: SQLite allows it,
+-- and the child rows are left pointing at nothing.
+DROP TABLE ITEM;
 
+-- The line items survive, still carrying ITEM_ID values whose items no longer
+-- exist. Nothing warns you - which is the argument for turning enforcement on.
 SELECT INVOICE_NUM, ITEM_ID, NUM_ORDERED, QUOTED_PRICE
 FROM INVOICE_LINE
 ORDER BY INVOICE_NUM, ITEM_ID;">
@@ -14363,11 +14708,14 @@ ORDER BY INVOICE_NUM, ITEM_ID;">
 -- that territory has not been assigned yet. List the reps,
 -- then take the column off again.
 " data-solution="ALTER TABLE REP
+-- A new column arrives null on every existing row.
 ADD COLUMN TERRITORY VARCHAR(15);
 
+-- No WHERE clause, so this sets every rep to North in one statement.
 UPDATE REP
 SET TERRITORY = &#39;North&#39;;
 
+-- Then clear one back to null, to make the counts below interesting.
 UPDATE REP
 SET TERRITORY = NULL
 WHERE REP_NUM = &#39;65&#39;;
@@ -14376,10 +14724,13 @@ SELECT REP_NUM, LAST_NAME, TERRITORY
 FROM REP
 ORDER BY REP_NUM;
 
+-- COUNT(*) counts rows and COUNT(column) counts values, so the gap between the
+-- two numbers is exactly how many reps have no territory recorded.
 SELECT COUNT(*) AS reps, COUNT(TERRITORY) AS territory_known
 FROM REP;
 
 ALTER TABLE REP
+-- Tidy up: the column and everything stored in it goes.
 DROP COLUMN TERRITORY;">
         <div class="sandbox-toolbar">
           <span class="sandbox-label">SQL Sandbox &middot; SQLite engine</span>
@@ -14421,8 +14772,12 @@ DROP COLUMN TERRITORY;">
       <div class="sandbox" data-sandbox data-seed="kimtay_full" data-starter="-- Ask the engine directly: which of these three things is null?
 SELECT NULL IS NULL AS null_is_null,
        0    IS NULL AS zero_is_null,
-       &#39;&#39;   IS NULL AS empty_string_is_null;" data-solution="SELECT NULL IS NULL AS null_is_null,
+       &#39;&#39;   IS NULL AS empty_string_is_null;" data-solution="-- Three tests with no table involved at all, to settle what a null actually is.
+-- IS NULL on a null answers 1 (true).
+SELECT NULL IS NULL AS null_is_null,
+       -- Zero is a real value, so this answers 0 (false). A null is not zero.
        0    IS NULL AS zero_is_null,
+       -- The empty string is also a real value, just a short one. Also false.
        &#39;&#39;   IS NULL AS empty_string_is_null;">
         <div class="sandbox-toolbar">
           <span class="sandbox-label">SQL Sandbox &middot; SQLite engine</span>
@@ -14467,19 +14822,26 @@ SELECT NULL IS NULL AS null_is_null,
 -- for exactly the customers who have an invoice on that date, and
 -- leave the rest null. Then list all four customers.
 " data-solution="ALTER TABLE CUSTOMER
+-- DATE stores a real date, so it can be compared and sorted properly.
 ADD COLUMN LAST_INVOICED DATE;
 
 UPDATE CUSTOMER
 SET LAST_INVOICED = &#39;2026-06-14&#39;
+-- The rows to change are chosen by a SUBQUERY. Anything legal in a SELECT&#39;s
+-- WHERE clause is legal in an UPDATE&#39;s WHERE clause too.
 WHERE CUSTOMER_NUM IN
+      -- The inner query runs first: the customers invoiced on that date.
       (SELECT CUSTOMER_NUM
        FROM INVOICE
        WHERE INVOICE_DATE = &#39;2026-06-14&#39;);
 
+-- The customers not invoiced that day keep a null, which is the honest record:
+-- not zero, not a blank date, simply nothing to report.
 SELECT CUSTOMER_NUM, CUSTOMER_NAME, LAST_INVOICED
 FROM CUSTOMER
 ORDER BY CUSTOMER_NUM;
 
+-- The two counts differ by exactly the number of customers left null.
 SELECT COUNT(*) AS customers, COUNT(LAST_INVOICED) AS invoiced_that_day
 FROM CUSTOMER;">
         <div class="sandbox-toolbar">
@@ -14730,8 +15092,10 @@ FROM CUSTOMER;">
       <div class="sandbox" data-sandbox data-seed="staywell_full" data-starter="-- Add WEBSITE to PROPERTY, record the address for P100 only,
 -- then list PROPERTY_ID, PROPERTY_NAME, and WEBSITE for both rows.
 " data-solution="ALTER TABLE PROPERTY
+-- The new column exists on every row immediately, holding null.
 ADD COLUMN WEBSITE VARCHAR(40);
 
+-- Fill it in for one property; the other keeps its null.
 UPDATE PROPERTY
 SET WEBSITE = &#39;millbrookcommons.example&#39;
 WHERE PROPERTY_ID = &#39;P100&#39;;
@@ -14759,14 +15123,21 @@ ORDER BY PROPERTY_ID;">
 -- with an unknown capacity, then count rows, count capacities,
 -- and sum the capacities.
 " data-solution="UPDATE ROOM
+-- Clear the capacity: null records that it is not known, where 0 would claim the
+-- room holds nobody.
 SET MAX_OCCUPANTS = NULL
+-- Two conditions, because ROOM&#39;s primary key is made of two columns and both are
+-- needed to identify a single room.
 WHERE PROPERTY_ID = &#39;P200&#39;
   AND ROOM_NUM = &#39;201&#39;;
 
+-- IS NULL is the only test that finds it.
 SELECT PROPERTY_ID, ROOM_NUM, ROOM_TYPE, MAX_OCCUPANTS
 FROM ROOM
 WHERE MAX_OCCUPANTS IS NULL;
 
+-- COUNT(*) counts rows, COUNT(column) counts values, and SUM quietly skips the
+-- null - so the total describes the rooms whose capacity is known, not all rooms.
 SELECT COUNT(*)             AS rooms,
        COUNT(MAX_OCCUPANTS) AS capacity_known,
        SUM(MAX_OCCUPANTS)   AS total_occupants
@@ -14790,20 +15161,25 @@ FROM ROOM;">
       <p>Layla Ibrahim&#39;s home state was entered from a form that has since been shown to be unreliable, so <code class="inline-code">HOME_STATE</code> for <code class="inline-code">S003</code> should be cleared. Do that, then write both <code class="inline-code">WHERE HOME_STATE = NULL</code> and <code class="inline-code">WHERE HOME_STATE IS NULL</code> and confirm which one finds her. Finish with a count of students and a count of known home states.</p>
       <div class="sandbox" data-sandbox data-seed="staywell_full" data-starter="-- Clear HOME_STATE for student S003, then prove to yourself which
 -- comparison finds the row and which returns nothing.
-" data-solution="UPDATE STUDENT
+" data-solution="-- Clear one home state so there is a null to study.
+UPDATE STUDENT
 SET HOME_STATE = NULL
 WHERE STUDENT_ID = &#39;S003&#39;;
 
 -- Returns no rows.
+-- Comparing a value against an unknown gives unknown, and WHERE keeps only what
+-- is definitely true - so the very row you are hunting for is discarded too.
 SELECT STUDENT_ID, FIRST_NAME, LAST_NAME, HOME_STATE
 FROM STUDENT
 WHERE HOME_STATE = NULL;
 
 -- Returns S003, Layla Ibrahim.
+-- IS NULL asks whether a value is present rather than what it equals.
 SELECT STUDENT_ID, FIRST_NAME, LAST_NAME, HOME_STATE
 FROM STUDENT
 WHERE HOME_STATE IS NULL;
 
+-- The gap between the two counts is the number of unknown home states.
 SELECT COUNT(*) AS students, COUNT(HOME_STATE) AS home_state_known
 FROM STUDENT;">
         <div class="sandbox-toolbar">
@@ -14827,8 +15203,10 @@ FROM STUDENT;">
 -- Create, copy, drop, rename. All five rooms must survive.
 " data-solution="DROP TABLE IF EXISTS ROOM_NEW;
 
+-- The whole rebuild inside one transaction, so ROOM is never missing.
 BEGIN;
 
+-- Step 1: the table you want - a wider ROOM_TYPE and a new NOTES column.
 CREATE TABLE ROOM_NEW (
   PROPERTY_ID   CHAR(4),
   ROOM_NUM      CHAR(3),
@@ -14836,15 +15214,19 @@ CREATE TABLE ROOM_NEW (
   MONTHLY_RENT  DECIMAL(9,2),
   MAX_OCCUPANTS SMALLINT,
   NOTES         VARCHAR(60),
+  -- The composite key is re-declared here; a rebuild has to restate every rule.
   PRIMARY KEY (PROPERTY_ID, ROOM_NUM)
 );
 
+-- Step 2: copy the data. NOTES is in neither list, so it arrives null everywhere.
 INSERT INTO ROOM_NEW (PROPERTY_ID, ROOM_NUM, ROOM_TYPE, MONTHLY_RENT, MAX_OCCUPANTS)
 SELECT PROPERTY_ID, ROOM_NUM, ROOM_TYPE, MONTHLY_RENT, MAX_OCCUPANTS
 FROM ROOM;
 
+-- Step 3: remove the old table.
 DROP TABLE ROOM;
 
+-- Step 4: rename the replacement into its place.
 ALTER TABLE ROOM_NEW RENAME TO ROOM;
 
 COMMIT;
@@ -14873,14 +15255,19 @@ ORDER BY PROPERTY_ID, ROOM_NUM;">
 -- remain in the database.
 " data-solution="DROP TABLE IF EXISTS LINE_REVIEW;
 
+-- CREATE TABLE ... AS can be built from a JOIN, not just a single table. The new
+-- table&#39;s columns come from whatever the SELECT list returns.
 CREATE TABLE LINE_REVIEW AS
 SELECT L.INVOICE_NUM, L.ITEM_ID, L.NUM_ORDERED, L.QUOTED_PRICE
 FROM INVOICE_LINE L
+-- The join is only here to reach INVOICE_DATE for the filter - none of INVOICE&#39;s
+-- columns appear in the result.
 INNER JOIN INVOICE I ON L.INVOICE_NUM = I.INVOICE_NUM
 WHERE I.INVOICE_DATE = &#39;2026-06-14&#39;;
 
 SELECT * FROM LINE_REVIEW ORDER BY INVOICE_NUM, ITEM_ID;
 
+-- A working table like this is disposable: it was a snapshot, not a source.
 DROP TABLE LINE_REVIEW;
 
 SELECT name FROM sqlite_master WHERE type = &#39;table&#39; ORDER BY name;">
@@ -14902,12 +15289,17 @@ SELECT name FROM sqlite_master WHERE type = &#39;table&#39; ORDER BY name;">
       <p>KimTay is retiring the invoicing side of the database and keeping only <code class="inline-code">CUSTOMER</code> and <code class="inline-code">REP</code>. Write the <code class="inline-code">DROP TABLE</code> statements in an order that would not violate a single foreign key on an engine that enforces them, and confirm which tables are left. Use <code class="inline-code">IF EXISTS</code> so the script can be run twice.</p>
       <div class="sandbox" data-sandbox data-seed="kimtay_full" data-starter="-- Remove INVOICE_LINE, INVOICE, and ITEM in an order that would
 -- satisfy an engine enforcing foreign keys. Then list what remains.
-" data-solution="DROP TABLE IF EXISTS INVOICE_LINE;
+" data-solution="-- Drop order matters: children before parents. INVOICE_LINE points at both of
+-- the tables below it, so it has to go first.
+DROP TABLE IF EXISTS INVOICE_LINE;
 
+-- Now INVOICE, which nothing references any more.
 DROP TABLE IF EXISTS INVOICE;
 
+-- And ITEM last. Reverse the order and, with enforcement on, the drops fail.
 DROP TABLE IF EXISTS ITEM;
 
+-- What is left. IF EXISTS on every line is what lets the script be re-run safely.
 SELECT name AS remaining_tables
 FROM sqlite_master
 WHERE type = &#39;table&#39;
@@ -14988,15 +15380,23 @@ SELECT ITEM_ID, DESCRIPTION, ON_HAND, PRICE
 FROM   ITEM
 WHERE  CATEGORY = &#39;Habitat&#39;;
 
-SELECT * FROM HABITAT;" data-solution="DROP VIEW IF EXISTS HABITAT;
+SELECT * FROM HABITAT;" data-solution="-- Housekeeping, so the box can be run twice.
+DROP VIEW IF EXISTS HABITAT;
 
+-- CREATE VIEW gives a name to a query. Nothing is copied and no rows are stored -
+-- the view IS the SELECT below, re-run every time the view is used.
 CREATE VIEW HABITAT AS
+-- Four of ITEM&#39;s six columns, so the other two are invisible through the view.
 SELECT ITEM_ID, DESCRIPTION, ON_HAND, PRICE
 FROM   ITEM
+-- And only the habitat rows, so a view hides rows as well as columns.
 WHERE  CATEGORY = &#39;Habitat&#39;;
 
+-- Query the view exactly as though it were a table.
 SELECT * FROM HABITAT;
 
+-- You can add your own WHERE on top. The engine combines it with the view&#39;s own
+-- condition, so this really means habitat items under 50.
 SELECT ITEM_ID, PRICE
 FROM   HABITAT
 WHERE  PRICE &lt; 50.00;">
@@ -15041,11 +15441,16 @@ SELECT ITEM_ID, DESCRIPTION, ON_HAND, PRICE
 FROM   ITEM
 WHERE  CATEGORY = &#39;Habitat&#39;;
 
+-- The view as it stands now: two rows.
 SELECT * FROM HABITAT ORDER BY ITEM_ID;
 
+-- Add a new HABITAT item to the base table. The view is not touched at all.
 INSERT INTO ITEM VALUES (&#39;TR55&#39;,&#39;Reptile Terrarium 20gal&#39;,&#39;Habitat&#39;,9,89.95,4);
+-- And a new ACCESSORY item, which the view&#39;s WHERE clause will exclude.
 INSERT INTO ITEM VALUES (&#39;CH12&#39;,&#39;Chew Rope Toy&#39;,&#39;Accessory&#39;,60,7.45,20);
 
+-- Three rows now, not two, and the accessory is absent. The view was never
+-- updated - it is a stored query, so it re-runs and sees the current data.
 SELECT * FROM HABITAT ORDER BY ITEM_ID;">
         <div class="sandbox-toolbar">
           <span class="sandbox-label">SQL Sandbox &middot; SQLite engine</span>
@@ -15076,11 +15481,16 @@ WHERE  CATEGORY = &#39;Habitat&#39;;
 
 SELECT * FROM HABITAT_LIST ORDER BY UNIT_PRICE;" data-solution="DROP VIEW IF EXISTS HABITAT_LIST;
 
+-- A column list in parentheses RENAMES the view&#39;s columns. The names must be
+-- given in order and there must be exactly as many as the SELECT returns.
 CREATE VIEW HABITAT_LIST (ID, ITEM_NAME, UNITS, UNIT_PRICE) AS
+-- The SELECT still uses the base table&#39;s own column names.
 SELECT ITEM_ID, DESCRIPTION, ON_HAND, PRICE
 FROM   ITEM
 WHERE  CATEGORY = &#39;Habitat&#39;;
 
+-- From here on the new names are the only ones that work: ORDER BY PRICE would
+-- fail, because through this view the column is called UNIT_PRICE.
 SELECT * FROM HABITAT_LIST ORDER BY UNIT_PRICE;">
         <div class="sandbox-toolbar">
           <span class="sandbox-label">SQL Sandbox &middot; SQLite engine</span>
@@ -15114,20 +15524,30 @@ FROM   INVOICE_DETAIL
 WHERE  LINE_TOTAL &gt; 50.00
 ORDER BY INVOICE_NUM, DESCRIPTION;" data-solution="DROP VIEW IF EXISTS INVOICE_DETAIL;
 
+-- A view over a four-table join - where views earn their keep. The join is
+-- written once here, and everyone else just selects from INVOICE_DETAIL.
 CREATE VIEW INVOICE_DETAIL AS
 SELECT I.INVOICE_NUM, I.INVOICE_DATE, C.CUSTOMER_NAME,
        T.DESCRIPTION, L.NUM_ORDERED, L.QUOTED_PRICE,
+       -- A calculated column becomes an ordinary column of the view.
        ROUND(L.NUM_ORDERED * L.QUOTED_PRICE, 2) AS LINE_TOTAL
 FROM   INVOICE I
+       -- Link 1: invoice to customer, for the name.
        INNER JOIN CUSTOMER C ON I.CUSTOMER_NUM = C.CUSTOMER_NUM
+       -- Link 2: invoice to its line items.
        INNER JOIN INVOICE_LINE L ON I.INVOICE_NUM = L.INVOICE_NUM
+       -- Link 3: line item to the item it names.
        INNER JOIN ITEM T ON L.ITEM_ID = T.ITEM_ID;
 
+-- Filtering on LINE_TOTAL works even though no table stores it - the view&#39;s
+-- calculated column behaves like any other column.
 SELECT INVOICE_NUM, CUSTOMER_NAME, DESCRIPTION, LINE_TOTAL
 FROM   INVOICE_DETAIL
 WHERE  LINE_TOTAL &gt; 50.00
 ORDER BY INVOICE_NUM, DESCRIPTION;
 
+-- And you can group a view, which is the real payoff: a four-table question
+-- answered without writing the four-table join again.
 SELECT CUSTOMER_NAME, ROUND(SUM(LINE_TOTAL), 2) AS SPENT
 FROM   INVOICE_DETAIL
 GROUP BY CUSTOMER_NAME
@@ -15160,15 +15580,21 @@ GROUP BY INVOICE_NUM;
 
 SELECT * FROM INVOICE_TOTAL ORDER BY INVOICE_NUM;" data-solution="DROP VIEW IF EXISTS INVOICE_TOTAL;
 
+-- A view over a GROUPED query, so each of its rows summarises several base rows.
 CREATE VIEW INVOICE_TOTAL AS
 SELECT INVOICE_NUM,
        COUNT(*) AS NUM_LINES,
+       -- ROUND keeps the money to two decimal places.
        ROUND(SUM(NUM_ORDERED * QUOTED_PRICE), 2) AS TOTAL
 FROM   INVOICE_LINE
+-- One view row per invoice. Everything in the view is computed, which is what
+-- makes a grouped view read-only in every engine.
 GROUP BY INVOICE_NUM;
 
 SELECT * FROM INVOICE_TOTAL ORDER BY INVOICE_NUM;
 
+-- Filtering a grouped view from outside is much easier to read than the HAVING
+-- clause it replaces - and it is exactly the same work underneath.
 SELECT INVOICE_NUM, TOTAL
 FROM   INVOICE_TOTAL
 WHERE  TOTAL &gt; 120.00
@@ -15203,9 +15629,11 @@ WHERE  ____;
 
 SELECT * FROM ____ ORDER BY PRICE DESC;" data-solution="DROP VIEW IF EXISTS PREMIUM_ITEM;
 
+-- A single-table view restricted by a value rather than a category.
 CREATE VIEW PREMIUM_ITEM AS
 SELECT ITEM_ID, DESCRIPTION, CATEGORY, PRICE
 FROM   ITEM
+-- Anyone querying this view can never see an item priced at 20 or less.
 WHERE  PRICE &gt; 20.00;
 
 SELECT * FROM PREMIUM_ITEM ORDER BY PRICE DESC;">
@@ -15397,19 +15825,26 @@ SELECT CUSTOMER_NUM, CUSTOMER_NAME, CITY
 FROM   CUSTOMER
 WHERE  CUSTOMER_NUM = &#39;1420&#39;;" data-solution="DROP VIEW IF EXISTS BROOKVILLE_CUST;
 
+-- A view restricted by city.
 CREATE VIEW BROOKVILLE_CUST AS
 SELECT CUSTOMER_NUM, CUSTOMER_NAME, CITY, BALANCE
 FROM   CUSTOMER
 WHERE  CITY = &#39;Brookville&#39;;
 
+-- One row to start with.
 SELECT * FROM BROOKVILLE_CUST ORDER BY CUSTOMER_NUM;
 
+-- Change that customer&#39;s city in the BASE TABLE. Nothing here mentions the view.
 UPDATE CUSTOMER
 SET    CITY = &#39;Northfield&#39;
 WHERE  CUSTOMER_NUM = &#39;1420&#39;;
 
+-- The view is now empty: the row no longer satisfies its WHERE clause, so it has
+-- dropped out of sight. WITH CHECK OPTION is what prevents this happening when
+-- the change is made THROUGH the view.
 SELECT * FROM BROOKVILLE_CUST ORDER BY CUSTOMER_NUM;
 
+-- The row is perfectly fine in the base table - only the view cannot see it.
 SELECT CUSTOMER_NUM, CUSTOMER_NAME, CITY
 FROM   CUSTOMER
 WHERE  CUSTOMER_NUM = &#39;1420&#39;;">
@@ -15450,18 +15885,23 @@ ORDER BY CUSTOMER_NUM;" data-solution="-- The DELETE clears anything a previous 
 DROP VIEW IF EXISTS KAISER_CUST;
 DELETE FROM CUSTOMER WHERE CUSTOMER_NUM IN (&#39;1550&#39;,&#39;1600&#39;);
 
+-- A view showing one rep&#39;s customers only.
 CREATE VIEW KAISER_CUST AS
 SELECT CUSTOMER_NUM, CUSTOMER_NAME, BALANCE, CREDIT_LIMIT
 FROM   CUSTOMER
 WHERE  REP_NUM = &#39;20&#39;;
 
+-- A new customer assigned to rep 20: it will appear in the view.
 INSERT INTO CUSTOMER VALUES
   (&#39;1550&#39;,&#39;Harbor Reef Supply&#39;,&#39;12 Dock St.&#39;,&#39;Northfield&#39;,&#39;OH&#39;,&#39;44067&#39;,0.00,4000.00,&#39;20&#39;);
+-- And one assigned to rep 65, which the view&#39;s WHERE clause excludes.
 INSERT INTO CUSTOMER VALUES
   (&#39;1600&#39;,&#39;Paws Plaza&#39;,&#39;5 Center Sq.&#39;,&#39;Brookville&#39;,&#39;OH&#39;,&#39;44403&#39;,0.00,4000.00,&#39;65&#39;);
 
+-- Three rows: the view picked up the new rep-20 customer automatically.
 SELECT * FROM KAISER_CUST ORDER BY CUSTOMER_NUM;
 
+-- The base table holds both new customers. The view is a window, not a copy.
 SELECT CUSTOMER_NUM, CUSTOMER_NAME, REP_NUM
 FROM   CUSTOMER
 ORDER BY CUSTOMER_NUM;">
@@ -15523,17 +15963,22 @@ WHERE  REP_NUM = &#39;20&#39;;
 
 SELECT * FROM CUST_REP ORDER BY CUSTOMER_NUM;" data-solution="DROP VIEW IF EXISTS CUST_REP;
 
+-- A view over a join of two tables.
 CREATE VIEW CUST_REP AS
 SELECT C.CUSTOMER_NUM, C.CUSTOMER_NAME, C.BALANCE, R.LAST_NAME, R.RATE
 FROM   CUSTOMER C
        INNER JOIN REP R ON C.REP_NUM = R.REP_NUM;
 
+-- Four rows, each carrying its rep&#39;s name and rate.
 SELECT * FROM CUST_REP ORDER BY CUSTOMER_NUM;
 
+-- Change ONE row in REP...
 UPDATE REP
 SET    RATE = 0.06
 WHERE  REP_NUM = &#39;20&#39;;
 
+-- ...and TWO rows of the view change, because Kaiser serves two customers. That
+-- one-to-many fan-out is why updating through a join view is so delicate.
 SELECT * FROM CUST_REP ORDER BY CUSTOMER_NUM;">
         <div class="sandbox-toolbar">
           <span class="sandbox-label">SQL Sandbox &middot; SQLite engine</span>
@@ -15625,6 +16070,7 @@ WHERE  CUSTOMER_NUM = &#39;1310&#39;;
 
 SELECT * FROM REP_BALANCE ORDER BY REP_NUM;" data-solution="DROP VIEW IF EXISTS REP_BALANCE;
 
+-- A grouped view: one row per rep, every value computed.
 CREATE VIEW REP_BALANCE AS
 SELECT REP_NUM,
        COUNT(*) AS NUM_CUSTOMERS,
@@ -15634,10 +16080,13 @@ GROUP BY REP_NUM;
 
 SELECT * FROM REP_BALANCE ORDER BY REP_NUM;
 
+-- Change one customer&#39;s balance in the base table.
 UPDATE CUSTOMER
 SET    BALANCE = BALANCE + 500.00
 WHERE  CUSTOMER_NUM = &#39;1310&#39;;
 
+-- That rep&#39;s TOTAL_BALANCE moves by 500, but NUM_CUSTOMERS does not - the view
+-- recomputes its aggregates from scratch every time it is queried.
 SELECT * FROM REP_BALANCE ORDER BY REP_NUM;">
         <div class="sandbox-toolbar">
           <span class="sandbox-label">SQL Sandbox &middot; SQLite engine</span>
@@ -15808,20 +16257,27 @@ WHERE  PRICE &lt; 30.00;
 
 SELECT * FROM SMALL_ITEM ORDER BY ITEM_ID;
 
+-- sqlite_master again, filtered to views this time rather than tables.
 SELECT name AS VIEW_NAME
 FROM   sqlite_master
 WHERE  type = &#39;view&#39;
 ORDER BY name;
 
+-- DROP VIEW removes the saved query and NOTHING else.
 DROP VIEW SMALL_ITEM;
 
+-- No views left.
 SELECT COUNT(*) AS VIEWS_LEFT FROM sqlite_master WHERE type = &#39;view&#39;;
 
+-- The view&#39;s query still works when written out by hand - it was only ever a
+-- name for these lines.
 SELECT ITEM_ID, DESCRIPTION, PRICE
 FROM   ITEM
 WHERE  PRICE &lt; 30.00
 ORDER BY ITEM_ID;
 
+-- And the base table still has all five rows. Dropping a view deletes no data,
+-- which is the key difference between DROP VIEW and DROP TABLE.
 SELECT COUNT(*) AS ITEM_ROWS FROM ITEM;">
         <div class="sandbox-toolbar">
           <span class="sandbox-label">SQL Sandbox &middot; SQLite engine</span>
@@ -15881,30 +16337,41 @@ DROP VIEW CHEAP_HABITAT;
 DROP VIEW CHEAP_ITEM;
 
 SELECT COUNT(*) AS VIEWS_LEFT FROM sqlite_master WHERE type = &#39;view&#39;;
-SELECT COUNT(*) AS ITEM_ROWS  FROM ITEM;" data-solution="DROP VIEW IF EXISTS CHEAP_HABITAT;
+SELECT COUNT(*) AS ITEM_ROWS  FROM ITEM;" data-solution="-- Drop the dependent view first, then the one it was built on.
+DROP VIEW IF EXISTS CHEAP_HABITAT;
 DROP VIEW IF EXISTS CHEAP_ITEM;
 
+-- A view over a table.
 CREATE VIEW CHEAP_ITEM AS
 SELECT ITEM_ID, DESCRIPTION, CATEGORY, PRICE
 FROM   ITEM
 WHERE  PRICE &lt; 30.00;
 
+-- A view over THAT view. Perfectly legal - a view is a query, and a query may
+-- read anything that behaves like a table.
 CREATE VIEW CHEAP_HABITAT AS
 SELECT ITEM_ID, DESCRIPTION, PRICE
+-- Note CATEGORY is available here because CHEAP_ITEM exposes it, even though the
+-- outer view does not display it.
 FROM   CHEAP_ITEM
 WHERE  CATEGORY = &#39;Habitat&#39;;
 
+-- Both conditions apply: cheap AND habitat.
 SELECT * FROM CHEAP_HABITAT;
 
+-- Two views in the catalogue, with nothing recording that one depends on the other.
 SELECT name AS VIEW_NAME
 FROM   sqlite_master
 WHERE  type = &#39;view&#39;
 ORDER BY name;
 
+-- Drop them in dependency order. Drop CHEAP_ITEM first and CHEAP_HABITAT would
+-- survive as a definition but fail the moment anybody queried it.
 DROP VIEW CHEAP_HABITAT;
 DROP VIEW CHEAP_ITEM;
 
 SELECT COUNT(*) AS VIEWS_LEFT FROM sqlite_master WHERE type = &#39;view&#39;;
+-- And the data is untouched throughout.
 SELECT COUNT(*) AS ITEM_ROWS  FROM ITEM;">
         <div class="sandbox-toolbar">
           <span class="sandbox-label">SQL Sandbox &middot; SQLite engine</span>
@@ -16082,10 +16549,14 @@ SELECT CUSTOMER_NUM, CUSTOMER_NAME
 FROM CUSTOMER;
 
 SELECT * FROM SHIPPING_CONTACT;" data-solution="DROP VIEW IF EXISTS SHIPPING_CONTACT;
+-- A view built for SECURITY: the address columns a shipping clerk needs, and
+-- nothing else. BALANCE, CREDIT_LIMIT and REP_NUM are simply not in it.
 CREATE VIEW SHIPPING_CONTACT AS
 SELECT CUSTOMER_NUM, CUSTOMER_NAME, STREET, CITY, STATE, ZIP
 FROM CUSTOMER;
 
+-- Granting SELECT on this view and nothing on CUSTOMER gives the clerk exactly
+-- these columns with no way to reach around them.
 SELECT * FROM SHIPPING_CONTACT;">
         <div class="sandbox-toolbar">
           <span class="sandbox-label">SQL Sandbox &middot; SQLite engine</span>
@@ -16118,9 +16589,11 @@ SELECT CUSTOMER_NUM, CUSTOMER_NAME, CITY, BALANCE
 FROM CUSTOMER;
 
 SELECT * FROM REP65_CUSTOMER;" data-solution="DROP VIEW IF EXISTS REP65_CUSTOMER;
+-- The other half of view security: restricting ROWS rather than columns.
 CREATE VIEW REP65_CUSTOMER AS
 SELECT CUSTOMER_NUM, CUSTOMER_NAME, CITY, BALANCE
 FROM CUSTOMER
+-- Rep 65 sees their own accounts and has no way to see anybody else&#39;s.
 WHERE REP_NUM = &#39;65&#39;;
 
 SELECT * FROM REP65_CUSTOMER;">
@@ -16258,13 +16731,19 @@ CREATE INDEX ITEM_INDEX1 ON ITEM (DESCRIPTION);
 -- sqlite_master proves the index now exists.
 SELECT name, tbl_name
 FROM sqlite_master
-WHERE type = &#39;index&#39; AND name NOT LIKE &#39;sqlite_%&#39;;" data-solution="DROP INDEX IF EXISTS ITEM_INDEX1;
+WHERE type = &#39;index&#39; AND name NOT LIKE &#39;sqlite_%&#39;;" data-solution="-- IF EXISTS makes the script safe to re-run.
+DROP INDEX IF EXISTS ITEM_INDEX1;
 DROP INDEX IF EXISTS ITEM_INDEX2;
+-- CREATE INDEX builds a lookup structure on a column. It stores no new data and
+-- changes no answers - it only changes how fast the engine finds rows.
 CREATE INDEX ITEM_INDEX1 ON ITEM (DESCRIPTION);
+-- A table may carry several indexes, one per column you filter or sort on often.
 CREATE INDEX ITEM_INDEX2 ON ITEM (CATEGORY);
 
+-- Indexes live in the same catalogue as tables and views.
 SELECT name, tbl_name
 FROM sqlite_master
+-- The NOT LIKE hides the indexes SQLite creates automatically for primary keys.
 WHERE type = &#39;index&#39; AND name NOT LIKE &#39;sqlite_%&#39;;">
         <div class="sandbox-toolbar">
           <span class="sandbox-label">SQL Sandbox &middot; SQLite engine</span>
@@ -16291,8 +16770,13 @@ SELECT CUSTOMER_NUM, CUSTOMER_NAME
 FROM CUSTOMER
 WHERE REP_NUM = &#39;20&#39;
 ORDER BY CUSTOMER_NAME;" data-solution="DROP INDEX IF EXISTS CUSTOMER_INDEX3;
+-- A COMPOSITE index on two columns, in this order. It helps a query that filters
+-- on REP_NUM and then sorts by CUSTOMER_NAME - the index already holds the rows
+-- in exactly that arrangement, so no separate sort is needed.
 CREATE INDEX CUSTOMER_INDEX3 ON CUSTOMER (REP_NUM, CUSTOMER_NAME);
 
+-- EXPLAIN QUERY PLAN does not run the query - it reports how the engine INTENDS
+-- to run it. Look for the index name in the output: that is the proof it is used.
 EXPLAIN QUERY PLAN
 SELECT CUSTOMER_NUM, CUSTOMER_NAME
 FROM CUSTOMER
@@ -16335,14 +16819,20 @@ FROM sqlite_master
 WHERE type = &#39;index&#39; AND name NOT LIKE &#39;sqlite_%&#39;;" data-solution="DROP INDEX IF EXISTS ITEM_INDEX1;
 DROP INDEX IF EXISTS ITEM_INDEX2;
 CREATE INDEX ITEM_INDEX1 ON ITEM (DESCRIPTION);
+-- A composite index on two columns.
 CREATE INDEX ITEM_INDEX2 ON ITEM (CATEGORY, DESCRIPTION);
 
+-- DROP INDEX removes the lookup structure. Every row stays exactly where it is -
+-- an index is derived data, so dropping one can only make queries slower, never
+-- wrong.
 DROP INDEX ITEM_INDEX2;
 
+-- One index left.
 SELECT name, tbl_name
 FROM sqlite_master
 WHERE type = &#39;index&#39; AND name NOT LIKE &#39;sqlite_%&#39;;
 
+-- And the table is untouched: same five rows, same values.
 SELECT ITEM_ID, DESCRIPTION, CATEGORY FROM ITEM ORDER BY ITEM_ID;">
         <div class="sandbox-toolbar">
           <span class="sandbox-label">SQL Sandbox &middot; SQLite engine</span>
@@ -16386,8 +16876,12 @@ CREATE TABLE ITEM_BARCODE (
 INSERT INTO ITEM_BARCODE VALUES (&#39;AV07&#39;, &#39;740015&#39;);
 INSERT INTO ITEM_BARCODE VALUES (&#39;CF21&#39;, &#39;740022&#39;);
 
+-- CREATE UNIQUE INDEX does two jobs at once: it speeds up lookups AND it enforces
+-- a rule, refusing any row that repeats a value already present.
 CREATE UNIQUE INDEX ITEM_BARCODE_UNIQUE ON ITEM_BARCODE (BARCODE);
 
+-- This insert is rejected: 740039 is fine, but run this box twice and the
+-- duplicate is caught by the index rather than by any column declaration.
 INSERT INTO ITEM_BARCODE VALUES (&#39;DG04&#39;, &#39;740039&#39;);
 
 SELECT * FROM ITEM_BARCODE;">
@@ -16425,9 +16919,11 @@ CREATE TABLE ITEM_BARCODE (
 INSERT INTO ITEM_BARCODE VALUES (&#39;AV07&#39;, &#39;740015&#39;);
 INSERT INTO ITEM_BARCODE VALUES (&#39;CF21&#39;, &#39;740022&#39;);
 
+-- The same unique index, enforcing one barcode per row.
 CREATE UNIQUE INDEX ITEM_BARCODE_UNIQUE ON ITEM_BARCODE (BARCODE);
 
 -- Give DG04 a barcode of its own and the insert succeeds.
+-- The index is not blocking inserts - it is blocking DUPLICATES.
 INSERT INTO ITEM_BARCODE VALUES (&#39;DG04&#39;, &#39;740031&#39;);
 
 SELECT * FROM ITEM_BARCODE;">
@@ -16448,6 +16944,9 @@ SELECT * FROM ITEM_BARCODE;">
       <p>One more thing to expect: you cannot create a unique index on a column that already contains duplicates. The DBMS checks the existing rows first and refuses to build an index it would immediately violate. <code class="inline-code">CITY</code> in the shipped <code class="inline-code">CUSTOMER</code> data holds Maple Grove twice, so the attempt fails; <code class="inline-code">CUSTOMER_NAME</code> holds four different values, so that one succeeds.</p>
       <div class="sandbox" data-sandbox data-seed="kimtay_full" data-starter="-- Maple Grove appears twice in CUSTOMER, so this is refused.
 CREATE UNIQUE INDEX CUSTOMER_CITY_UNIQUE ON CUSTOMER (CITY);" data-solution="DROP INDEX IF EXISTS CUSTOMER_NAME_UNIQUE;
+-- A business rule expressed as an index: no two customers may share a name. The
+-- engine checks every future INSERT and UPDATE against it, and it only succeeds
+-- now because the existing four names happen to be distinct.
 CREATE UNIQUE INDEX CUSTOMER_NAME_UNIQUE ON CUSTOMER (CUSTOMER_NAME);
 
 SELECT name, tbl_name
@@ -16634,9 +17133,12 @@ ORDER BY ORDINAL_POSITION;</pre>
       <p>SQLite has no <code class="inline-code">INFORMATION_SCHEMA</code>. It keeps one catalog table, <code class="inline-code">sqlite_master</code>, holding a row for every table, view, index, and trigger in the database. The columns you will use are <code class="inline-code">type</code>, <code class="inline-code">name</code>, <code class="inline-code">tbl_name</code> (the object the entry belongs to), and <code class="inline-code">sql</code> (the exact statement that created it). Run the starter first, then narrow it.</p>
       <div class="sandbox" data-sandbox data-seed="kimtay_full" data-starter="SELECT type, name
 FROM sqlite_master
-ORDER BY type, name;" data-solution="SELECT type, name
+ORDER BY type, name;" data-solution="-- The catalogue is queried with ordinary SQL - that is the whole point of it.
+SELECT type, name
 FROM sqlite_master
+-- IN narrows the listing to the two kinds of object worth seeing here.
 WHERE type IN (&#39;table&#39;, &#39;view&#39;)
+-- Sorting by type groups the tables together and the views together.
 ORDER BY type, name;">
         <div class="sandbox-toolbar">
           <span class="sandbox-label">SQL Sandbox &middot; SQLite engine</span>
@@ -16656,8 +17158,12 @@ ORDER BY type, name;">
       <p>For columns, SQLite offers <code class="inline-code">pragma_table_info</code>, a function you put in a <code class="inline-code">FROM</code> clause and hand a table name. It returns one row per column, in table order.</p>
       <div class="sandbox" data-sandbox data-seed="kimtay_full" data-starter="SELECT name, type
 FROM pragma_table_info(&#39;REP&#39;)
-ORDER BY cid;" data-solution="SELECT name, type, &quot;notnull&quot;, pk
+ORDER BY cid;" data-solution="-- pragma_table_info can be used as a TABLE, which means its output can be
+-- selected from, filtered and sorted like anything else.
+SELECT name, type, &quot;notnull&quot;, pk
+-- The table being described is passed as an argument, in quotes.
 FROM pragma_table_info(&#39;REP&#39;)
+-- cid is the column&#39;s position, so this restores the declared column order.
 ORDER BY cid;">
         <div class="sandbox-toolbar">
           <span class="sandbox-label">SQL Sandbox &middot; SQLite engine</span>
@@ -16701,9 +17207,12 @@ ORDER BY TABLE_NAME;</pre>
 FROM sqlite_master m
 WHERE m.type = &#39;table&#39;
   AND EXISTS (SELECT 1 FROM pragma_table_info(m.name) c WHERE c.name = &#39;PRICE&#39;)
-ORDER BY m.name;" data-solution="SELECT m.name AS TABLE_NAME
+ORDER BY m.name;" data-solution="-- The question every developer asks before changing a column: where else is it?
+SELECT m.name AS TABLE_NAME
 FROM sqlite_master m
 WHERE m.type = &#39;table&#39;
+  -- A correlated subquery: for each table in turn, look inside its column list
+  -- and keep the table only if REP_NUM is there. m.name feeds the pragma call.
   AND EXISTS (SELECT 1 FROM pragma_table_info(m.name) c WHERE c.name = &#39;REP_NUM&#39;)
 ORDER BY m.name;">
         <div class="sandbox-toolbar">
@@ -16734,6 +17243,7 @@ CREATE TABLE ITEM_ARCHIVE (
 );
 
 SELECT COUNT(*) AS ENTRIES_AFTER FROM sqlite_master;" data-solution="DROP TABLE IF EXISTS ITEM_ARCHIVE;
+-- Count the catalogue entries before anything is created.
 SELECT COUNT(*) AS ENTRIES_BEFORE FROM sqlite_master;
 
 CREATE TABLE ITEM_ARCHIVE (
@@ -16741,16 +17251,22 @@ CREATE TABLE ITEM_ARCHIVE (
     DESCRIPTION  VARCHAR(30)  NOT NULL,
     PRICE        DECIMAL(7,2)
 );
+-- An index on the new table, which is a second catalogue entry.
 CREATE INDEX ITEM_ARCHIVE_PRICE_IDX ON ITEM_ARCHIVE (PRICE);
 
+-- Everything the catalogue now holds about this one table. Expect three rows:
+-- the table, your index, and SQLite&#39;s automatic index for the primary key.
 SELECT type, name, tbl_name
 FROM sqlite_master
 WHERE tbl_name = &#39;ITEM_ARCHIVE&#39;
 ORDER BY type, name;
 
+-- The count has grown by those entries.
 SELECT COUNT(*) AS ENTRIES_AFTER FROM sqlite_master;
 
+-- DROP TABLE takes the indexes with it - you never drop them separately.
 DROP TABLE ITEM_ARCHIVE;
+-- Back to the starting number, which is the proof.
 SELECT COUNT(*) AS ENTRIES_AFTER_DROP FROM sqlite_master;">
         <div class="sandbox-toolbar">
           <span class="sandbox-label">SQL Sandbox &middot; SQLite engine</span>
@@ -16894,18 +17410,28 @@ CREATE TABLE SUPPLIER (
 );
 INSERT INTO SUPPLIER VALUES (&#39;S10&#39;, &#39;Buckeye Pet Supply&#39;, &#39;orders@buckeyepet.example&#39;, 7);
 SELECT * FROM SUPPLIER;" data-solution="DROP TABLE IF EXISTS SUPPLIER;
+-- A table written to show constraints, so read the rules rather than the columns.
 CREATE TABLE SUPPLIER (
+    -- PRIMARY KEY: unique and never null.
     SUPPLIER_ID    CHAR(3)      PRIMARY KEY,
+    -- NOT NULL: must always hold a value.
     SUPPLIER_NAME  VARCHAR(30)  NOT NULL,
+    -- UNIQUE: no two suppliers may share an email. Unlike a primary key, a
+    -- UNIQUE column is still allowed to be null.
     EMAIL          VARCHAR(40)  UNIQUE,
     LEAD_DAYS      SMALLINT     NOT NULL,
+    -- CHECK tests a condition on every row written. Naming the constraint means
+    -- the error message tells you which rule broke instead of leaving you to guess.
     CONSTRAINT LEAD_DAYS_POSITIVE CHECK (LEAD_DAYS &gt; 0)
 );
+-- Both rows satisfy every rule, so both are stored.
 INSERT INTO SUPPLIER VALUES (&#39;S10&#39;, &#39;Buckeye Pet Supply&#39;, &#39;orders@buckeyepet.example&#39;, 7);
 INSERT INTO SUPPLIER VALUES (&#39;S20&#39;, &#39;Lakeside Aquatics&#39;, &#39;sales@lakeside.example&#39;, 14);
 
 SELECT * FROM SUPPLIER ORDER BY SUPPLIER_ID;
 
+-- The catalogue shows the table plus the automatic indexes the PRIMARY KEY and
+-- UNIQUE constraints created behind the scenes to enforce themselves.
 SELECT type, name
 FROM sqlite_master
 WHERE tbl_name = &#39;SUPPLIER&#39;
@@ -16942,9 +17468,12 @@ CREATE TABLE SUPPLIER (
     SUPPLIER_NAME  VARCHAR(30)  NOT NULL,
     EMAIL          VARCHAR(40)  UNIQUE,
     LEAD_DAYS      SMALLINT     NOT NULL,
+    -- The rule under test below: a lead time must be a positive number.
     CONSTRAINT LEAD_DAYS_POSITIVE CHECK (LEAD_DAYS &gt; 0)
 );
 INSERT INTO SUPPLIER VALUES (&#39;S10&#39;, &#39;Buckeye Pet Supply&#39;, &#39;orders@buckeyepet.example&#39;, 7);
+-- 1 is greater than 0, so the CHECK passes and this row is stored. A same-day
+-- supplier is legal; only 0 or a negative number would be refused.
 INSERT INTO SUPPLIER VALUES (&#39;S30&#39;, &#39;Same Day Pet Foods&#39;, &#39;rush@sameday.example&#39;, 1);
 
 SELECT * FROM SUPPLIER ORDER BY SUPPLIER_ID;">
@@ -16989,12 +17518,17 @@ INSERT INTO SUPPLIER VALUES (&#39;S50&#39;, &#39;Second Buckeye&#39;, &#39;order
       </div>
       <h4>Referential integrity, enforced for real</h4>
       <p>Referential integrity is the rule that a foreign key has to point at a row that exists. <code class="inline-code">INVOICE_LINE.ITEM_ID</code> is declared <code class="inline-code">REFERENCES ITEM(ITEM_ID)</code> in the schema this page ships, so a line for item <code class="inline-code">ZZ99</code> ought to be impossible. Watch what actually happens.</p>
-      <div class="sandbox" data-sandbox data-seed="kimtay_full" data-starter="PRAGMA foreign_keys;" data-solution="PRAGMA foreign_keys;
+      <div class="sandbox" data-sandbox data-seed="kimtay_full" data-starter="PRAGMA foreign_keys;" data-solution="-- PRAGMA with no value READS the setting. SQLite ships with foreign key checking
+-- OFF, so this answers 0.
+PRAGMA foreign_keys;
 
 -- The DELETE is only a guard so this script survives a second Run.
 DELETE FROM INVOICE_LINE WHERE ITEM_ID = &#39;ZZ99&#39;;
+-- With enforcement off, this is accepted even though item ZZ99 does not exist.
+-- The row is an orphan: it points at nothing.
 INSERT INTO INVOICE_LINE VALUES (&#39;50710&#39;, &#39;ZZ99&#39;, 1, 9.99);
 
+-- And there it sits, with no warning of any kind.
 SELECT INVOICE_NUM, ITEM_ID, NUM_ORDERED
 FROM INVOICE_LINE
 WHERE ITEM_ID = &#39;ZZ99&#39;;">
@@ -17015,7 +17549,11 @@ WHERE ITEM_ID = &#39;ZZ99&#39;;">
       <p>The pragma reports <code class="inline-code">0</code>, and the insert is accepted. That is the explanation for both. SQLite parses foreign key declarations and stores them in the catalog, but it does not enforce them unless enforcement is turned on for the connection. The row you created is an orphan, an invoice line for an item that does not exist, and every inner join to <code class="inline-code">ITEM</code> will quietly leave it out: seven rows in <code class="inline-code">INVOICE_LINE</code>, six rows in the join. That is the shape of the bug, and it is a hard one to see.</p>
       <p>Now turn enforcement on and run the identical insert.</p>
       <div class="sandbox" data-sandbox data-seed="kimtay_full" data-starter="PRAGMA foreign_keys = ON;
-PRAGMA foreign_keys;" data-solution="PRAGMA foreign_keys = ON;
+PRAGMA foreign_keys;" data-solution="-- PRAGMA with a value WRITES the setting, turning enforcement on for this
+-- connection only.
+PRAGMA foreign_keys = ON;
+-- Now the same insert is refused: ZZ99 does not exist in ITEM, so the foreign key
+-- rejects the row rather than letting an orphan into the database.
 INSERT INTO INVOICE_LINE VALUES (&#39;50710&#39;, &#39;ZZ99&#39;, 1, 9.99);">
         <div class="sandbox-toolbar">
           <span class="sandbox-label">SQL Sandbox &middot; SQLite engine</span>
@@ -17038,6 +17576,9 @@ SELECT INVOICE_NUM, NUM_ORDERED
 FROM INVOICE_LINE
 WHERE ITEM_ID = &#39;CF21&#39;
 ORDER BY INVOICE_NUM;" data-solution="PRAGMA foreign_keys = ON;
+-- The other direction. Deleting a PARENT row is refused while children still
+-- point at it - invoice lines reference CF21, and removing it would leave them
+-- referring to nothing. Delete the children first, or the rule stops you.
 DELETE FROM ITEM WHERE ITEM_ID = &#39;CF21&#39;;">
         <div class="sandbox-toolbar">
           <span class="sandbox-label">SQL Sandbox &middot; SQLite engine</span>
@@ -17067,6 +17608,8 @@ ORDER BY ITEM_ID;" data-solution="PRAGMA foreign_keys = ON;
 
 -- The DELETE is only a guard so this script survives a second Run.
 DELETE FROM INVOICE_LINE WHERE INVOICE_NUM = &#39;50712&#39; AND ITEM_ID = &#39;DG04&#39;;
+-- Both parents exist - invoice 50712 and item DG04 - so the row is accepted even
+-- with enforcement on. A foreign key blocks orphans, not inserts in general.
 INSERT INTO INVOICE_LINE VALUES (&#39;50712&#39;, &#39;DG04&#39;, 4, 11.99);
 
 SELECT INVOICE_NUM, ITEM_ID, NUM_ORDERED
@@ -17097,11 +17640,16 @@ CREATE TABLE REP_PRACTICE (
 INSERT INTO REP_PRACTICE VALUES (NULL, &#39;Kaiser&#39;);
 SELECT * FROM REP_PRACTICE;" data-solution="DROP TABLE IF EXISTS REP_PRACTICE;
 CREATE TABLE REP_PRACTICE (
+    -- Declared PRIMARY KEY, which is supposed to mean unique AND never null.
     REP_NUM    CHAR(2)      PRIMARY KEY,
     LAST_NAME  VARCHAR(15)  NOT NULL
 );
+-- And yet SQLite accepts a null key: a long-standing quirk kept for backward
+-- compatibility. MySQL and Oracle both refuse this row outright.
 INSERT INTO REP_PRACTICE VALUES (NULL, &#39;Kaiser&#39;);
 
+-- The proof: one row stored, but zero keys stored. If you rely on a primary key
+-- never being null, declare the column NOT NULL as well in SQLite.
 SELECT COUNT(*) AS ROWS_STORED, COUNT(REP_NUM) AS KEYS_STORED
 FROM REP_PRACTICE;">
         <div class="sandbox-toolbar">
@@ -17280,19 +17828,25 @@ DROP CONSTRAINT PRICE_POSITIVE;</pre>
       <div class="sandbox" data-sandbox data-seed="kimtay_full" data-starter="SELECT COUNT(*) AS CATALOG_ENTRIES FROM sqlite_master;" data-solution="DROP VIEW IF EXISTS BIG_BALANCE;
 DROP INDEX IF EXISTS CUSTOMER_BALANCE_IDX;
 
+-- A view: a saved query, storing no data.
 CREATE VIEW BIG_BALANCE AS
 SELECT CUSTOMER_NUM, CUSTOMER_NAME, BALANCE
 FROM CUSTOMER
 WHERE BALANCE &gt; 1000;
 
+-- An index: a lookup structure, also storing no data of its own. Both are
+-- derived objects that sit beside the table without changing it.
 CREATE INDEX CUSTOMER_BALANCE_IDX ON CUSTOMER (BALANCE);
 
+-- Both appear in the one catalogue, distinguished by their type column.
 SELECT type, name
 FROM sqlite_master
 WHERE name NOT LIKE &#39;sqlite_%&#39;
   AND type IN (&#39;view&#39;, &#39;index&#39;)
 ORDER BY type, name;
 
+-- The view is queried like a table; the index is never named in a query at all -
+-- the engine decides on its own whether to use it.
 SELECT * FROM BIG_BALANCE ORDER BY BALANCE DESC;">
         <div class="sandbox-toolbar">
           <span class="sandbox-label">SQL Sandbox &middot; SQLite engine</span>
@@ -17332,9 +17886,13 @@ SELECT * FROM BIG_BALANCE ORDER BY BALANCE DESC;">
         <div class="callout-body"><strong class="callout-label">Data dictionary</strong><p>Another name for the system catalog. Textbooks, Oracle documentation, and job postings all use it. If an interviewer asks how you would find every table containing a <code class="inline-code">CUSTOMER_NUM</code>, the answer they are listening for is the data dictionary, whatever the engine calls it.</p></div>
       </div>
       <p>One short check that ties the two halves of the module together. A constraint is not stored somewhere separate from the table; it is part of the table&#39;s definition, which means it is part of the catalog entry. Read the entry and you read the rules.</p>
-      <div class="sandbox" data-sandbox data-seed="kimtay_full" data-starter="SELECT sql FROM sqlite_master WHERE name = &#39;INVOICE_LINE&#39;;" data-solution="SELECT name, sql
+      <div class="sandbox" data-sandbox data-seed="kimtay_full" data-starter="SELECT sql FROM sqlite_master WHERE name = &#39;INVOICE_LINE&#39;;" data-solution="-- sqlite_master keeps each object&#39;s original CREATE statement in its sql column,
+-- so the catalogue can be searched as TEXT.
+SELECT name, sql
 FROM sqlite_master
 WHERE type = &#39;table&#39;
+  -- LIKE with % on both sides finds the phrase anywhere in the statement. This
+  -- is the quick way to ask which tables declare a foreign key.
   AND sql LIKE &#39;%FOREIGN KEY%&#39;
 ORDER BY name;">
         <div class="sandbox-toolbar">
@@ -17382,21 +17940,29 @@ ORDER BY name;">
 FROM sqlite_master
 WHERE tbl_name = &#39;ITEM&#39;
 ORDER BY type;" data-solution="DROP TABLE IF EXISTS REORDER_REQUEST;
+-- A table that carries every kind of constraint at once.
 CREATE TABLE REORDER_REQUEST (
     REQUEST_ID  CHAR(4)   PRIMARY KEY,
+    -- NOT NULL, because a request for nothing in particular is meaningless.
     ITEM_ID     CHAR(4)   NOT NULL,
     QUANTITY    SMALLINT  NOT NULL,
+    -- A named CHECK: reordering zero or minus five units is not a real request.
     CONSTRAINT QUANTITY_POSITIVE CHECK (QUANTITY &gt; 0),
+    -- And a foreign key, so a request can only name an item that exists.
     FOREIGN KEY (ITEM_ID) REFERENCES ITEM(ITEM_ID)
 );
 
+-- Both rows satisfy every rule.
 INSERT INTO REORDER_REQUEST VALUES (&#39;R001&#39;, &#39;CF21&#39;, 24);
 INSERT INTO REORDER_REQUEST VALUES (&#39;R002&#39;, &#39;GR15&#39;, 12);
 
+-- The join proves the foreign key values really do point at live items.
 SELECT R.REQUEST_ID, I.DESCRIPTION, R.QUANTITY
 FROM REORDER_REQUEST R INNER JOIN ITEM I ON R.ITEM_ID = I.ITEM_ID
 ORDER BY R.REQUEST_ID;
 
+-- More than one entry: the table itself, plus the index SQLite built to enforce
+-- the primary key.
 SELECT COUNT(*) AS CATALOG_ENTRIES
 FROM sqlite_master
 WHERE tbl_name = &#39;REORDER_REQUEST&#39;;">
@@ -17645,11 +18211,14 @@ WHERE tbl_name = &#39;REORDER_REQUEST&#39;;">
       </div>
       <h4>Exercise 1: take inventory with the catalog</h4>
       <p>You have been handed the StayWell database with no documentation. List every table in it, then list the columns of <code class="inline-code">LEASE</code> with each column&#39;s type, whether it accepts nulls, and its position in the primary key. Run the starter before the solution and count how many entries are not tables.</p>
-      <div class="sandbox" data-sandbox data-seed="staywell_full" data-starter="SELECT type, name FROM sqlite_master ORDER BY type, name;" data-solution="SELECT type, name
+      <div class="sandbox" data-sandbox data-seed="staywell_full" data-starter="SELECT type, name FROM sqlite_master ORDER BY type, name;" data-solution="-- What tables does this database hold?
+SELECT type, name
 FROM sqlite_master
 WHERE type = &#39;table&#39;
 ORDER BY name;
 
+-- And what does one of them look like? notnull is quoted because NOT NULL is a
+-- reserved phrase - the double quotes say to read it as a column name.
 SELECT name, type, &quot;notnull&quot;, pk
 FROM pragma_table_info(&#39;LEASE&#39;)
 ORDER BY cid;">
@@ -17677,13 +18246,16 @@ WHERE type IN (&#39;view&#39;, &#39;index&#39;)
 ORDER BY type, name;" data-solution="DROP VIEW IF EXISTS DOUBLE_ROOMS;
 DROP INDEX IF EXISTS ROOM_RENT_IDX;
 
+-- The view narrows the rows anyone using it can see.
 CREATE VIEW DOUBLE_ROOMS AS
 SELECT PROPERTY_ID, ROOM_NUM, MONTHLY_RENT
 FROM ROOM
 WHERE ROOM_TYPE = &#39;Double&#39;;
 
+-- The index speeds up queries that filter or sort on rent. It changes no answers.
 CREATE INDEX ROOM_RENT_IDX ON ROOM (MONTHLY_RENT);
 
+-- IN lets one catalogue query ask about both objects at once.
 SELECT type, name, tbl_name
 FROM sqlite_master
 WHERE name IN (&#39;DOUBLE_ROOMS&#39;, &#39;ROOM_RENT_IDX&#39;)
@@ -17723,16 +18295,24 @@ CREATE TABLE INSPECTION (
     ROOM_NUM       CHAR(3)      NOT NULL,
     INSPECTOR      VARCHAR(20)  NOT NULL,
     SCORE          SMALLINT     NOT NULL,
+    -- CHECK with BETWEEN: a percentage below 0 or above 100 is not a score.
     CONSTRAINT SCORE_RANGE CHECK (SCORE BETWEEN 0 AND 100),
+    -- A table-level UNIQUE over TWO columns: one inspection per room, and the
+    -- pair must be unique even though neither column is unique alone.
     CONSTRAINT ONE_PER_ROOM UNIQUE (PROPERTY_ID, ROOM_NUM),
+    -- A COMPOSITE foreign key, because ROOM is identified by two columns. Both
+    -- are listed on each side, in matching order.
     FOREIGN KEY (PROPERTY_ID, ROOM_NUM) REFERENCES ROOM(PROPERTY_ID, ROOM_NUM)
 );
 
+-- Both rooms exist and both scores are in range, so both rows are accepted.
 INSERT INTO INSPECTION VALUES (&#39;I001&#39;, &#39;P100&#39;, &#39;101&#39;, &#39;Ortiz&#39;, 92);
 INSERT INTO INSPECTION VALUES (&#39;I002&#39;, &#39;P200&#39;, &#39;202&#39;, &#39;Feldman&#39;, 88);
 
 SELECT * FROM INSPECTION ORDER BY INSPECTION_ID;
 
+-- Several entries: the table, plus an automatic index for the primary key and
+-- another for the UNIQUE constraint.
 SELECT COUNT(*) AS CATALOG_ENTRIES
 FROM sqlite_master
 WHERE tbl_name = &#39;INSPECTION&#39;;">
@@ -17753,15 +18333,22 @@ WHERE tbl_name = &#39;INSPECTION&#39;;">
       <p>Three catalog entries this time: the table, the index enforcing the primary key, and a second index enforcing <code class="inline-code">ONE_PER_ROOM</code>. The starter version has only two, because it declared no uniqueness beyond the key. That difference is the clearest evidence you will see that a <code class="inline-code">UNIQUE</code> constraint is a working structure and not a comment.</p>
       <h4>Exercise 4: prove referential integrity, twice</h4>
       <p>A lease is entered for student <code class="inline-code">S099</code>, who has never existed. Run the first sandbox with enforcement off, watch the orphan lease go in, then remove it. Then run the second, which turns enforcement on and attempts the identical insert. The second one is meant to fail, and the error is the answer.</p>
-      <div class="sandbox" data-sandbox data-seed="staywell_full" data-starter="PRAGMA foreign_keys;" data-solution="PRAGMA foreign_keys;
+      <div class="sandbox" data-sandbox data-seed="staywell_full" data-starter="PRAGMA foreign_keys;" data-solution="-- Read the setting first: 0, so foreign keys are not being enforced.
+PRAGMA foreign_keys;
 
+-- Student S099 does not exist, and with enforcement off the lease is accepted anyway.
 INSERT INTO LEASE VALUES (&#39;L005&#39;, &#39;S099&#39;, &#39;P100&#39;, &#39;101&#39;, &#39;2026-08-15&#39;, &#39;2027-05-15&#39;, 595.00);
 
+-- There it is in the table, looking perfectly ordinary.
 SELECT LEASE_ID, STUDENT_ID FROM LEASE ORDER BY LEASE_ID;
 
+-- The damage made visible: an INNER JOIN drops the orphan, so this count is one
+-- lower than the number of leases. Rows that match nothing quietly vanish from
+-- every report built on a join.
 SELECT COUNT(*) AS MATCHED_TO_A_STUDENT
 FROM LEASE L INNER JOIN STUDENT S ON L.STUDENT_ID = S.STUDENT_ID;
 
+-- Clean up after the demonstration.
 DELETE FROM LEASE WHERE LEASE_ID = &#39;L005&#39;;
 SELECT COUNT(*) AS LEASES FROM LEASE;">
         <div class="sandbox-toolbar">
@@ -17779,8 +18366,11 @@ SELECT COUNT(*) AS LEASES FROM LEASE;">
         <div class="sandbox-hint">Ask for the setting first. A <code class="inline-code">0</code> tells you what to expect from the insert that follows. The <code class="inline-code">DELETE</code> at the end tidies up, which is also what lets you press Run twice.</div>
       </div>
       <div class="sandbox" data-sandbox data-seed="staywell_full" data-starter="PRAGMA foreign_keys = ON;
-PRAGMA foreign_keys;" data-solution="PRAGMA foreign_keys = ON;
+PRAGMA foreign_keys;" data-solution="-- Turn enforcement on for this connection.
+PRAGMA foreign_keys = ON;
 
+-- The same insert is now refused: S099 is not a student, so the lease cannot be
+-- stored. The database is protecting its own consistency.
 INSERT INTO LEASE VALUES (&#39;L005&#39;, &#39;S099&#39;, &#39;P100&#39;, &#39;101&#39;, &#39;2026-08-15&#39;, &#39;2027-05-15&#39;, 595.00);">
         <div class="sandbox-toolbar">
           <span class="sandbox-label">SQL Sandbox &middot; SQLite engine</span>
@@ -17800,8 +18390,11 @@ INSERT INTO LEASE VALUES (&#39;L005&#39;, &#39;S099&#39;, &#39;P100&#39;, &#39;1
       <h4>Exercise 5: add a constraint to a table that already has rows</h4>
       <p>Back to KimTay. Nobody may be paid a commission rate above 0.25, and no commission total may be negative, but <code class="inline-code">REP</code> was created without either rule and SQLite has no <code class="inline-code">ALTER TABLE ... ADD CONSTRAINT</code>. Rebuild <code class="inline-code">REP</code> with the pattern from 6-8a: create <code class="inline-code">REP_NEW</code> carrying the same nine columns plus a <code class="inline-code">NOT NULL</code> primary key, two named <code class="inline-code">CHECK</code> constraints, and a default of 0 for <code class="inline-code">COMMISSION</code>; copy the three reps across; drop the original; rename the replacement. Wrap it in a transaction, then confirm from the catalog that the rules are now part of the table.</p>
       <div class="sandbox" data-sandbox data-seed="kimtay_full" data-starter="SELECT sql FROM sqlite_master WHERE name = &#39;REP&#39;;" data-solution="DROP TABLE IF EXISTS REP_NEW;
+-- SQLite cannot add a constraint to an existing table, so the rebuild dance is
+-- the way to do it - all inside one transaction, so REP is never missing.
 BEGIN;
 
+-- Step 1: the table you want, with the new rules written in.
 CREATE TABLE REP_NEW (
     REP_NUM      CHAR(2)      NOT NULL,
     LAST_NAME    VARCHAR(15)  NOT NULL,
@@ -17810,22 +18403,30 @@ CREATE TABLE REP_NEW (
     CITY         VARCHAR(15),
     STATE        CHAR(2),
     ZIP          CHAR(5),
+    -- DEFAULT supplies a value when an INSERT does not mention the column.
     COMMISSION   DECIMAL(8,2) NOT NULL DEFAULT 0,
     RATE         DECIMAL(4,2) NOT NULL,
+    -- Declared at table level here, and paired with NOT NULL above so the SQLite
+    -- null-key quirk cannot apply.
     PRIMARY KEY (REP_NUM),
+    -- A CHECK may combine conditions with AND, exactly like a WHERE clause.
     CONSTRAINT RATE_RANGE CHECK (RATE &gt;= 0 AND RATE &lt;= 0.25),
     CONSTRAINT COMMISSION_NOT_NEGATIVE CHECK (COMMISSION &gt;= 0)
 );
 
+-- Step 2: copy the data across. Every existing row is checked against the new
+-- constraints as it lands, so bad data is caught here.
 INSERT INTO REP_NEW (REP_NUM, LAST_NAME, FIRST_NAME, STREET, CITY, STATE, ZIP, COMMISSION, RATE)
 SELECT REP_NUM, LAST_NAME, FIRST_NAME, STREET, CITY, STATE, ZIP, COMMISSION, RATE
 FROM REP;
 
+-- Steps 3 and 4: remove the old table and rename the new one into its place.
 DROP TABLE REP;
 ALTER TABLE REP_NEW RENAME TO REP;
 COMMIT;
 
 SELECT REP_NUM, LAST_NAME, COMMISSION, RATE FROM REP ORDER BY REP_NUM;
+-- Reading the sql column back is how you confirm the constraints really are there.
 SELECT sql FROM sqlite_master WHERE name = &#39;REP&#39;;">
         <div class="sandbox-toolbar">
           <span class="sandbox-label">SQL Sandbox &middot; SQLite engine</span>
@@ -17844,15 +18445,20 @@ SELECT sql FROM sqlite_master WHERE name = &#39;REP&#39;;">
       <p>Kaiser, Hull, and Perez come through with rates of 0.05, 0.07, and 0.05, all inside the new range, which is why the copy succeeded. Read the final result carefully: the catalog now stores the rebuilt definition, with both named <code class="inline-code">CHECK</code> constraints in it, under the name <code class="inline-code">REP</code>, and the DBMS wrote that entry without being asked. Had one rep been on a rate of 0.30, the <code class="inline-code">INSERT</code> would have failed, the <code class="inline-code">COMMIT</code> would never have run, and the original table would still be there. That is why the transaction is not optional.</p>
       <h4>Exercise 6: audit the whole database from the catalog</h4>
       <p>A KimTay developer is planning to rename <code class="inline-code">ITEM_ID</code> and needs two facts before writing anything: how many columns each table has, and exactly which tables store a column called <code class="inline-code">ITEM_ID</code>. Produce both, with one query each, and do it without naming any table by hand except in the search itself.</p>
-      <div class="sandbox" data-sandbox data-seed="kimtay_full" data-starter="SELECT COUNT(*) AS COLUMN_COUNT FROM pragma_table_info(&#39;CUSTOMER&#39;);" data-solution="SELECT m.name AS TABLE_NAME,
+      <div class="sandbox" data-sandbox data-seed="kimtay_full" data-starter="SELECT COUNT(*) AS COLUMN_COUNT FROM pragma_table_info(&#39;CUSTOMER&#39;);" data-solution="-- A correlated subquery in the SELECT list rather than the WHERE clause: for each
+-- table, count its columns. It runs once per row of the outer query.
+SELECT m.name AS TABLE_NAME,
        (SELECT COUNT(*) FROM pragma_table_info(m.name)) AS COLUMN_COUNT
 FROM sqlite_master m
 WHERE m.type = &#39;table&#39;
 ORDER BY m.name;
 
+-- The impact question: which tables would a change to ITEM_ID touch?
 SELECT m.name AS TABLE_NAME
 FROM sqlite_master m
 WHERE m.type = &#39;table&#39;
+  -- EXISTS looks inside each table&#39;s column list and keeps the table if the
+  -- column is there. This is the query to run BEFORE renaming anything.
   AND EXISTS (SELECT 1 FROM pragma_table_info(m.name) c WHERE c.name = &#39;ITEM_ID&#39;)
 ORDER BY m.name;">
         <div class="sandbox-toolbar">
@@ -17903,8 +18509,12 @@ ORDER BY m.name;">
 SELECT CUSTOMER_NUM, CUSTOMER_NAME, BALANCE
 FROM CUSTOMER
 WHERE REP_NUM = &#39;20&#39;
-ORDER BY CUSTOMER_NUM;" data-solution="SELECT CUSTOMER_NUM, CUSTOMER_NAME, BALANCE
+ORDER BY CUSTOMER_NUM;" data-solution="-- The SELECT a stored procedure would wrap. Nothing about it changes because it
+-- lives inside a procedure - only where the text is kept changes.
+SELECT CUSTOMER_NUM, CUSTOMER_NAME, BALANCE
 FROM CUSTOMER
+-- In the procedure this literal is replaced by a parameter, which is the whole
+-- point: one stored query answering the question for any rep.
 WHERE REP_NUM = &#39;20&#39;
 ORDER BY CUSTOMER_NUM;">
         <div class="sandbox-toolbar">
@@ -18027,11 +18637,14 @@ END;
 -- A plain UPDATE. It says nothing about logging.
 UPDATE ITEM SET PRICE = 44.00 WHERE ITEM_ID = &#39;CF21&#39;;
 
-SELECT ITEM_ID, OLD_PRICE, NEW_PRICE FROM PRICE_LOG;" data-solution="DROP TRIGGER IF EXISTS LOG_PRICE_CHANGE;
+SELECT ITEM_ID, OLD_PRICE, NEW_PRICE FROM PRICE_LOG;" data-solution="-- Housekeeping, so the box can be run more than once.
+DROP TRIGGER IF EXISTS LOG_PRICE_CHANGE;
 DROP TABLE IF EXISTS PRICE_LOG;
 
+-- Put the seeded price back, so the change below is always the same size.
 UPDATE ITEM SET PRICE = 42.50 WHERE ITEM_ID = &#39;CF21&#39;;
 
+-- The audit table. Nothing ever writes to it by hand.
 CREATE TABLE PRICE_LOG (
     ITEM_ID    CHAR(4),
     OLD_PRICE  DECIMAL(7,2),
@@ -18039,15 +18652,24 @@ CREATE TABLE PRICE_LOG (
     CHANGED_ON DATE
 );
 
+-- CREATE TRIGGER: code the database runs BY ITSELF when something happens.
 CREATE TRIGGER LOG_PRICE_CHANGE
+-- AFTER UPDATE OF PRICE ON ITEM: the event. It fires only when that one column
+-- is updated on that one table, and only after the change has succeeded.
 AFTER UPDATE OF PRICE ON ITEM
+-- BEGIN ... END wraps the body, exactly as in a stored procedure.
 BEGIN
     INSERT INTO PRICE_LOG
+    -- OLD and NEW are supplied by the trigger: the row as it was, and as it now
+    -- is. They are the reason a trigger can record what changed.
     VALUES (OLD.ITEM_ID, OLD.PRICE, NEW.PRICE, DATE(&#39;now&#39;));
 END;
 
+-- One ordinary UPDATE. Nothing here mentions PRICE_LOG at all.
 UPDATE ITEM SET PRICE = 44.00 WHERE ITEM_ID = &#39;CF21&#39;;
 
+-- And yet the log has a row: the trigger ran on its own. That is the point, and
+-- also the danger - work happens that the statement does not show.
 SELECT ITEM_ID, OLD_PRICE, NEW_PRICE FROM PRICE_LOG;">
         <div class="sandbox-toolbar">
           <span class="sandbox-label">SQL Sandbox &middot; SQLite engine</span>
@@ -18157,8 +18779,11 @@ SELECT ITEM_ID, OLD_PRICE, NEW_PRICE FROM PRICE_LOG;">
       <div class="sandbox" data-sandbox data-seed="kimtay_full" data-starter="-- Add an upper case name column and a lower case city column.
 SELECT CUSTOMER_NUM, CUSTOMER_NAME, CITY
 FROM CUSTOMER
-ORDER BY CUSTOMER_NUM;" data-solution="SELECT CUSTOMER_NUM,
+ORDER BY CUSTOMER_NUM;" data-solution="-- UPPER and LOWER are ROW functions: they run once per row, so five rows in
+-- means five rows out. Compare that with an aggregate, which returns one row.
+SELECT CUSTOMER_NUM,
        UPPER(CUSTOMER_NAME) AS UPPER_NAME,
+       -- The stored value is untouched; only the output is changed.
        LOWER(CITY) AS LOWER_CITY
 FROM CUSTOMER
 ORDER BY CUSTOMER_NUM;">
@@ -18183,6 +18808,10 @@ FROM CUSTOMER
 WHERE CITY = &#39;maple grove&#39;
 ORDER BY CUSTOMER_NUM;" data-solution="SELECT CUSTOMER_NUM, CUSTOMER_NAME, CITY
 FROM CUSTOMER
+-- Applying UPPER to the COLUMN makes the comparison case-insensitive, so
+-- 'Maple Grove' and 'MAPLE GROVE' both match. The cost is that the engine must
+-- compute the function for every row before it can compare, which stops any
+-- index on CITY from being used.
 WHERE UPPER(CITY) = &#39;MAPLE GROVE&#39;
 ORDER BY CUSTOMER_NUM;">
         <div class="sandbox-toolbar">
@@ -18208,7 +18837,10 @@ ORDER BY CUSTOMER_NUM;">
 SELECT ITEM_ID, DESCRIPTION
 FROM ITEM
 ORDER BY ITEM_ID;" data-solution="SELECT ITEM_ID,
+       -- SUBSTR(value, start, length): start counts from 1, not 0, so this takes
+       -- the first two characters.
        SUBSTR(ITEM_ID, 1, 2) AS PREFIX,
+       -- LENGTH counts characters in the value, ignoring the column&#39;s declared width.
        LENGTH(DESCRIPTION) AS NAME_LENGTH
 FROM ITEM
 ORDER BY ITEM_ID;">
@@ -18233,6 +18865,9 @@ FROM ITEM
 WHERE LENGTH(DESCRIPTION) &gt; 20
 ORDER BY ITEM_ID;" data-solution="SELECT ITEM_ID, DESCRIPTION, LENGTH(DESCRIPTION) AS NAME_LENGTH
 FROM ITEM
+-- A function is legal in a WHERE clause as long as it is a ROW function - it
+-- produces one value per row, so the condition can be tested row by row. An
+-- aggregate here would be an error, because it needs the whole table first.
 WHERE LENGTH(DESCRIPTION) &gt; 20
 ORDER BY ITEM_ID;">
         <div class="sandbox-toolbar">
@@ -18253,8 +18888,11 @@ ORDER BY ITEM_ID;">
       <div class="sandbox" data-sandbox data-seed="kimtay_full" data-starter="SELECT &#39;[&#39; || &#39;  Maple Grove  &#39; || &#39;]&#39; AS RAW_VALUE,
        &#39;[&#39; || TRIM(&#39;  Maple Grove  &#39;) || &#39;]&#39; AS TRIMMED_VALUE,
        LENGTH(&#39;  Maple Grove  &#39;) AS BEFORE_LEN,
-       LENGTH(TRIM(&#39;  Maple Grove  &#39;)) AS AFTER_LEN;" data-solution="SELECT &#39;[&#39; || &#39;  Maple Grove  &#39; || &#39;]&#39; AS RAW_VALUE,
+       LENGTH(TRIM(&#39;  Maple Grove  &#39;)) AS AFTER_LEN;" data-solution="-- Square brackets are just text, added so the spaces are visible on screen.
+SELECT &#39;[&#39; || &#39;  Maple Grove  &#39; || &#39;]&#39; AS RAW_VALUE,
+       -- TRIM removes leading and trailing spaces, never the ones in the middle.
        &#39;[&#39; || TRIM(&#39;  Maple Grove  &#39;) || &#39;]&#39; AS TRIMMED_VALUE,
+       -- The two lengths are the proof: the spaces really were part of the value.
        LENGTH(&#39;  Maple Grove  &#39;) AS BEFORE_LEN,
        LENGTH(TRIM(&#39;  Maple Grove  &#39;)) AS AFTER_LEN;">
         <div class="sandbox-toolbar">
@@ -18277,7 +18915,11 @@ ORDER BY ITEM_ID;">
 SELECT REP_NUM, FIRST_NAME, LAST_NAME
 FROM REP
 ORDER BY REP_NUM;" data-solution="SELECT REP_NUM,
+       -- Functions nest: SUBSTR takes the first letter of each name, and || glues
+       -- the two results together into a pair of initials.
        SUBSTR(FIRST_NAME, 1, 1) || SUBSTR(LAST_NAME, 1, 1) AS INITIALS,
+       -- Nested the other way round: take three characters, then upper-case the
+       -- result. The inner function always runs first.
        UPPER(SUBSTR(LAST_NAME, 1, 3)) AS CODE
 FROM REP
 ORDER BY REP_NUM;">
@@ -18308,7 +18950,10 @@ ORDER BY REP_NUM;">
 SELECT REP_NUM, COMMISSION, RATE
 FROM REP
 ORDER BY REP_NUM;" data-solution="SELECT REP_NUM, COMMISSION, RATE,
+       -- The raw multiplication, showing every decimal place the engine produced.
        COMMISSION * RATE AS RAW_PAYOUT,
+       -- ROUND(value, 2) cuts it to two decimals. Rounding at the point of
+       -- DISPLAY is right; rounding money before you finish calculating is not.
        ROUND(COMMISSION * RATE, 2) AS PAYOUT
 FROM REP
 ORDER BY REP_NUM;">
@@ -18331,6 +18976,7 @@ ORDER BY REP_NUM;">
 SELECT INVOICE_NUM, ITEM_ID, NUM_ORDERED, QUOTED_PRICE
 FROM INVOICE_LINE
 ORDER BY INVOICE_NUM, ITEM_ID;" data-solution="SELECT INVOICE_NUM, ITEM_ID, NUM_ORDERED, QUOTED_PRICE,
+       -- The line total, computed per row and rounded to money.
        ROUND(NUM_ORDERED * QUOTED_PRICE, 2) AS LINE_TOTAL
 FROM INVOICE_LINE
 ORDER BY INVOICE_NUM, ITEM_ID;">
@@ -18353,7 +18999,10 @@ ORDER BY INVOICE_NUM, ITEM_ID;">
 SELECT CUSTOMER_NUM, CUSTOMER_NAME, BALANCE, CREDIT_LIMIT
 FROM CUSTOMER
 ORDER BY CUSTOMER_NUM;" data-solution="SELECT CUSTOMER_NUM, CUSTOMER_NAME,
+       -- The signed difference: negative for a customer who is under their limit.
        BALANCE - CREDIT_LIMIT AS DIFF,
+       -- ABS drops the sign, giving the SIZE of the gap regardless of direction.
+       -- Useful when you care how far apart two numbers are, not which is bigger.
        ABS(BALANCE - CREDIT_LIMIT) AS GAP
 FROM CUSTOMER
 ORDER BY CUSTOMER_NUM;">
@@ -18378,6 +19027,8 @@ FROM CUSTOMER
 ORDER BY ABS(CREDIT_LIMIT - BALANCE) DESC;" data-solution="SELECT CUSTOMER_NUM, CUSTOMER_NAME,
        ABS(CREDIT_LIMIT - BALANCE) AS AVAILABLE
 FROM CUSTOMER
+-- The expression is repeated here rather than reusing the alias. ORDER BY does
+-- accept an alias, so ORDER BY AVAILABLE DESC would work too and read better.
 ORDER BY ABS(CREDIT_LIMIT - BALANCE) DESC;">
         <div class="sandbox-toolbar">
           <span class="sandbox-label">SQL Sandbox &middot; SQLite engine</span>
@@ -18411,7 +19062,10 @@ ORDER BY ITEM_ID;</pre>
        CAST(PRICE AS INTEGER) AS CHOPPED
 FROM ITEM
 ORDER BY ITEM_ID;" data-solution="SELECT ITEM_ID, PRICE,
+       -- ROUND goes to the NEAREST whole number, so 64.99 becomes 65.
        ROUND(PRICE, 0) AS ROUNDED,
+       -- CAST to INTEGER simply CHOPS the decimal part off, so 64.99 becomes 64.
+       -- Two different answers from the same value - pick deliberately.
        CAST(PRICE AS INTEGER) AS CHOPPED
 FROM ITEM
 ORDER BY ITEM_ID;">
@@ -18461,7 +19115,10 @@ FROM INVOICE
 ORDER BY INVOICE_NUM;</pre>
       <p>Start with the clock. <code class="inline-code">DATE(&#39;now&#39;)</code> gives today as a date, and <code class="inline-code">DATETIME(&#39;now&#39;)</code> adds the time of day. Both read the clock on the machine running the database, so your result will not match the one printed in any hint here.</p>
       <div class="sandbox" data-sandbox data-seed="kimtay_full" data-starter="SELECT DATE(&#39;now&#39;) AS TODAY,
-       DATETIME(&#39;now&#39;) AS RIGHT_NOW;" data-solution="SELECT DATE(&#39;now&#39;) AS TODAY,
+       DATETIME(&#39;now&#39;) AS RIGHT_NOW;" data-solution="-- No FROM clause at all: these functions ask the server about itself, so there
+-- is no table to read.
+SELECT DATE(&#39;now&#39;) AS TODAY,
+       -- DATETIME adds the time of day. DATE gives the calendar date alone.
        DATETIME(&#39;now&#39;) AS RIGHT_NOW;">
         <div class="sandbox-toolbar">
           <span class="sandbox-label">SQL Sandbox &middot; SQLite engine</span>
@@ -18482,8 +19139,11 @@ ORDER BY INVOICE_NUM;</pre>
 SELECT INVOICE_NUM, INVOICE_DATE
 FROM INVOICE
 ORDER BY INVOICE_NUM;" data-solution="SELECT INVOICE_NUM, INVOICE_DATE,
+       -- strftime pulls a piece out of a date. %Y is the four-digit year.
        strftime(&#39;%Y&#39;, INVOICE_DATE) AS INVOICE_YEAR,
+       -- %m is the two-digit month.
        strftime(&#39;%m&#39;, INVOICE_DATE) AS INVOICE_MONTH,
+       -- Combining them gives a period label to group monthly reports by.
        strftime(&#39;%Y-%m&#39;, INVOICE_DATE) AS PERIOD
 FROM INVOICE
 ORDER BY INVOICE_NUM;">
@@ -18507,6 +19167,8 @@ SELECT INVOICE_NUM, INVOICE_DATE,
        DATE(INVOICE_DATE, &#39;+15 days&#39;) AS DUE_DATE
 FROM INVOICE
 ORDER BY INVOICE_NUM;" data-solution="SELECT INVOICE_NUM, INVOICE_DATE,
+       -- DATE(value, modifier) shifts a date. The engine handles month ends and
+       -- leap years, which is exactly why you never do this arithmetic by hand.
        DATE(INVOICE_DATE, &#39;+30 days&#39;) AS DUE_DATE
 FROM INVOICE
 ORDER BY INVOICE_NUM;">
@@ -18530,6 +19192,9 @@ SELECT INVOICE_NUM, INVOICE_DATE,
        julianday(INVOICE_DATE) AS JULIAN
 FROM INVOICE
 ORDER BY INVOICE_NUM;" data-solution="SELECT INVOICE_NUM, INVOICE_DATE,
+       -- julianday turns a date into a single number of days, so subtracting two
+       -- of them gives the days between. A fixed date is used here so the answer
+       -- is the same whenever the query is run.
        julianday(&#39;2026-07-01&#39;) - julianday(INVOICE_DATE) AS DAYS_OLD
 FROM INVOICE
 ORDER BY INVOICE_NUM;">
@@ -18557,7 +19222,10 @@ SELECT INVOICE_NUM, INVOICE_DATE,
        CAST(julianday(&#39;now&#39;) - julianday(INVOICE_DATE) AS INTEGER) AS DAYS_OLD
 FROM INVOICE
 ORDER BY INVOICE_NUM;" data-solution="SELECT INVOICE_NUM, INVOICE_DATE,
+       -- Against 'now' the result carries a fraction, because now includes a time
+       -- of day and midnight on the invoice date does not.
        julianday(&#39;now&#39;) - julianday(INVOICE_DATE) AS RAW_DAYS,
+       -- CAST to INTEGER chops that fraction off, giving whole days elapsed.
        CAST(julianday(&#39;now&#39;) - julianday(INVOICE_DATE) AS INTEGER) AS DAYS_OLD
 FROM INVOICE
 ORDER BY INVOICE_NUM;">
@@ -18697,6 +19365,8 @@ SELECT REP_NUM,
        CONCAT(FIRST_NAME, LAST_NAME) AS FULL_NAME
 FROM REP
 ORDER BY REP_NUM;" data-solution="SELECT REP_NUM,
+       -- CONCAT takes the pieces as arguments. It is the MySQL spelling, and
+       -- SQLite has accepted it since version 3.44.
        CONCAT(FIRST_NAME, &#39; &#39;, LAST_NAME) AS FULL_NAME
 FROM REP
 ORDER BY REP_NUM;">
@@ -18723,6 +19393,9 @@ ORDER BY REP_NUM;">
 SELECT REP_NUM, CITY, STATE, ZIP
 FROM REP
 ORDER BY REP_NUM;" data-solution="SELECT REP_NUM,
+       -- || is the STANDARD SQL concatenation operator, used between the pieces
+       -- rather than around them. SQLite and Oracle both accept it; MySQL does
+       -- not, which makes string joining one of the least portable corners of SQL.
        CITY || &#39;, &#39; || STATE || &#39; &#39; || ZIP AS MAILING_LINE
 FROM REP
 ORDER BY REP_NUM;">
@@ -18746,6 +19419,8 @@ ORDER BY REP_NUM;">
 SELECT CUSTOMER_NUM, CUSTOMER_NAME, STREET, CITY, STATE, ZIP
 FROM CUSTOMER
 ORDER BY CUSTOMER_NUM;" data-solution="SELECT CUSTOMER_NUM,
+       -- One CONCAT call can take as many arguments as you need. The literal
+       -- commas and spaces are supplied as their own arguments.
        CONCAT(CUSTOMER_NAME, &#39;, &#39;, STREET, &#39;, &#39;, CITY, &#39; &#39;, STATE, &#39; &#39;, ZIP) AS MAILING_LABEL
 FROM CUSTOMER
 ORDER BY CUSTOMER_NUM;">
@@ -18767,8 +19442,14 @@ ORDER BY CUSTOMER_NUM;">
       <p>Here is the part that costs people real time. Concatenating a value with null does not do the harmless thing you might expect, and what it does depends on the engine and on the spelling you chose. <code class="inline-code">COALESCE(value, replacement)</code> is the tool for the job: it hands back the first argument unless that argument is null, in which case it hands back the second. Run this and read all three columns.</p>
       <div class="sandbox" data-sandbox data-seed="kimtay_full" data-starter="SELECT CONCAT(&#39;Rep: &#39;, NULL) AS CONCAT_RESULT,
        &#39;Rep: &#39; || NULL AS PIPE_RESULT,
-       &#39;Rep: &#39; || COALESCE(NULL, &#39;unassigned&#39;) AS SAFE_RESULT;" data-solution="SELECT CONCAT(&#39;Rep: &#39;, NULL) AS CONCAT_RESULT,
+       &#39;Rep: &#39; || COALESCE(NULL, &#39;unassigned&#39;) AS SAFE_RESULT;" data-solution="-- The three ways a null behaves when you join strings, side by side.
+-- CONCAT treats a null as an empty string, so the label survives.
+SELECT CONCAT(&#39;Rep: &#39;, NULL) AS CONCAT_RESULT,
+       -- || is stricter: a null anywhere makes the WHOLE result null, so the
+       -- text you wrote disappears too.
        &#39;Rep: &#39; || NULL AS PIPE_RESULT,
+       -- COALESCE returns its first argument that is not null, which is how you
+       -- substitute a readable stand-in before the null can spread.
        &#39;Rep: &#39; || COALESCE(NULL, &#39;unassigned&#39;) AS SAFE_RESULT;">
         <div class="sandbox-toolbar">
           <span class="sandbox-label">SQL Sandbox &middot; SQLite engine</span>
@@ -18801,10 +19482,15 @@ ORDER BY CUSTOMER_NUM;">
 FROM CUSTOMER C
 LEFT JOIN INVOICE I ON C.CUSTOMER_NUM = I.CUSTOMER_NUM
 ORDER BY C.CUSTOMER_NUM;" data-solution="SELECT C.CUSTOMER_NAME,
+       -- For the unmatched customer the LEFT JOIN supplies a null invoice number,
+       -- and || turns the entire label null.
        C.CUSTOMER_NAME || &#39; / &#39; || I.INVOICE_NUM AS PIPE_LABEL,
+       -- CONCAT keeps the name and simply leaves a gap where the null was.
        CONCAT(C.CUSTOMER_NAME, &#39; / &#39;, I.INVOICE_NUM) AS CONCAT_LABEL,
+       -- COALESCE is the version to actually ship: it says what the gap means.
        C.CUSTOMER_NAME || &#39; / &#39; || COALESCE(I.INVOICE_NUM, &#39;no invoice&#39;) AS SAFE_LABEL
 FROM CUSTOMER C
+-- LEFT JOIN keeps the customer with no invoice, which is what creates the null.
 LEFT JOIN INVOICE I ON C.CUSTOMER_NUM = I.CUSTOMER_NUM
 ORDER BY C.CUSTOMER_NUM;">
         <div class="sandbox-toolbar">
@@ -19874,9 +20560,13 @@ SELECT BALANCE, CREDIT_LIMIT
 SELECT CUSTOMER_NUM, CUSTOMER_NAME, BALANCE, CREDIT_LIMIT
 FROM CUSTOMER
 WHERE REP_NUM = &#39;20&#39;
-ORDER BY CUSTOMER_NUM;" data-solution="SELECT CUSTOMER_NUM, CUSTOMER_NAME, BALANCE, CREDIT_LIMIT
+ORDER BY CUSTOMER_NUM;" data-solution="-- The four columns a stored procedure would read INTO its local variables.
+SELECT CUSTOMER_NUM, CUSTOMER_NAME, BALANCE, CREDIT_LIMIT
 FROM CUSTOMER
+-- The procedure&#39;s parameter goes here in place of the literal.
 WHERE REP_NUM = &#39;20&#39;
+-- ORDER BY matters more than usual for a cursor: it fixes the order the rows
+-- will be handed over, one at a time.
 ORDER BY CUSTOMER_NUM;">
         <div class="sandbox-toolbar">
           <span class="sandbox-label">SQL Sandbox &middot; SQLite engine</span>
@@ -20193,12 +20883,19 @@ JOIN INVOICE I ON C.CUSTOMER_NUM = I.CUSTOMER_NUM
 JOIN INVOICE_LINE L ON I.INVOICE_NUM = L.INVOICE_NUM
 JOIN ITEM T ON L.ITEM_ID = T.ITEM_ID
 WHERE C.REP_NUM = &#39;20&#39;
-ORDER BY I.INVOICE_NUM, T.DESCRIPTION;" data-solution="SELECT C.CUSTOMER_NAME, I.INVOICE_NUM, T.DESCRIPTION,
+ORDER BY I.INVOICE_NUM, T.DESCRIPTION;" data-solution="-- The query a cursor would walk, written as a plain SELECT first. Run it before
+-- wrapping it in a cursor, so you know exactly what rows the loop will see.
+SELECT C.CUSTOMER_NAME, I.INVOICE_NUM, T.DESCRIPTION,
+       -- Three stored columns and one calculated one.
        L.NUM_ORDERED * L.QUOTED_PRICE AS LINE_TOTAL
 FROM CUSTOMER C
+-- Hop 1: customer to invoice.
 JOIN INVOICE I ON C.CUSTOMER_NUM = I.CUSTOMER_NUM
+-- Hop 2: invoice to line item.
 JOIN INVOICE_LINE L ON I.INVOICE_NUM = L.INVOICE_NUM
+-- Hop 3: line item to item.
 JOIN ITEM T ON L.ITEM_ID = T.ITEM_ID
+-- The parameter the procedure would accept.
 WHERE C.REP_NUM = &#39;65&#39;
 ORDER BY I.INVOICE_NUM, T.DESCRIPTION;">
         <div class="sandbox-toolbar">
@@ -20311,6 +21008,9 @@ JOIN INVOICE I ON C.CUSTOMER_NUM = I.CUSTOMER_NUM
 JOIN INVOICE_LINE L ON I.INVOICE_NUM = L.INVOICE_NUM
 JOIN ITEM T ON L.ITEM_ID = T.ITEM_ID
 WHERE C.REP_NUM = &#39;65&#39;
+  -- The second filter tests the CALCULATION, not a stored column. Doing it here
+  -- rather than inside the loop means fewer rows are ever fetched - the database
+  -- discards rows far more cheaply than your loop can.
   AND L.NUM_ORDERED * L.QUOTED_PRICE &gt;= 50
 ORDER BY I.INVOICE_NUM, T.DESCRIPTION;">
         <div class="sandbox-toolbar">
@@ -20355,11 +21055,16 @@ FROM INVOICE I
 JOIN CUSTOMER C ON I.CUSTOMER_NUM = C.CUSTOMER_NUM
 JOIN INVOICE_LINE L ON I.INVOICE_NUM = L.INVOICE_NUM
 GROUP BY I.INVOICE_NUM, C.CUSTOMER_NAME
-ORDER BY I.INVOICE_NUM;" data-solution="SELECT I.INVOICE_NUM, C.CUSTOMER_NAME,
+ORDER BY I.INVOICE_NUM;" data-solution="-- A cursor can walk a GROUPED query just as happily as a plain one: each row it
+-- hands back simply summarises several underlying rows.
+SELECT I.INVOICE_NUM, C.CUSTOMER_NAME,
        SUM(L.NUM_ORDERED * L.QUOTED_PRICE) AS INVOICE_TOTAL
 FROM INVOICE I
+-- Hop 1: invoice to customer, for the name.
 JOIN CUSTOMER C ON I.CUSTOMER_NUM = C.CUSTOMER_NUM
+-- Hop 2: invoice to its line items, for the money.
 JOIN INVOICE_LINE L ON I.INVOICE_NUM = L.INVOICE_NUM
+-- One row per invoice, so the loop would walk invoices rather than lines.
 GROUP BY I.INVOICE_NUM, C.CUSTOMER_NAME
 ORDER BY I.INVOICE_NUM;">
         <div class="sandbox-toolbar">
@@ -20406,24 +21111,32 @@ WHERE REP_NUM = &#39;20&#39; AND CREDIT_LIMIT - BALANCE &gt;= 5000;
 
 SELECT * FROM CUST_REVIEW ORDER BY CUSTOMER_NUM;" data-solution="DROP TABLE IF EXISTS CUST_REVIEW;
 
+-- Somewhere for the results to go, exactly as the cursor version used.
 CREATE TABLE CUST_REVIEW
     (CUSTOMER_NUM CHAR(4),
      CUSTOMER_NAME VARCHAR(35),
      AVAILABLE_CREDIT DECIMAL(9,2),
      REVIEW_NOTE VARCHAR(10));
 
+-- The whole cursor loop, replaced by two set-based INSERTs. This one writes the
+-- rows that would have taken the IF branch...
 INSERT INTO CUST_REVIEW
        (CUSTOMER_NUM, CUSTOMER_NAME, AVAILABLE_CREDIT, REVIEW_NOTE)
+-- The literal in the SELECT list supplies the same value on every row it writes.
 SELECT CUSTOMER_NUM, CUSTOMER_NAME, CREDIT_LIMIT - BALANCE, &#39;Call rep&#39;
 FROM CUSTOMER
 WHERE REP_NUM = &#39;20&#39; AND CREDIT_LIMIT - BALANCE &lt; 5000;
 
+-- ...and this one writes the rows that would have taken the ELSE branch. The
+-- two WHERE clauses are the IF, turned inside out.
 INSERT INTO CUST_REVIEW
        (CUSTOMER_NUM, CUSTOMER_NAME, AVAILABLE_CREDIT, REVIEW_NOTE)
 SELECT CUSTOMER_NUM, CUSTOMER_NAME, CREDIT_LIMIT - BALANCE, &#39;No action&#39;
 FROM CUSTOMER
 WHERE REP_NUM = &#39;20&#39; AND CREDIT_LIMIT - BALANCE &gt;= 5000;
 
+-- Same result as the cursor, in two statements instead of thirty lines - and far
+-- faster, because the database does the looping internally.
 SELECT * FROM CUST_REVIEW ORDER BY CUSTOMER_NUM;">
         <div class="sandbox-toolbar">
           <span class="sandbox-label">SQL Sandbox &middot; SQLite engine</span>
@@ -20680,16 +21393,21 @@ WHERE CUSTOMER_NUM = &#39;1999&#39;;
 SELECT CUSTOMER_NAME, BALANCE
 FROM CUSTOMER
 WHERE REP_NUM = &#39;20&#39;;" data-solution="-- Case 1: exactly one row comes back. This is the case the procedure was written for.
+-- Filtering on the PRIMARY KEY is what guarantees at most one row.
 SELECT CUSTOMER_NAME, BALANCE
 FROM CUSTOMER
 WHERE CUSTOMER_NUM = &#39;1225&#39;;
 
 -- Case 2: no row comes back. In PL/SQL this raises NO_DATA_FOUND.
+-- The key is valid in shape but matches nothing, and an empty result is not an
+-- error to SQL - only to a procedure that expected to fill a variable.
 SELECT CUSTOMER_NAME, BALANCE
 FROM CUSTOMER
 WHERE CUSTOMER_NUM = &#39;1999&#39;;
 
 -- Case 3: two rows come back. In PL/SQL this raises TOO_MANY_ROWS.
+-- The difference is the column: REP_NUM is not a key, so it can match many rows,
+-- and SELECT ... INTO has no way to choose between them.
 SELECT CUSTOMER_NAME, BALANCE
 FROM CUSTOMER
 WHERE REP_NUM = &#39;20&#39;;">
@@ -20794,8 +21512,12 @@ END;
       <div class="sandbox" data-sandbox data-seed="kimtay_full" data-starter="SELECT CUSTOMER_NUM, CUSTOMER_NAME, BALANCE
 FROM CUSTOMER
 WHERE REP_NUM = &#39;20&#39;
-ORDER BY CUSTOMER_NUM;" data-solution="SELECT CUSTOMER_NUM, CUSTOMER_NAME, BALANCE
+ORDER BY CUSTOMER_NUM;" data-solution="-- The SELECT a stored procedure would wrap. Nothing about it changes because it
+-- lives inside a procedure - only where the text is kept changes.
+SELECT CUSTOMER_NUM, CUSTOMER_NAME, BALANCE
 FROM CUSTOMER
+-- In the procedure this literal is replaced by a parameter, which is the whole
+-- point: one stored query answering the question for any rep.
 WHERE REP_NUM = &#39;20&#39;
 ORDER BY CUSTOMER_NUM;">
         <div class="sandbox-toolbar">
@@ -21041,7 +21763,9 @@ EXEC GET_CUSTOMER &#39;1420&#39;;</pre>
       </div>
       <div class="sandbox" data-sandbox data-seed="kimtay_full" data-starter="SELECT CUSTOMER_NAME, BALANCE
 FROM CUSTOMER
-WHERE CUSTOMER_NUM = &#39;1420&#39;;" data-solution="SELECT CUSTOMER_NAME, BALANCE
+WHERE CUSTOMER_NUM = &#39;1420&#39;;" data-solution="-- The single-row lookup a procedure would perform with SELECT ... INTO. Filtering
+-- on the primary key is what makes it safe: at most one row can ever come back.
+SELECT CUSTOMER_NAME, BALANCE
 FROM CUSTOMER
 WHERE CUSTOMER_NUM = &#39;1420&#39;;">
         <div class="sandbox-toolbar">
@@ -21126,10 +21850,14 @@ SET BALANCE = 1200.00
 WHERE CUSTOMER_NUM = &#39;1225&#39;;
 
 -- The one statement the stored procedure wraps.
+-- The new value is computed from the old one, so running it twice adds 700, not
+-- 350 - which is why the reset above matters.
 UPDATE CUSTOMER
 SET BALANCE = BALANCE + 350.00
 WHERE CUSTOMER_NUM = &#39;1225&#39;;
 
+-- Read the row back with the limit alongside, so you can see whether the charge
+-- pushed the balance past it - the check the procedure performs for you.
 SELECT CUSTOMER_NUM, CUSTOMER_NAME, BALANCE, CREDIT_LIMIT
 FROM CUSTOMER
 WHERE CUSTOMER_NUM = &#39;1225&#39;;">
@@ -21203,17 +21931,22 @@ WHERE ITEM_ID = &#39;DG04&#39;;
 SELECT ITEM_ID, DESCRIPTION, ON_HAND
 FROM ITEM_WORK
 ORDER BY ITEM_ID;" data-solution="-- Step 1: find out what still points at DG04.
+-- This is the query behind the error message: these are the rows a foreign key
+-- would be protecting if the delete were attempted.
 SELECT INVOICE_NUM, ITEM_ID, NUM_ORDERED
 FROM INVOICE_LINE
 WHERE ITEM_ID = &#39;DG04&#39;;
 
 -- Step 2: delete it from a working copy, where no foreign key is watching.
 DROP TABLE IF EXISTS ITEM_WORK;
+-- CREATE TABLE ... AS copies the columns and rows but NOT the constraints, which
+-- is exactly why the delete below is allowed to succeed here.
 CREATE TABLE ITEM_WORK AS SELECT * FROM ITEM;
 
 DELETE FROM ITEM_WORK
 WHERE ITEM_ID = &#39;DG04&#39;;
 
+-- Four rows in the copy, five still in the real ITEM table.
 SELECT ITEM_ID, DESCRIPTION, ON_HAND
 FROM ITEM_WORK
 ORDER BY ITEM_ID;">
@@ -21293,8 +22026,12 @@ GO</pre>
       <div class="sandbox" data-sandbox data-seed="kimtay_full" data-starter="SELECT CUSTOMER_NUM, CUSTOMER_NAME, BALANCE
 FROM CUSTOMER
 WHERE REP_NUM = &#39;20&#39;
-ORDER BY CUSTOMER_NUM;" data-solution="SELECT CUSTOMER_NUM, CUSTOMER_NAME, BALANCE
+ORDER BY CUSTOMER_NUM;" data-solution="-- The SELECT a stored procedure would wrap. Nothing about it changes because it
+-- lives inside a procedure - only where the text is kept changes.
+SELECT CUSTOMER_NUM, CUSTOMER_NAME, BALANCE
 FROM CUSTOMER
+-- In the procedure this literal is replaced by a parameter, which is the whole
+-- point: one stored query answering the question for any rep.
 WHERE REP_NUM = &#39;20&#39;
 ORDER BY CUSTOMER_NUM;">
         <div class="sandbox-toolbar">
@@ -21389,15 +22126,20 @@ SELECT SUM(IL.NUM_ORDERED * IL.QUOTED_PRICE) AS REP_TOTAL
 FROM CUSTOMER C
      JOIN INVOICE I       ON C.CUSTOMER_NUM = I.CUSTOMER_NUM
      JOIN INVOICE_LINE IL ON I.INVOICE_NUM = IL.INVOICE_NUM
-WHERE C.REP_NUM = &#39;20&#39;;" data-solution="SELECT I.INVOICE_NUM, C.CUSTOMER_NAME, IT.DESCRIPTION,
+WHERE C.REP_NUM = &#39;20&#39;;" data-solution="-- The detail listing a cursor would print one line at a time.
+SELECT I.INVOICE_NUM, C.CUSTOMER_NAME, IT.DESCRIPTION,
        IL.NUM_ORDERED * IL.QUOTED_PRICE AS LINE_TOTAL
 FROM CUSTOMER C
+     -- Three hops across four tables.
      JOIN INVOICE I       ON C.CUSTOMER_NUM = I.CUSTOMER_NUM
      JOIN INVOICE_LINE IL ON I.INVOICE_NUM = IL.INVOICE_NUM
      JOIN ITEM IT         ON IL.ITEM_ID = IT.ITEM_ID
 WHERE C.REP_NUM = &#39;20&#39;
 ORDER BY I.INVOICE_NUM, IT.DESCRIPTION;
 
+-- And the running total the loop would accumulate in a variable, obtained here
+-- in one statement. ITEM is not joined this time, because no description is
+-- displayed - a total needs fewer tables than a detail line.
 SELECT SUM(IL.NUM_ORDERED * IL.QUOTED_PRICE) AS REP_TOTAL
 FROM CUSTOMER C
      JOIN INVOICE I       ON C.CUSTOMER_NUM = I.CUSTOMER_NUM
@@ -21587,6 +22329,7 @@ DELETE FROM INVOICE_LINE WHERE INVOICE_NUM = &#39;50712&#39; AND ITEM_ID = &#39;
 
 -- 1. The audit table. Nothing writes to it by hand, ever.
 CREATE TABLE INVOICE_LINE_LOG (
+    -- INTEGER PRIMARY KEY in SQLite numbers itself, so the trigger never supplies it.
     LOG_ID       INTEGER  PRIMARY KEY,
     INVOICE_NUM  CHAR(5),
     ITEM_ID      CHAR(4),
@@ -21596,10 +22339,14 @@ CREATE TABLE INVOICE_LINE_LOG (
 
 -- 2. The trigger. It fires after each new INVOICE_LINE row lands.
 CREATE TRIGGER LOG_NEW_LINE
+-- The event: after an insert on this table, and only after it succeeds.
 AFTER INSERT ON INVOICE_LINE
+-- FOR EACH ROW: run the body once per row inserted, not once per statement.
 FOR EACH ROW
 BEGIN
     INSERT INTO INVOICE_LINE_LOG (INVOICE_NUM, ITEM_ID, NUM_ORDERED, LOGGED_ON)
+    -- NEW holds the row being inserted. On an INSERT there is no OLD, because
+    -- the row did not exist a moment ago.
     VALUES (NEW.INVOICE_NUM, NEW.ITEM_ID, NEW.NUM_ORDERED, DATE(&#39;now&#39;));
 END;
 
@@ -21608,6 +22355,7 @@ INSERT INTO INVOICE_LINE (INVOICE_NUM, ITEM_ID, NUM_ORDERED, QUOTED_PRICE)
 VALUES (&#39;50712&#39;, &#39;GR15&#39;, 4, 15.25);
 
 -- 4. Proof the trigger ran.
+-- Two statements were executed and two rows were written, in two tables.
 SELECT LOG_ID, INVOICE_NUM, ITEM_ID, NUM_ORDERED, LOGGED_ON
 FROM INVOICE_LINE_LOG;">
         <div class="sandbox-toolbar">
@@ -21662,7 +22410,8 @@ SET BALANCE = BALANCE
 WHERE CUSTOMER_NUM = &#39;1120&#39;;
 
 SELECT LOG_ID, CUSTOMER_NUM, OLD_BALANCE, NEW_BALANCE
-FROM BALANCE_LOG;" data-solution="DROP TRIGGER IF EXISTS LOG_BALANCE_CHANGE;
+FROM BALANCE_LOG;" data-solution="-- Housekeeping, including resetting the balance so the box can be re-run.
+DROP TRIGGER IF EXISTS LOG_BALANCE_CHANGE;
 DROP TABLE IF EXISTS BALANCE_LOG;
 UPDATE CUSTOMER SET BALANCE = 3512.50 WHERE CUSTOMER_NUM = &#39;1120&#39;;
 
@@ -21674,11 +22423,16 @@ CREATE TABLE BALANCE_LOG (
 );
 
 CREATE TRIGGER LOG_BALANCE_CHANGE
+-- OF BALANCE narrows the event: changing any other column does not fire this.
 AFTER UPDATE OF BALANCE ON CUSTOMER
 FOR EACH ROW
+-- WHEN adds a condition the row must meet before the body runs. Here it filters
+-- out updates that set the balance to the value it already had.
 WHEN OLD.BALANCE &lt;&gt; NEW.BALANCE
 BEGIN
     INSERT INTO BALANCE_LOG (CUSTOMER_NUM, OLD_BALANCE, NEW_BALANCE)
+    -- On an UPDATE both OLD and NEW exist, which is what makes a before-and-after
+    -- audit possible.
     VALUES (OLD.CUSTOMER_NUM, OLD.BALANCE, NEW.BALANCE);
 END;
 
@@ -21688,10 +22442,13 @@ SET BALANCE = BALANCE + 250.00
 WHERE CUSTOMER_NUM = &#39;1120&#39;;
 
 -- A change that changes nothing. The WHEN clause skips it.
+-- The UPDATE still runs and still touches the row; only the trigger body is
+-- skipped, which keeps the audit free of no-op entries.
 UPDATE CUSTOMER
 SET BALANCE = BALANCE
 WHERE CUSTOMER_NUM = &#39;1120&#39;;
 
+-- One row, not two.
 SELECT LOG_ID, CUSTOMER_NUM, OLD_BALANCE, NEW_BALANCE
 FROM BALANCE_LOG;">
         <div class="sandbox-toolbar">
@@ -21736,14 +22493,22 @@ WHERE CUSTOMER_NUM = &#39;1500&#39;;" data-solution="DROP TRIGGER IF EXISTS CHEC
 DELETE FROM CUSTOMER WHERE CUSTOMER_NUM = &#39;1500&#39;;
 
 CREATE TRIGGER CHECK_CREDIT_LIMIT
+-- BEFORE, not AFTER: the trigger has to run while the insert can still be
+-- stopped. An AFTER trigger fires once the row is already in.
 BEFORE INSERT ON CUSTOMER
 FOR EACH ROW
+-- Only rows over the ceiling are worth checking, so WHEN filters the rest out.
 WHEN NEW.CREDIT_LIMIT &gt; 10000
 BEGIN
+    -- RAISE(ABORT, message) cancels the statement and reports your own wording.
+    -- This is a business rule enforced in the database rather than in an
+    -- application, so it holds no matter which program does the inserting.
     SELECT RAISE(ABORT, &#39;Credit limit over 10000 needs manager approval&#39;);
 END;
 
 -- Within the ceiling, so this one is stored.
+-- The WHEN condition is false, the trigger body never runs, and the insert
+-- proceeds exactly as though no trigger existed.
 INSERT INTO CUSTOMER (CUSTOMER_NUM, CUSTOMER_NAME, STREET, CITY, STATE, ZIP,
                       BALANCE, CREDIT_LIMIT, REP_NUM)
 VALUES (&#39;1500&#39;, &#39;Harbor Pet Supply&#39;, &#39;12 Dock St.&#39;, &#39;Northfield&#39;, &#39;OH&#39;, &#39;44067&#39;,
@@ -21786,7 +22551,8 @@ VALUES (&#39;50712&#39;, &#39;GR15&#39;, 4, 15.25);
 
 SELECT ITEM_ID, DESCRIPTION, ON_HAND
 FROM ITEM
-WHERE ITEM_ID = &#39;GR15&#39;;" data-solution="DROP TRIGGER IF EXISTS REDUCE_ON_HAND;
+WHERE ITEM_ID = &#39;GR15&#39;;" data-solution="-- Housekeeping: remove the line and put the stock back, so the box re-runs cleanly.
+DROP TRIGGER IF EXISTS REDUCE_ON_HAND;
 DELETE FROM INVOICE_LINE WHERE INVOICE_NUM = &#39;50712&#39; AND ITEM_ID = &#39;GR15&#39;;
 UPDATE ITEM SET ON_HAND = 22 WHERE ITEM_ID = &#39;GR15&#39;;
 
@@ -21794,14 +22560,20 @@ CREATE TRIGGER REDUCE_ON_HAND
 AFTER INSERT ON INVOICE_LINE
 FOR EACH ROW
 BEGIN
+    -- A trigger that CHANGES another table rather than just recording something.
+    -- Selling an item automatically takes it out of stock.
     UPDATE ITEM
     SET ON_HAND = ON_HAND - NEW.NUM_ORDERED
+    -- NEW supplies both the quantity and which item to reduce.
     WHERE ITEM_ID = NEW.ITEM_ID;
 END;
 
+-- One INSERT into INVOICE_LINE...
 INSERT INTO INVOICE_LINE (INVOICE_NUM, ITEM_ID, NUM_ORDERED, QUOTED_PRICE)
 VALUES (&#39;50712&#39;, &#39;GR15&#39;, 4, 15.25);
 
+-- ...and ITEM changed too, from 22 to 18, with nothing in the statement above
+-- mentioning ITEM at all. Powerful, and the reason triggers must be documented.
 SELECT ITEM_ID, DESCRIPTION, ON_HAND
 FROM ITEM
 WHERE ITEM_ID = &#39;GR15&#39;;">
@@ -21850,6 +22622,8 @@ DROP TRIGGER IF EXISTS LOG_BALANCE_CHANGE;
 DROP TRIGGER IF EXISTS CHECK_CREDIT_LIMIT;
 DROP TRIGGER IF EXISTS REDUCE_ON_HAND;
 
+-- One harmless trigger, created only so the catalogue query below has something
+-- to find. Its body updates a column to the value it already holds.
 CREATE TRIGGER LOG_NEW_LINE
 AFTER INSERT ON INVOICE_LINE
 FOR EACH ROW
@@ -21858,6 +22632,9 @@ BEGIN
 END;
 
 -- Every trigger this database holds, and the table each one guards.
+-- Triggers live in the same catalogue as tables, views and indexes. Running this
+-- is how you discover the automatic behaviour a database already has, which is
+-- the first thing to check when a table changes without an obvious cause.
 SELECT name, type, tbl_name
 FROM sqlite_master
 WHERE type = &#39;trigger&#39;;">
@@ -22047,8 +22824,11 @@ SELECT CUSTOMER_NUM, CUSTOMER_NAME, BALANCE, CREDIT_LIMIT
 FROM CUSTOMER
 ORDER BY CUSTOMER_NUM;" data-solution="-- Both databases are loaded. Paste a review answer here and press Run.
 -- Starter: the SELECT that a cursor over KimTay&#39;s customers would drive.
+-- Four columns, so a procedure walking this would declare four local variables
+-- of matching types to FETCH each row into.
 SELECT CUSTOMER_NUM, CUSTOMER_NAME, BALANCE, CREDIT_LIMIT
 FROM CUSTOMER
+-- ORDER BY fixes the sequence the rows would be handed over in.
 ORDER BY CUSTOMER_NUM;">
         <div class="sandbox-toolbar">
           <span class="sandbox-label">SQL Sandbox &middot; SQLite engine</span>
@@ -22314,10 +23094,12 @@ VALUES (99, &#39;L004&#39;, &#39;2026-09-01&#39;, 465.00);
 
 SELECT LOG_ID, LEASE_ID, AMOUNT
 FROM PAYMENT_LOG;" data-solution="-- StayWell wants a permanent record of every payment as it arrives.
+-- Housekeeping, so the box can be run more than once.
 DROP TRIGGER IF EXISTS LOG_PAYMENT;
 DROP TABLE IF EXISTS PAYMENT_LOG;
 DELETE FROM PAYMENT WHERE PAYMENT_ID = 99;
 
+-- The audit table, with a key that numbers itself.
 CREATE TABLE PAYMENT_LOG (
     LOG_ID     INTEGER  PRIMARY KEY,
     LEASE_ID   CHAR(4),
@@ -22326,16 +23108,21 @@ CREATE TABLE PAYMENT_LOG (
 );
 
 CREATE TRIGGER LOG_PAYMENT
+-- The event: after a payment row is stored.
 AFTER INSERT ON PAYMENT
+-- Once per row inserted.
 FOR EACH ROW
 BEGIN
     INSERT INTO PAYMENT_LOG (LEASE_ID, AMOUNT, LOGGED_ON)
+    -- NEW is the payment that just landed; DATE('now') stamps when it was seen.
     VALUES (NEW.LEASE_ID, NEW.AMOUNT, DATE(&#39;now&#39;));
 END;
 
+-- One ordinary INSERT, with no mention of the log anywhere in it.
 INSERT INTO PAYMENT (PAYMENT_ID, LEASE_ID, PAYMENT_DATE, AMOUNT)
 VALUES (99, &#39;L004&#39;, &#39;2026-09-01&#39;, 465.00);
 
+-- And the log has a row, written by the database on its own.
 SELECT LOG_ID, LEASE_ID, AMOUNT
 FROM PAYMENT_LOG;">
         <div class="sandbox-toolbar">
