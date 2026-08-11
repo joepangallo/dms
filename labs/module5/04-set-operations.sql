@@ -192,16 +192,13 @@ ORDER BY ID_NUM;
 
 -- >>> EXERCISE 17  (section 5-3, seed: kimtay_full)
 -- Hint: CF21 is the only item that appears on both invoices, so it is the only row UNION collapses. Four rows becomes three: CF21, DG04, GR15.
--- The starter below is deliberately unfinished -- it has a blank to fill in,
--- or stops mid-statement. It is commented out so this file still runs
--- straight through. Uncomment it, complete it, then run it.
--- -- Invoice 50710 lists CF21 and DG04. Invoice 50711 lists CF21 and GR15.
--- -- Step 1: run this and count the rows.
--- SELECT ITEM_ID FROM INVOICE_LINE WHERE INVOICE_NUM = '50710'
--- UNION ALL
--- SELECT ITEM_ID FROM INVOICE_LINE WHERE INVOICE_NUM = '50711';
---
--- -- Step 2: change UNION ALL to UNION, run it again, and explain the difference.
+-- Invoice 50710 lists CF21 and DG04. Invoice 50711 lists CF21 and GR15.
+-- Step 1: run this and count the rows.
+SELECT ITEM_ID FROM INVOICE_LINE WHERE INVOICE_NUM = '50710'
+UNION ALL
+SELECT ITEM_ID FROM INVOICE_LINE WHERE INVOICE_NUM = '50711';
+
+-- Step 2: change UNION ALL to UNION, run it again, and explain the difference.
 
 -- >>> EXERCISE 18  (section 5-3, seed: kimtay_full)
 -- Hint: INTERSECT returns Access Pet Center (1120) on its own. Swap in EXCEPT and you get Companion Care Clinic (1310) on its own, because 1310 belongs to rep 20 and has no invoice.

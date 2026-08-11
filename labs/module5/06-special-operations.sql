@@ -129,18 +129,15 @@ ORDER BY CUSTOMER.CUSTOMER_NUM;
 
 -- >>> EXERCISE 23  (section 5-5, seed: kimtay_full)
 -- Hint: The inner join returns three rows and hides Companion Care Clinic. The LEFT JOIN returns four, with an empty INVOICE_NUM on row 1310. Adding WHERE INVOICE.INVOICE_NUM IS NULL narrows it to that one row. WHERE always goes before ORDER BY.
--- The starter below is deliberately unfinished -- it has a blank to fill in,
--- or stops mid-statement. It is commented out so this file still runs
--- straight through. Uncomment it, complete it, then run it.
--- -- Run these three one at a time and compare the row counts.
--- -- 1. Inner join: which customers drop out, and why?
--- SELECT CUSTOMER.CUSTOMER_NUM, CUSTOMER.CUSTOMER_NAME, INVOICE.INVOICE_NUM
--- FROM CUSTOMER INNER JOIN INVOICE ON CUSTOMER.CUSTOMER_NUM = INVOICE.CUSTOMER_NUM
--- ORDER BY CUSTOMER.CUSTOMER_NUM;
---
--- -- 2. Now change INNER JOIN to LEFT JOIN and run it again.
--- -- 3. Then put this line just before the ORDER BY and run it a third time:
--- --      WHERE INVOICE.INVOICE_NUM IS NULL
+-- Run these three one at a time and compare the row counts.
+-- 1. Inner join: which customers drop out, and why?
+SELECT CUSTOMER.CUSTOMER_NUM, CUSTOMER.CUSTOMER_NAME, INVOICE.INVOICE_NUM
+FROM CUSTOMER INNER JOIN INVOICE ON CUSTOMER.CUSTOMER_NUM = INVOICE.CUSTOMER_NUM
+ORDER BY CUSTOMER.CUSTOMER_NUM;
+
+-- 2. Now change INNER JOIN to LEFT JOIN and run it again.
+-- 3. Then put this line just before the ORDER BY and run it a third time:
+--      WHERE INVOICE.INVOICE_NUM IS NULL
 
 -- >>> EXERCISE 24  (section 5-5, seed: kimtay_full)
 -- Hint: Five rows. One has an empty customer and invoice 50713, the orphan invoice. One has Companion Care Clinic and an empty invoice. Both unmatched sides survive, which is what makes the join full. Without the DELETE on the first line, a second run would fail on the primary key.
@@ -162,16 +159,13 @@ ORDER BY CUSTOMER.CUSTOMER_NUM, INVOICE.INVOICE_NUM;
 
 -- >>> EXERCISE 25  (section 5-5, seed: kimtay_full)
 -- Hint: The product is twelve rows, 4 times 3. Adding the WHERE condition cuts it to the four rows that are true, one per customer. FROM CUSTOMER CROSS JOIN REP also returns twelve and states the intent openly.
--- The starter below is deliberately unfinished -- it has a blank to fill in,
--- or stops mid-statement. It is commented out so this file still runs
--- straight through. Uncomment it, complete it, then run it.
--- -- No join condition anywhere. Predict the row count before you run it:
--- -- CUSTOMER has 4 rows, REP has 3.
--- SELECT COUNT(*) AS ROW_COUNT FROM CUSTOMER, REP;
---
--- -- Then run the rows themselves, and finally add the missing condition
--- --      WHERE CUSTOMER.REP_NUM = REP.REP_NUM
--- -- to collapse the product into the inner join you actually wanted.
+-- No join condition anywhere. Predict the row count before you run it:
+-- CUSTOMER has 4 rows, REP has 3.
+SELECT COUNT(*) AS ROW_COUNT FROM CUSTOMER, REP;
+
+-- Then run the rows themselves, and finally add the missing condition
+--      WHERE CUSTOMER.REP_NUM = REP.REP_NUM
+-- to collapse the product into the inner join you actually wanted.
 
 -- >>> EXERCISE 26  (section 5-5, seed: staywell_full)
 -- Hint: Part (a) gives five rows and P200 room 101 has an empty LEASE_ID, so it is the vacant one. Part (b) also gives five rows, but for the opposite reason: L001 appears twice because it has two payments, and L004 appears once with an empty payment.

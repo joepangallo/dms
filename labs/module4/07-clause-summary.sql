@@ -4,23 +4,37 @@
 --
 -- Sections: 4-7
 -- Load first: 00-setup-both.sql   (has every table this file touches)
---             individual seeds used here: kimtay_full
 --
--- Examples are the statements shown in the lesson. Exercises are the
--- starter queries from the live sandboxes -- edit them and re-run.
+-- Examples are the statements shown in the lesson, with the page's own
+-- line-by-line commentary kept intact. Exercises are the starter queries
+-- from the live sandboxes -- edit them and re-run.
 -- Solutions are in 90-exercise-solutions.sql.
 -- ======================================================================
 
+
 -- ----------------------------------------------------------------------
--- Section 4-7 -- Summary of SQL Clauses, Functions, and Operators
+-- Section 4-7  Summary of SQL Clauses, Functions, and Operators
 -- ----------------------------------------------------------------------
 
+
 -- Example 4-7.1
+-- SELECT: the grouping column and two aggregates - every column here is either
+--   grouped or aggregated, as the rule requires.
 SELECT CATEGORY, COUNT(*) AS ITEM_COUNT, AVG(PRICE) AS AVERAGE_PRICE
+
+-- FROM: the table being read. This is the clause order the engine follows:
 FROM ITEM
+
+-- WHERE: 1st - discard individual rows before anything is grouped.
 WHERE ON_HAND > 10
+
+-- GROUP BY: 2nd - pile up the survivors, one pile per category.
 GROUP BY CATEGORY
+
+-- HAVING: 3rd - discard whole piles, using a condition on an aggregate.
 HAVING COUNT(*) > 1
+
+-- ORDER BY: 4th and last - sort what is left for reading.
 ORDER BY CATEGORY;
 
 -- >>> EXERCISE 16  (section 4-7, seed: kimtay_full)

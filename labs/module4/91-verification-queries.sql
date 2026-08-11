@@ -11,9 +11,11 @@
 -- Statements marked INTENTIONALLY INVALID are expected to raise an error.
 -- ======================================================================
 
+
 -- ----------------------------------------------------------------------
 -- Group 4-1  --  58 checks
 -- ----------------------------------------------------------------------
+
 
 -- Check 1
 -- Expected: 5 rows, 3 columns: AV07/Aviary Starter Cage/64.99, CF21/Grain-Free Dry Food 30lb/42.50, DG04/Nylon Dog Leash 6ft/11.99, FT88/Fish Tank Filter Kit/27.75, GR15/Small Animal Grooming Kit/15.25. MySQL prints 42.50; the browser engine prints 42.5 (trailing zeros dropped).
@@ -65,12 +67,14 @@ WHERE CITY = 'Maple Grove';
 -- Expected: 1 row: 1120/Access Pet Center
 SELECT CUSTOMER_NUM, CUSTOMER_NAME FROM CUSTOMER WHERE CUSTOMER_NUM = '1120';
 
--- Check 12  !! INTENTIONALLY INVALID -- expected to error
+-- Check 12
 -- Expected: ERROR, no result set. Browser engine: syntax error near "Grove". MySQL: ERROR 1064 syntax error near 'Grove'. Backs the quiz claim that unquoted words are read as names and the statement never runs.
+-- !! INTENTIONALLY INVALID -- this statement is SUPPOSED to fail.
 SELECT CUSTOMER_NUM FROM CUSTOMER WHERE CITY = Maple Grove;
 
--- Check 13  !! INTENTIONALLY INVALID -- expected to error
+-- Check 13
 -- Expected: ERROR, no result set. Browser engine: no such column: Northfield. MySQL: ERROR 1054 Unknown column 'Northfield' in 'where clause'. This is the single-bare-word case named in the quiz note.
+-- !! INTENTIONALLY INVALID -- this statement is SUPPOSED to fail.
 SELECT CUSTOMER_NUM FROM CUSTOMER WHERE CITY = Northfield;
 
 -- Check 14
@@ -301,6 +305,7 @@ SELECT CUSTOMER_NUM FROM CUSTOMER WHERE BALANCE > CREDIT_LIMIT;
 -- Group 4-2  --  25 checks
 -- ----------------------------------------------------------------------
 
+
 -- Check 59
 -- Expected: 4 rows in this order: 1120 Access Pet Center 3512.50; 1310 Companion Care Clinic 0.00; 1225 Downtown Aquarium & Pets 1200.00; 1420 Whiskers & Wags Boutique 4820.75 (SQLite prints the balances as 3512.5, 0, 1200, 4820.75)
 SELECT CUSTOMER_NUM, CUSTOMER_NAME, BALANCE
@@ -460,6 +465,7 @@ ORDER BY ACADEMIC_YEAR_RENT DESC;
 -- Group 4-3  --  34 checks
 -- ----------------------------------------------------------------------
 
+
 -- Check 84
 -- Expected: One row, one column headed COUNT(*), value 5. Verified in SQLite.
 SELECT COUNT(*)
@@ -574,8 +580,9 @@ SELECT COUNT(*) AS LINE_COUNT,
        COUNT(DISTINCT ITEM_ID) AS ITEMS
 FROM INVOICE_LINE;
 
--- Check 105  !! INTENTIONALLY INVALID -- expected to error
+-- Check 105
 -- Expected: Named in the 'Where DISTINCT goes' callout as an engine difference, not offered as a working example. Verified: SQLite raises 'wrong number of arguments to function COUNT()'. MySQL accepts COUNT(DISTINCT expr, expr) and would return 3 here.
+-- !! INTENTIONALLY INVALID -- this statement is SUPPOSED to fail.
 SELECT COUNT(DISTINCT CITY, STATE) FROM CUSTOMER;
 
 -- Check 106
@@ -646,8 +653,10 @@ SELECT SUM(ON_HAND) FROM ITEM;
 -- Group 4-4  --  18 checks
 -- ----------------------------------------------------------------------
 
--- Check 118  !! INTENTIONALLY INVALID -- expected to error
+
+-- Check 118
 -- Expected: Error in both engines, no rows. SQLite 3.51 (verified): 'misuse of aggregate function AVG()'. MySQL: error 1111 'Invalid use of group function'.
+-- !! INTENTIONALLY INVALID -- this statement is SUPPOSED to fail.
 SELECT ITEM_ID, DESCRIPTION
 FROM ITEM
 WHERE PRICE > AVG(PRICE);
@@ -752,8 +761,9 @@ SELECT CUSTOMER_NAME
 FROM CUSTOMER
 WHERE BALANCE > 4000;
 
--- Check 135  !! INTENTIONALLY INVALID -- expected to error
+-- Check 135
 -- Expected: Error in both engines, no rows. SQLite (verified): 'sub-select returns 2 columns - expected 1'. MySQL: error 1241 'Operand should contain 1 column(s)'. (Matcher 'will not run' card.)
+-- !! INTENTIONALLY INVALID -- this statement is SUPPOSED to fail.
 SELECT ITEM_ID
 FROM ITEM
 WHERE ITEM_ID IN (SELECT ITEM_ID, NUM_ORDERED FROM INVOICE_LINE);
@@ -761,6 +771,7 @@ WHERE ITEM_ID IN (SELECT ITEM_ID, NUM_ORDERED FROM INVOICE_LINE);
 -- ----------------------------------------------------------------------
 -- Group 4-5  --  21 checks
 -- ----------------------------------------------------------------------
+
 
 -- Check 136
 -- Expected: 4 rows: Accessory|1|11.99, Food|1|42.5, Grooming|1|15.25, Habitat|2|46.37
@@ -815,8 +826,9 @@ FROM ITEM
 GROUP BY CATEGORY
 HAVING COUNT(*) > 1;
 
--- Check 144  !! INTENTIONALLY INVALID -- expected to error
+-- Check 144
 -- Expected: Error on both engines (this is the previous query with the test moved from HAVING up into WHERE). SQLite: 'misuse of aggregate: COUNT()'. MySQL: 'Invalid use of group function'. Shown deliberately as an illegal statement.
+-- !! INTENTIONALLY INVALID -- this statement is SUPPOSED to fail.
 SELECT CATEGORY, COUNT(*) AS ITEM_COUNT FROM ITEM WHERE COUNT(*) > 1 GROUP BY CATEGORY;
 
 -- Check 145
@@ -891,6 +903,7 @@ SELECT REP_NUM, COUNT(*) AS C FROM CUSTOMER GROUP BY REP_NUM HAVING REP_NUM IN (
 -- ----------------------------------------------------------------------
 -- Group 4-67  --  33 checks
 -- ----------------------------------------------------------------------
+
 
 -- Check 157
 -- Expected: On a freshly seeded staywell_full database (no UPDATE run yet): 5 rows: P100|101|595, P100|102|450, P200|101|610, P200|201|725, P200|202|465
@@ -1033,8 +1046,9 @@ WHERE ON_HAND > 10
 GROUP BY CATEGORY
 ORDER BY CATEGORY;
 
--- Check 175  !! INTENTIONALLY INVALID -- expected to error
+-- Check 175
 -- Expected: Error in both engines; SQLite reports 'misuse of aggregate: COUNT()'. This is the WHERE-runs-before-grouping rule the lesson states
+-- !! INTENTIONALLY INVALID -- this statement is SUPPOSED to fail.
 SELECT CATEGORY FROM ITEM WHERE COUNT(*) > 1 GROUP BY CATEGORY;
 
 -- Check 176
@@ -1099,6 +1113,7 @@ SELECT COUNT(*) FROM ITEM WHERE PRICE IS NULL;
 -- ----------------------------------------------------------------------
 -- Group 4-end  --  30 checks
 -- ----------------------------------------------------------------------
+
 
 -- Check 190
 -- Expected: Verified in SQLite. 3 rows in this order: Habitat|2, Food|1, Grooming|1. Accessory is absent because DG04 at 11.99 fails the WHERE test; the HAVING drops nothing.

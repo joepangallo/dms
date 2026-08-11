@@ -1,10 +1,13 @@
 # Module 4 — Single-Table Queries
 
-Every SQL statement from Module 4, extracted from the course source (`content/module4.json`)
-and the sandbox seed databases in `db.html`, as plain `.sql` files you can run outside the browser.
+Every SQL statement from Module 4, extracted from the course page (`db.html`) and the sandbox seed
+databases, as plain `.sql` files you can run outside the browser.
 
 Use these when you want a real client — `sqlite3`, MySQL Workbench, DBeaver, VS Code — instead of
 the in-page sandbox, or when you want the whole module's SQL in one place to study or grade from.
+
+These files carry the page's **line-by-line commentary**: every clause is explained on its own
+comment line directly above the code it describes. The Module 5 labs are built the same way.
 
 ---
 
@@ -97,11 +100,27 @@ Everything else in Module 4 runs identically in both.
 
 ## Where this came from
 
-Generated from the course's own source, so it stays in step with the site:
+Generated from the course page itself, so it stays in step with the site:
 
-- statements — `content/module4.json` (66 lesson examples, 20 sandbox exercises, 219 verification checks)
+- statements and commentary — the Module 4 section of `db.html` (65 lesson examples, 20 sandbox
+  exercises)
+- expected results — `sqlChecks` in `content/module4.json` (219 checks)
 - table definitions and sample rows — `window.SANDBOX_SEEDS` in `db.html`
 
-All 316 statements that are meant to succeed were executed against SQLite 3.51 and pass. The only
-failures are the intentional ones listed above. If you change a module's content JSON, regenerate
-rather than hand-editing these files.
+Regenerate with:
+
+```bash
+python3 tools/gen-module-labs.py module4
+```
+
+It is idempotent — running it against an unchanged page reproduces these files byte for byte. The
+`00-*.sql` setup files are the seed databases and are not regenerated.
+
+Every statement meant to succeed was executed against SQLite 3.51 and passes. The only failures are
+the intentional ones listed above: one in `04-nesting-queries.sql` and seven in
+`91-verification-queries.sql`. Statements marked INTENTIONALLY INVALID are marked by observed
+behaviour — the generator runs each one — so the marker count and the error count always agree.
+
+One query the earlier hand-built version of these labs carried twice, as both a lesson example and an
+exercise solution, now appears only as the solution: the page has it as a sandbox and not as a code
+block. Nothing is lost.

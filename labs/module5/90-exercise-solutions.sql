@@ -439,7 +439,6 @@ ORDER BY I.INVOICE_NUM;
 -- Hint given: CF21 is the only item that appears on both invoices, so it is the only row UNION collapses. Four rows becomes three: CF21, DG04, GR15.
 
 -- Starter:
---   (deliberately unfinished -- a blank to fill in, or stops mid-statement)
 --   -- Invoice 50710 lists CF21 and DG04. Invoice 50711 lists CF21 and GR15.
 --   -- Step 1: run this and count the rows.
 --   SELECT ITEM_ID FROM INVOICE_LINE WHERE INVOICE_NUM = '50710'
@@ -603,7 +602,6 @@ ORDER BY PROPERTY_ID, ROOM_NUM;
 -- Hint given: The inner join returns three rows and hides Companion Care Clinic. The LEFT JOIN returns four, with an empty INVOICE_NUM on row 1310. Adding WHERE INVOICE.INVOICE_NUM IS NULL narrows it to that one row. WHERE always goes before ORDER BY.
 
 -- Starter:
---   (deliberately unfinished -- a blank to fill in, or stops mid-statement)
 --   -- Run these three one at a time and compare the row counts.
 --   -- 1. Inner join: which customers drop out, and why?
 --   SELECT CUSTOMER.CUSTOMER_NUM, CUSTOMER.CUSTOMER_NAME, INVOICE.INVOICE_NUM
@@ -667,7 +665,6 @@ ORDER BY CUSTOMER.CUSTOMER_NUM, INVOICE.INVOICE_NUM;
 -- Hint given: The product is twelve rows, 4 times 3. Adding the WHERE condition cuts it to the four rows that are true, one per customer. FROM CUSTOMER CROSS JOIN REP also returns twelve and states the intent openly.
 
 -- Starter:
---   (deliberately unfinished -- a blank to fill in, or stops mid-statement)
 --   -- No join condition anywhere. Predict the row count before you run it:
 --   -- CUSTOMER has 4 rows, REP has 3.
 --   SELECT COUNT(*) AS ROW_COUNT FROM CUSTOMER, REP;

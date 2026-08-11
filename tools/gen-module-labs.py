@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-"""Generate labs/module5/*.sql from db.html (annotated SQL) + content/module5.json (checks).
+"""Generate labs/moduleN/*.sql from db.html (annotated SQL) + content/moduleN.json (checks).
 
-Mirrors the layout of labs/module4. Run from anywhere:  python3 tools/gen-module5-labs.py
+Run from anywhere:  python3 tools/gen-module-labs.py [module4|module5]
 
 Sourced from db.html rather than the content JSON because Module 5's SQL carries
 line-by-line commentary that lives only in the rendered page. The setup files
@@ -12,24 +12,87 @@ import json
 import os
 import re
 import sqlite3
+import sys
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-OUT = os.path.join(ROOT, 'labs', 'module5')
+
+MODULES = {
+    'module4': {
+        'next': 'module5',
+        'title': 'Module 4',
+        'label': {'m4-1': '4-1', 'm4-2': '4-2', 'm4-3': '4-3', 'm4-4': '4-4', 'm4-5': '4-5',
+                  'm4-6': '4-6', 'm4-7': '4-7', 'm4-summary': 'Summary', 'm4-terms': 'Key Terms',
+                  'm4-review': 'Review', 'm4-exercises': 'Case Exercises'},
+        'titles': {'m4-1': '4-1  Constructing Simple Queries', 'm4-2': '4-2  Sorting',
+                   'm4-3': '4-3  Using Functions', 'm4-4': '4-4  Nesting Queries',
+                   'm4-5': '4-5  Grouping', 'm4-6': '4-6  Nulls',
+                   'm4-7': '4-7  Summary of SQL Clauses, Functions, and Operators',
+                   'm4-summary': 'Module Summary', 'm4-terms': 'Key Terms',
+                   'm4-review': 'Review Questions', 'm4-exercises': 'Case Exercises'},
+        'lessons': [
+            ('01-simple-queries.sql', ['m4-1'], 'Constructing Simple Queries'),
+            ('02-sorting.sql', ['m4-2'], 'Sorting'),
+            ('03-functions.sql', ['m4-3'], 'Using Functions'),
+            ('04-nesting-queries.sql', ['m4-4'], 'Nesting Queries'),
+            ('05-grouping.sql', ['m4-5'], 'Grouping'),
+            ('06-nulls.sql', ['m4-6'], 'Nulls'),
+            ('07-clause-summary.sql', ['m4-7'], 'Summary of SQL Clauses, Functions, and Operators'),
+            ('08-review-and-cases.sql', ['m4-summary', 'm4-terms', 'm4-review', 'm4-exercises'],
+             'Module summary, key terms, review questions, case exercises'),
+        ],
+    },
+    'module5': {
+        'next': 'module6',
+        'title': 'Module 5',
+        'label': {'m5-1': '5-1', 'm5-2': '5-2', 'm5-2b': '5-2e-5-2h', 'm5-3': '5-3',
+                  'm5-4': '5-4', 'm5-5': '5-5', 'm5-summary': 'Summary',
+                  'm5-terms': 'Key Terms', 'm5-review': 'Review', 'm5-exercises': 'Case Exercises'},
+        'titles': {'m5-1': '5-1  Querying Multiple Tables',
+                   'm5-2': '5-2  Comparing Joins, IN, and EXISTS',
+                   'm5-2b': '5-2e to 5-2h  Aliases, Self-Joins, and Joining Several Tables',
+                   'm5-3': '5-3  Set Operations', 'm5-4': '5-4  All and Any',
+                   'm5-5': '5-5  Special Operations', 'm5-summary': 'Module Summary',
+                   'm5-terms': 'Key Terms', 'm5-review': 'Review Questions',
+                   'm5-exercises': 'Case Exercises'},
+        'lessons': [
+            ('01-querying-multiple-tables.sql', ['m5-1'], 'Querying Multiple Tables'),
+            ('02-joins-in-exists.sql', ['m5-2'], 'Comparing Joins, IN, and EXISTS'),
+            ('03-aliases-and-self-joins.sql', ['m5-2b'], 'Aliases, Self-Joins, and Joining Several Tables'),
+            ('04-set-operations.sql', ['m5-3'], 'Set Operations'),
+            ('05-all-and-any.sql', ['m5-4'], 'All and Any'),
+            ('06-special-operations.sql', ['m5-5'], 'Special Operations'),
+            ('07-review-and-cases.sql', ['m5-summary', 'm5-terms', 'm5-review', 'm5-exercises'],
+             'Module summary, key terms, review questions, case exercises'),
+        ],
+    },
+}
+
+MOD = (sys.argv[1] if len(sys.argv) > 1 else 'module5')
+if MOD not in MODULES:
+    raise SystemExit(f'usage: gen-module-labs.py [{" | ".join(MODULES)}]')
+CFG = MODULES[MOD]
+OUT = os.path.join(ROOT, 'labs', MOD)
 os.makedirs(OUT, exist_ok=True)
 
 src = open(os.path.join(ROOT, 'db.html'), encoding='utf-8').read()
-seg = src[src.index('<section class="page" id="module5"'):src.index('<section class="page" id="module6"')]
+seg = src[src.index(f'<section class="page" id="{MOD}"'):src.index(f'<section class="page" id="{CFG["next"]}"')]
 
 seeds = json.loads(src[src.index('window.SANDBOX_SEEDS = ') + len('window.SANDBOX_SEEDS = '):
                        src.index('</script>', src.index('window.SANDBOX_SEEDS = '))].strip().rstrip(';'))
 
-def runs_clean(sql, seed_key):
+def runs_clean(sql, seed_key, need_semicolon=True):
     """True when this script executes without error against its own seed."""
     # A starter must also TERMINATE. Several stop mid-statement on purpose, and
     # standalone they parse fine - but in a lab file the next statement would be
     # glued onto them, so they have to be treated as unfinished.
-    if not sql.rstrip().endswith(';'):
-        return False
+    if need_semicolon:
+        # Ignore any trailing instruction comment ("Your turn: ...") before
+        # asking whether the last statement was actually terminated.
+        tail = sql.rstrip().split('\n')
+        while tail and (not tail[-1].strip() or tail[-1].lstrip().startswith('--')):
+            tail.pop()
+        if not tail or not '\n'.join(tail).rstrip().endswith(';'):
+            return False
     db = sqlite3.connect(':memory:')
     try:
         db.executescript(seeds.get(seed_key, ''))
@@ -53,29 +116,13 @@ def section_of(pos):
     return '?'
 
 
-TITLES = {
-    'm5-1': '5-1  Querying Multiple Tables',
-    'm5-2': '5-2  Comparing Joins, IN, and EXISTS',
-    'm5-2b': '5-2e to 5-2h  Aliases, Self-Joins, and Joining Several Tables',
-    'm5-3': '5-3  Set Operations',
-    'm5-4': '5-4  All and Any',
-    'm5-5': '5-5  Special Operations',
-    'm5-summary': 'Module Summary',
-    'm5-terms': 'Key Terms',
-    'm5-review': 'Review Questions',
-    'm5-exercises': 'Case Exercises',
-}
+TITLES = CFG["titles"]
 
 # Short label for headers and cross-references. The lesson sections carry a
 # numbered id; the closing sections do not, so they get a word instead of the
 # first token of their title.
-LABEL = {
-    'm5-1': '5-1', 'm5-2': '5-2', 'm5-2b': '5-2e-5-2h',
-    'm5-3': '5-3', 'm5-4': '5-4', 'm5-5': '5-5',
-    'm5-summary': 'Summary', 'm5-terms': 'Key Terms',
-    'm5-review': 'Review', 'm5-exercises': 'Case Exercises',
-}
-LESSON_SECS = {'m5-1', 'm5-2', 'm5-2b', 'm5-3', 'm5-4', 'm5-5'}
+LABEL = CFG["label"]
+LESSON_SECS = {k for k in TITLES if re.match(r'^m\d+-\d', k)}
 
 
 # ---------------------------------------------------------------- harvest
@@ -124,14 +171,14 @@ for _, kind, p in items:
         p['ex'] = ex_no
 
 # ---------------------------------------------------------------- checks
-data = json.load(open(os.path.join(ROOT, 'content', 'module5.json')))
+data = json.load(open(os.path.join(ROOT, 'content', f'{MOD}.json')))
 groups = [(g['key'], g.get('sqlChecks', [])) for g in data['groups']]
 print('sqlChecks:', sum(len(c) for _, c in groups))
 
 # ---------------------------------------------------------------- writing
 def banner(title, sub_lines):
     out = ['-- ' + '=' * 70,
-           f'-- Module 5 · {title}',
+           f'-- {CFG["title"]} · {title}',
            '-- ' + '=' * 70,
            '--']
     out += ['-- ' + l if l else '--' for l in sub_lines]
@@ -147,16 +194,7 @@ def comment_block(text, indent='--   '):
     return '\n'.join(indent + l if l.strip() else indent.rstrip() for l in text.split('\n'))
 
 
-LESSONS = [
-    ('01-querying-multiple-tables.sql', ['m5-1'], 'Querying Multiple Tables'),
-    ('02-joins-in-exists.sql', ['m5-2'], 'Comparing Joins, IN, and EXISTS'),
-    ('03-aliases-and-self-joins.sql', ['m5-2b'], 'Aliases, Self-Joins, and Joining Several Tables'),
-    ('04-set-operations.sql', ['m5-3'], 'Set Operations'),
-    ('05-all-and-any.sql', ['m5-4'], 'All and Any'),
-    ('06-special-operations.sql', ['m5-5'], 'Special Operations'),
-    ('07-review-and-cases.sql', ['m5-summary', 'm5-terms', 'm5-review', 'm5-exercises'],
-     'Module summary, key terms, review questions, case exercises'),
-]
+LESSONS = CFG["lessons"]
 
 # statements the module shows deliberately broken
 INVALID = [
@@ -199,7 +237,10 @@ for fname, secs, title in LESSONS:
             if kind == 'code':
                 tag = f"-- Example {s.replace('m','').replace('-','-')}.{p['n']}"
                 lines.append(f"\n-- Example {LABEL[s]}.{p['n']}")
-                if is_invalid(p['sql']):
+                # Mark by observed behaviour, not by reading the prose: a comment
+                # can say "deliberate error" about the line below it while the
+                # statement as a whole still runs.
+                if not runs_clean(p['sql'], 'both_full', need_semicolon=False):
                     lines.append('-- !! INTENTIONALLY INVALID -- this statement is SUPPOSED to fail.')
                 lines.append(p['sql'])
             else:

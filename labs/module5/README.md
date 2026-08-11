@@ -6,8 +6,8 @@ databases, as plain `.sql` files you can run outside the browser.
 Use these when you want a real client — `sqlite3`, MySQL Workbench, DBeaver, VS Code — instead of
 the in-page sandbox, or when you want the whole module's SQL in one place to study or grade from.
 
-Unlike the Module 4 labs, these files carry the page's **line-by-line commentary**: every clause is
-explained on its own comment line directly above the code it describes.
+These files carry the page's **line-by-line commentary**: every clause is explained on its own
+comment line directly above the code it describes. The Module 4 labs are built the same way.
 
 ---
 
@@ -65,7 +65,7 @@ Inside each lesson file:
 
 ## Unfinished starters
 
-Module 5 leans on fill-in-the-blank exercises far more than Module 4 did. Sixteen of the thirty
+Module 5 leans on fill-in-the-blank exercises far more than Module 4 did. Thirteen of the thirty
 starters are **deliberately incomplete** — they contain a `___` blank, or stop mid-statement waiting
 for you to add the `INTERSECT` half or the `ON` condition.
 
@@ -145,15 +145,14 @@ Generated from the course page itself:
 - expected results — `sqlChecks` in `content/module5.json` (123 checks)
 - table definitions and sample rows — `window.SANDBOX_SEEDS` in `db.html`
 
-**Note on the source.** The Module 4 labs were generated from `content/module4.json`. These read
-`db.html` instead — at the time it was the only place the line-by-line commentary existed. That
-commentary has since been backfilled into `content/module5.json`, so the two sources now agree on
-every statement *and* every comment, and either one can be used to regenerate.
+**Note on the source.** These read `db.html`, which is where the line-by-line commentary was first
+written. It has since been backfilled into `content/module5.json`, so the two sources agree on every
+statement *and* every comment.
 
 Regenerate with:
 
 ```bash
-python3 tools/gen-module5-labs.py
+python3 tools/gen-module-labs.py module5
 ```
 
 It is idempotent — running it against an unchanged page reproduces these files byte for byte. The
