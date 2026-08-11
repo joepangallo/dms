@@ -67,6 +67,7 @@ tools/                       maintenance scripts (Node, no dependencies to insta
   rerun.mjs                  confirm every sandbox survives being run twice
 labs/                        SQL to run outside the browser, in a real client
   module4/                   every Module 4 statement as .sql files, plus the seed databases
+  module5/                   the same for Module 5, with the page's line-by-line commentary
 homework/                    assignment pages
   Assigned/                  what students receive
   Solutions/                 answer keys — gitignored, never published
@@ -76,7 +77,9 @@ homework/                    assignment pages
 JSON and re-render when changing a module wholesale; edit `db.html` directly for small fixes.
 
 `labs/module4/` is generated from `content/module4.json` and the seeds in `db.html`, so regenerate it
-rather than hand-editing when the module changes.
+rather than hand-editing when the module changes. `labs/module5/` is generated the same way but from
+`db.html` rather than the JSON, because the line-by-line commentary on Module 5's SQL lives only in
+the rendered page — see that directory's README.
 
 ---
 
