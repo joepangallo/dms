@@ -404,7 +404,7 @@
       },
       {
        "type": "code",
-       "text": "-- MySQL. Not runnable in the sandbox on this page.\n-- UPDATE: BROKEN, and unavoidably so.\nUPDATE REP_BALANCE\n\n-- SET: TOTAL_BALANCE is a SUM of several customers' balances. Setting it to 4000\n--   would mean the engine deciding how to split that figure back across the\n--   individual rows, and there is no correct answer - so grouped views are simply\n--   not updatable, in any engine.\nSET    TOTAL_BALANCE = 4000.00\nWHERE  REP_NUM = '20';"
+       "text": "-- MySQL. Not runnable in the sandbox on this page.\n-- UPDATE: BROKEN, and unavoidably so.\nUPDATE REP_BALANCE\n\n-- SET: TOTAL_BALANCE is a SUM of several customers' balances. Setting it to 4000\n--   would mean the engine deciding how to split that figure back across the\n--   individual rows, and there is no correct answer - so grouped views are simply\n--   not updatable, in any engine.\nSET    TOTAL_BALANCE = 4000.00\n\n-- WHERE: picks the one row - rep 20's summary - the broken UPDATE targets.\nWHERE  REP_NUM = '20';"
       },
       {
        "type": "p",
@@ -412,7 +412,7 @@
       },
       {
        "type": "code",
-       "text": "-- MySQL. Not runnable in the sandbox on this page.\n-- DELETE FROM a grouped view: BROKEN for the same reason. One row of this view\n--   stands for several real customer rows, and deleting it would have to mean\n--   deleting all of them - which is certainly not what the statement says.\nDELETE FROM REP_BALANCE\nWHERE  REP_NUM = '35';"
+       "text": "-- MySQL. Not runnable in the sandbox on this page.\n-- DELETE FROM a grouped view: BROKEN for the same reason. One row of this view\n--   stands for several real customer rows, and deleting it would have to mean\n--   deleting all of them - which is certainly not what the statement says.\nDELETE FROM REP_BALANCE\n\n-- WHERE: rep 35's summary row - the one this broken DELETE would remove.\nWHERE  REP_NUM = '35';"
       },
       {
        "type": "p",

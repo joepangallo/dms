@@ -16039,11 +16039,13 @@ GROUP BY REP_NUM;</pre>
 -- UPDATE: BROKEN, and unavoidably so.
 UPDATE REP_BALANCE
 
--- SET: TOTAL_BALANCE is a SUM of several customers' balances. Setting it to 4000
+-- SET: TOTAL_BALANCE is a SUM of several customers&#39; balances. Setting it to 4000
 --   would mean the engine deciding how to split that figure back across the
 --   individual rows, and there is no correct answer - so grouped views are simply
 --   not updatable, in any engine.
 SET    TOTAL_BALANCE = 4000.00
+
+-- WHERE: picks the one row - rep 20&#39;s summary - the broken UPDATE targets.
 WHERE  REP_NUM = &#39;20&#39;;</pre>
       <p>Which balance should move? Access Pet Center&#39;s, Companion Care Clinic&#39;s, or some split between them? There is no answer in the statement and no answer in the data. MySQL reports error 1288, <code class="inline-code">The target table REP_BALANCE of the UPDATE is not updatable</code>. A <code class="inline-code">DELETE</code> fares no better: deleting a summary row would mean deleting an unspecified number of customers.</p>
       <pre class="code-block">-- MySQL. Not runnable in the sandbox on this page.
@@ -16051,6 +16053,8 @@ WHERE  REP_NUM = &#39;20&#39;;</pre>
 --   stands for several real customer rows, and deleting it would have to mean
 --   deleting all of them - which is certainly not what the statement says.
 DELETE FROM REP_BALANCE
+
+-- WHERE: rep 35&#39;s summary row - the one this broken DELETE would remove.
 WHERE  REP_NUM = &#39;35&#39;;</pre>
       <p>The correct move is the one the data supports: change a real balance on a real customer, and let the view recompute. Run this and watch the total follow.</p>
       <div class="sandbox" data-sandbox data-seed="kimtay_full" data-starter="DROP VIEW IF EXISTS REP_BALANCE;
@@ -19055,6 +19059,8 @@ SELECT ITEM_ID, PRICE, TRUNCATE(PRICE, 0) AS WHOLE_DOLLARS
 -- FROM: the table being read. Row functions like this one run once per row, so
 --   five rows in means five rows out - unlike an aggregate.
 FROM ITEM
+
+-- ORDER BY: sorted by item ID for a stable, readable listing.
 ORDER BY ITEM_ID;</pre>
       <p>The SQLite way to chop is to cast the value to an integer, which discards the fraction rather than rounding it. Run the comparison and look at AV07.</p>
       <div class="sandbox" data-sandbox data-seed="kimtay_full" data-starter="SELECT ITEM_ID, PRICE,
@@ -19096,7 +19102,7 @@ ORDER BY ITEM_ID;">
       </table></div>
       <pre class="code-block">-- MySQL only. Every function in this statement is unavailable in the
 -- sandbox. The four sandboxes below do the same four jobs.
--- CURDATE(): today's date, taken from the server. It needs no column and no
+-- CURDATE(): today&#39;s date, taken from the server. It needs no column and no
 --   arguments, so it returns the same value on every row.
 SELECT CURDATE() AS TODAY,
 
@@ -19112,6 +19118,8 @@ SELECT CURDATE() AS TODAY,
 
 -- FROM: the table supplying INVOICE_DATE to all three date functions.
 FROM INVOICE
+
+-- ORDER BY: sorted by invoice number so the ages line up in a predictable order.
 ORDER BY INVOICE_NUM;</pre>
       <p>Start with the clock. <code class="inline-code">DATE(&#39;now&#39;)</code> gives today as a date, and <code class="inline-code">DATETIME(&#39;now&#39;)</code> adds the time of day. Both read the clock on the machine running the database, so your result will not match the one printed in any hint here.</p>
       <div class="sandbox" data-sandbox data-seed="kimtay_full" data-starter="SELECT DATE(&#39;now&#39;) AS TODAY,
@@ -19642,6 +19650,8 @@ CALL SHOW_REP_COUNT();</pre>
       <pre class="code-block">-- DELIMITER //: as always, so inner semicolons are safe.
 DELIMITER //
 
+-- DROP PROCEDURE IF EXISTS: clears out any earlier BAD_REP_NAME so this script
+--   can be re-run without erroring on a duplicate name.
 DROP PROCEDURE IF EXISTS BAD_REP_NAME //
 
 -- CREATE PROCEDURE: this one is broken on purpose - watch the parameter name.
@@ -19659,10 +19669,12 @@ BEGIN
     --   into a variable. It expects exactly one row.
     SELECT LAST_NAME
     INTO   o_last_name
+
+    -- FROM: REP, the table whose REP_NUM column collides with the parameter above.
     FROM   REP
 
     -- BROKEN. Both sides of this comparison are read as the COLUMN REP_NUM, so
-    --   the condition says "where the column equals itself" - true for every row.
+    --   the condition says &quot;where the column equals itself&quot; - true for every row.
     --   That is why parameters are conventionally prefixed i_ or p_: the prefix
     --   makes a collision like this impossible.
     WHERE  REP_NUM = REP_NUM;
@@ -19679,6 +19691,8 @@ CALL BAD_REP_NAME(&#39;35&#39;, @last);</pre>
       <p>The most common job for a procedure is to look one thing up and hand it back. <code class="inline-code">SELECT ... INTO</code> does that: it runs an ordinary query, then copies each selected column into the variable named in the matching position of the <code class="inline-code">INTO</code> list. One column or several, it is built for a query that returns exactly one row. Zero rows and it assigns nothing; two or more rows and it raises an error. Both of those cases are the subject of 8-5.</p>
       <pre class="code-block">DELIMITER //
 
+-- DROP PROCEDURE IF EXISTS: same re-runnability guard as before - drops any
+--   earlier DISP_REP_NAME before the CREATE below runs.
 DROP PROCEDURE IF EXISTS DISP_REP_NAME //
 
 -- CREATE PROCEDURE: the fixed version of the previous example.
@@ -19696,6 +19710,8 @@ BEGIN
     --   position, so the order of the two lists has to agree.
     SELECT LAST_NAME, FIRST_NAME
     INTO   o_last_name, o_first_name
+
+    -- FROM: REP, the table this corrected lookup reads.
     FROM   REP
 
     -- Now the comparison is genuinely column against parameter.
@@ -19722,6 +19738,8 @@ SELECT @last AS LAST_NAME, @first AS FIRST_NAME;</pre>
       <p>KimTay&#39;s credit department keeps asking how much room a customer has left. That is <code class="inline-code">CREDIT_LIMIT</code> minus <code class="inline-code">BALANCE</code>, and no column holds it:</p>
       <pre class="code-block">DELIMITER //
 
+-- DROP PROCEDURE IF EXISTS: drops any earlier GET_CREDIT_AVAILABLE so the CREATE
+--   that follows doesn&#39;t fail on a name that already exists.
 DROP PROCEDURE IF EXISTS GET_CREDIT_AVAILABLE //
 
 -- CREATE PROCEDURE: this one computes something rather than just fetching it.
@@ -19742,7 +19760,13 @@ BEGIN
     --   querying the table twice.
     SELECT BALANCE, CREDIT_LIMIT
     INTO   v_balance, v_credit_limit
+
+    -- FROM: CUSTOMER, the table holding both BALANCE and CREDIT_LIMIT for this
+    --   lookup.
     FROM   CUSTOMER
+
+    -- WHERE: CUSTOMER_NUM is the primary key of CUSTOMER, so this matches exactly
+    --   the one customer passed in - required for SELECT ... INTO to work.
     WHERE  CUSTOMER_NUM = i_customer_num;
 
     -- SET: assigns a value to a variable. The calculation is done in the
@@ -19753,11 +19777,16 @@ END //
 DELIMITER ;</pre>
       <pre class="code-block">-- CALL: a customer that owes money - the available credit is limit minus balance.
 CALL GET_CREDIT_AVAILABLE(&#39;1420&#39;, @avail);
+
+-- SELECT: the CALL alone shows nothing - this reads the OUT value back through
+--   @avail.
 SELECT @avail AS CREDIT_AVAILABLE;
 
 -- CALL: a customer with a zero balance, so the whole limit is still available.
 --   Same procedure, different argument - which is the point of parameters.
 CALL GET_CREDIT_AVAILABLE(&#39;1310&#39;, @avail);
+
+-- SELECT: same read-back, now showing the second call&#39;s result.
 SELECT @avail AS CREDIT_AVAILABLE;</pre>
       <p>The first call reports 1179.25 for Whiskers &amp; Wags Boutique, whose limit of 6000.00 stands against a balance of 4820.75. The second reports 10000.00 for Companion Care Clinic, which owes nothing against a limit of 10000.00. Two callers, two answers, one copy of the arithmetic.</p>
       <div class="table-scroll"><table class="data-table wrap-cells">
@@ -19769,6 +19798,8 @@ SELECT @avail AS CREDIT_AVAILABLE;</pre>
       <p>An <code class="inline-code">INOUT</code> parameter is the right choice when the procedure&#39;s job is to adjust a number the caller is already holding. A commission run works that way: it starts with a rep&#39;s running total and adds the effect of one more sale, at that rep&#39;s own rate.</p>
       <pre class="code-block">DELIMITER //
 
+-- DROP PROCEDURE IF EXISTS: the same re-run guard as every script above -
+--   removes any earlier ADD_SALE_TO_COMMISSION first.
 DROP PROCEDURE IF EXISTS ADD_SALE_TO_COMMISSION //
 
 -- CREATE PROCEDURE: demonstrates the third parameter direction.
@@ -19785,10 +19816,15 @@ BEGIN
     -- A local to hold the rate looked up from the table.
     DECLARE v_rate DECIMAL(4,2);
 
-    -- SELECT ... INTO: fetch this rep's commission rate.
+    -- SELECT ... INTO: fetch this rep&#39;s commission rate.
     SELECT RATE
     INTO   v_rate
+
+    -- FROM: REP, the table that holds each rep&#39;s commission RATE.
     FROM   REP
+
+    -- WHERE: matches the one rep passed in; REP_NUM is the primary key of REP,
+    --   so SELECT ... INTO gets exactly the one row it needs.
     WHERE  REP_NUM = i_rep_num;
 
     -- SET: the INOUT parameter appears on BOTH sides - its incoming value is
@@ -19914,6 +19950,8 @@ SHOW CREATE PROCEDURE DISP_REP_NAME;</pre>
       <p>Here is a lookup with no handler at all. It is correct for every customer that exists, which is exactly why the flaw survives testing:</p>
       <pre class="code-block">DELIMITER //
 
+-- DROP PROCEDURE: makes the script re-runnable. Without it, the second run
+--   fails because the procedure already exists.
 DROP PROCEDURE IF EXISTS GET_CUST_BALANCE_UNSAFE //
 
 -- CREATE PROCEDURE: written the obvious way, with no error handling at all -
@@ -19939,6 +19977,8 @@ SET @bal = 0;
 
 -- CALL: a customer that exists. The balance comes back correctly.
 CALL GET_CUST_BALANCE_UNSAFE(&#39;1120&#39;, @bal);
+
+-- SELECT: reads back @bal, the correct balance for a customer that exists.
 SELECT @bal AS BALANCE_FOUND;
 
 -- CALL: a customer that does NOT exist. No error is raised.
@@ -19948,20 +19988,22 @@ CALL GET_CUST_BALANCE_UNSAFE(&#39;9999&#39;, @bal);
 --   that a program would have to go looking for.
 SHOW WARNINGS;
 
--- SELECT: the variable still holds the PREVIOUS customer's balance, now being
+-- SELECT: the variable still holds the PREVIOUS customer&#39;s balance, now being
 --   reported as if it belonged to customer 9999. A wrong answer, silently.
 SELECT @bal AS BALANCE_FOUND;</pre>
       <p>The first <code class="inline-code">SELECT @bal</code> reports 3512.50, the balance for Access Pet Center. There is no customer 9999, so the second call assigns nothing, <code class="inline-code">SHOW WARNINGS</code> displays warning 1329, and <code class="inline-code">@bal</code> comes back NULL, because an <code class="inline-code">OUT</code> parameter was set to NULL when the procedure started. Nothing stopped, nothing was recorded, and the only clue is a warning the caller had to ask for.</p>
       <p>NULL is at least visibly wrong. The dangerous version returns a number that looks perfectly reasonable. An <code class="inline-code">INOUT</code> parameter is not blanked: it arrives holding whatever the caller put in it, and if the lookup assigns nothing, that incoming value is what travels straight back out. A local variable behaves the same way within a single execution: <code class="inline-code">DECLARE</code> gives it NULL at the start of every call, but once you have assigned to it, a later failed lookup leaves the earlier value sitting there untouched.</p>
       <pre class="code-block">DELIMITER //
 
+-- DROP PROCEDURE: same reason as before - without it, re-running the script
+--   fails because the procedure already exists.
 DROP PROCEDURE IF EXISTS STALE_DEMO //
 
 -- CREATE PROCEDURE: the same trap, made even easier to fall into by using INOUT.
 CREATE PROCEDURE STALE_DEMO(
     IN    i_customer_num CHAR(4),
 
-    -- INOUT means the parameter arrives holding the caller's old value, so a
+    -- INOUT means the parameter arrives holding the caller&#39;s old value, so a
     --   failed lookup leaves that stale value sitting in place.
     INOUT io_balance     DECIMAL(9,2))
 BEGIN
@@ -19974,16 +20016,20 @@ BEGIN
 END //
 
 DELIMITER ;</pre>
-      <pre class="code-block">SET @bal = 0;
+      <pre class="code-block">-- SET: reset @bal so a leftover value from the previous demo can&#39;t be
+--   mistaken for real output.
+SET @bal = 0;
 
 -- CALL: a real customer, so the variable is filled correctly.
 CALL STALE_DEMO(&#39;1120&#39;, @bal);
+
+-- SELECT: reads back @bal, filled in correctly for a customer that exists.
 SELECT @bal AS BALANCE_FOUND;
 
 -- CALL: a customer that does not exist.
 CALL STALE_DEMO(&#39;9999&#39;, @bal);
 
--- SELECT: the previous customer's balance is still there, and nothing in the
+-- SELECT: the previous customer&#39;s balance is still there, and nothing in the
 --   output distinguishes a real answer from a leftover one. This is why a
 --   procedure must report what happened, not just what it found.
 SELECT @bal AS BALANCE_FOUND;</pre>
@@ -19998,6 +20044,7 @@ SELECT @bal AS BALANCE_FOUND;</pre>
       <p>Now the same balance lookup, written so that a missing customer is reported instead of hidden:</p>
       <pre class="code-block">DELIMITER //
 
+-- DROP PROCEDURE: clears out any earlier version so the script can run again.
 DROP PROCEDURE IF EXISTS GET_CUST_BALANCE //
 
 -- CREATE PROCEDURE: the safe version of the lookup.
@@ -20011,7 +20058,7 @@ CREATE PROCEDURE GET_CUST_BALANCE(
 BEGIN
 
     -- DECLARE ... HANDLER: registers what to do when a condition arises. CONTINUE
-    --   means "run this, then carry on with the next statement"; NOT FOUND is the
+    --   means &quot;run this, then carry on with the next statement&quot;; NOT FOUND is the
     --   condition raised when a SELECT ... INTO matches no row.
     DECLARE CONTINUE HANDLER FOR NOT FOUND
 
@@ -20019,14 +20066,14 @@ BEGIN
         SET o_status = CONCAT(&#39;No customer numbered &#39;, i_customer_num);
 
     -- Set the OUT parameters to known values BEFORE the lookup, so nothing stale
-    --   can survive. This line is what kills the previous example's bug.
+    --   can survive. This line is what kills the previous example&#39;s bug.
     SET o_balance = NULL;
 
     -- The optimistic default, overwritten by the handler if the lookup misses.
     SET o_status  = &#39;OK&#39;;
 
     -- The lookup itself. If it finds nothing, the handler fires and o_status
-    --   changes; if it succeeds, o_status stays 'OK'.
+    --   changes; if it succeeds, o_status stays &#39;OK&#39;.
     SELECT BALANCE
     INTO   o_balance
     FROM   CUSTOMER
@@ -20034,13 +20081,19 @@ BEGIN
 END //
 
 DELIMITER ;</pre>
-      <pre class="code-block">-- CALL: a customer that exists - balance filled in, status 'OK'.
+      <pre class="code-block">-- CALL: a customer that exists - balance filled in, status &#39;OK&#39;.
 CALL GET_CUST_BALANCE(&#39;1120&#39;, @bal, @status);
+
+-- SELECT: reads @bal and @status back through the session variables the
+--   CALL wrote to.
 SELECT @bal AS BALANCE_FOUND, @status AS STATUS;
 
 -- CALL: a customer that does not - balance NULL, status explaining why. The
 --   caller can now tell the two cases apart without guessing.
 CALL GET_CUST_BALANCE(&#39;9999&#39;, @bal, @status);
+
+-- SELECT: same read-back, now showing the NULL balance and the handler&#39;s
+--   status message.
 SELECT @bal AS BALANCE_FOUND, @status AS STATUS;</pre>
       <p>The first call reports 3512.50 with status OK. The second reports NULL with status No customer numbered 9999. The caller now has something it can test. Notice the two <code class="inline-code">SET</code> statements before the query: establishing a known starting state is what makes the outcome unambiguous, whichever path the body takes.</p>
       <div class="table-scroll"><table class="data-table wrap-cells">
@@ -20062,6 +20115,7 @@ SELECT @bal AS BALANCE_FOUND, @status AS STATUS;</pre>
       <p>This procedure looks a balance up by city, a design that only works while each city holds one customer. KimTay has two in Maple Grove, Access Pet Center and Companion Care Clinic:</p>
       <pre class="code-block">DELIMITER //
 
+-- DROP PROCEDURE: re-runnable script, same reasoning as the earlier examples.
 DROP PROCEDURE IF EXISTS GET_BALANCE_BY_CITY //
 
 -- CREATE PROCEDURE: this one looks up on a NON-key column, which is where the
@@ -20072,14 +20126,19 @@ CREATE PROCEDURE GET_BALANCE_BY_CITY(
     OUT o_status  VARCHAR(60))
 BEGIN
 
-    -- DECLARE EXIT HANDLER: EXIT means "run this, then STOP the procedure" -
+    -- DECLARE EXIT HANDLER: EXIT means &quot;run this, then STOP the procedure&quot; -
     --   unlike CONTINUE, nothing after the failing statement runs. SQLEXCEPTION
     --   catches any error, including a SELECT ... INTO that matched several rows.
     DECLARE EXIT HANDLER FOR SQLEXCEPTION
+
+        -- CONCAT builds a message that names the city where the lookup failed.
         SET o_status = CONCAT(&#39;Lookup failed for &#39;, i_city, &#39; - check the city&#39;);
 
     -- Known starting values again.
     SET o_balance = NULL;
+
+    -- The optimistic default, overwritten by the EXIT handler if SQLEXCEPTION
+    --   fires.
     SET o_status  = &#39;OK&#39;;
 
     -- One city holds one customer and works; another holds two, the INTO cannot
@@ -20093,11 +20152,16 @@ END //
 DELIMITER ;</pre>
       <pre class="code-block">-- CALL: Northfield has exactly one customer, so the lookup succeeds.
 CALL GET_BALANCE_BY_CITY(&#39;Northfield&#39;, @bal, @status);
+
+-- SELECT: reads back @bal and @status - the balance found, and status &#39;OK&#39;.
 SELECT @bal AS BALANCE_FOUND, @status AS STATUS;
 
 -- CALL: Maple Grove has two, so SELECT ... INTO fails and the EXIT handler
 --   reports it instead of returning one of the two at random.
 CALL GET_BALANCE_BY_CITY(&#39;Maple Grove&#39;, @bal, @status);
+
+-- SELECT: reads back @bal and @status - NULL balance, and the message the
+--   EXIT handler set.
 SELECT @bal AS BALANCE_FOUND, @status AS STATUS;</pre>
       <p>Northfield holds one customer, Downtown Aquarium &amp; Pets, so the first call reports 1200.00 with status OK. Maple Grove holds two, so the second raises error 1172, the handler catches it, and the caller sees NULL with status Lookup failed for Maple Grove - check the city. The session stays alive and the client sees no error at all. That is the point of catching it, and also the responsibility that comes with catching it: if you swallow an error, you have to report it some other way, or you have rebuilt the silent failure you set out to remove.</p>
       <div class="callout callout-note">
@@ -20201,6 +20265,8 @@ SET    BALANCE = BALANCE + 250.00;</pre>
       <p>Now the same operation as a procedure. The <code class="inline-code">WHERE</code> clause is part of the stored definition and the customer number is a required parameter, so there is no version of this that runs without a target:</p>
       <pre class="code-block">DELIMITER //
 
+-- DROP PROCEDURE IF EXISTS: makes the script re-runnable - without it, the
+--   second run fails because UPD_CUST_BALANCE already exists.
 DROP PROCEDURE IF EXISTS UPD_CUST_BALANCE //
 
 -- CREATE PROCEDURE: an UPDATE wrapped safely, so the WHERE clause can never be
@@ -20211,7 +20277,7 @@ CREATE PROCEDURE UPD_CUST_BALANCE(
     OUT o_status       VARCHAR(60))
 BEGIN
 
-    -- A local to hold the customer's name, used in the status message.
+    -- A local to hold the customer&#39;s name, used in the status message.
     DECLARE v_name VARCHAR(35);
 
     -- EXIT HANDLER FOR NOT FOUND: if the customer does not exist, stop before the
@@ -20228,6 +20294,8 @@ BEGIN
 
     -- The change itself, reached only when the customer is known to exist.
     UPDATE CUSTOMER
+
+    -- SET: adds the caller&#39;s i_amount to the customer&#39;s current balance.
     SET    BALANCE = BALANCE + i_amount
 
     -- The WHERE clause is written into the procedure once and cannot be left off
@@ -20242,6 +20310,8 @@ DELIMITER ;</pre>
       <p>The lookup at the top is doing real work. It fetches the name for the status message, but more importantly it is an existence test. If the customer is not there, <code class="inline-code">NOT FOUND</code> fires, and because the handler is an <code class="inline-code">EXIT</code> handler the <code class="inline-code">UPDATE</code> never runs at all.</p>
       <pre class="code-block">-- CALL: a real customer. The status names them and the amount.
 CALL UPD_CUST_BALANCE(&#39;1120&#39;, 250.00, @status);
+
+-- SELECT: reads back the status message the successful call set.
 SELECT @status AS STATUS;
 
 -- SELECT: proof that exactly one row moved and the other three did not.
@@ -20250,6 +20320,8 @@ SELECT CUSTOMER_NUM, CUSTOMER_NAME, BALANCE FROM CUSTOMER ORDER BY CUSTOMER_NUM;
 -- CALL: a customer that does not exist. The handler stops the procedure before
 --   the UPDATE, so nothing at all is changed and the caller is told why.
 CALL UPD_CUST_BALANCE(&#39;9999&#39;, 250.00, @status);
+
+-- SELECT: reads back the status message explaining why nothing changed.
 SELECT @status AS STATUS;</pre>
       <p>The first call reports Balance for Access Pet Center changed by 250.00, and the listing that follows shows 1120 at 3762.50 while 1225, 1310, and 1420 sit untouched at 1200.00, 0.00, and 4820.75. The second call reports No customer numbered 9999 - nothing changed, and no row anywhere moved. This example does change the shipped data; the cleanup at the end of the section puts 1120 back.</p>
       <div class="table-scroll"><table class="data-table wrap-cells">
@@ -20261,6 +20333,7 @@ SELECT @status AS STATUS;</pre>
       <p>When a procedure changes data, a handler is the natural place to undo partial work. This one reduces stock as an item ships, wraps the change in a transaction, and rolls back if anything goes wrong. Notice the declaration order: the local variable first, then the handlers, then the executable statements.</p>
       <pre class="code-block">DELIMITER //
 
+-- DROP PROCEDURE IF EXISTS: same re-runnability guard, now for SHIP_ITEM.
 DROP PROCEDURE IF EXISTS SHIP_ITEM //
 
 -- CREATE PROCEDURE: a procedure that changes data inside a transaction, with two
@@ -20270,6 +20343,7 @@ CREATE PROCEDURE SHIP_ITEM(
     IN  i_qty_shipped SMALLINT,
     OUT o_status      VARCHAR(60))
 BEGIN
+    -- A local to hold the item&#39;s description, used in the success message.
     DECLARE v_description VARCHAR(30);
 
     -- EXIT HANDLER FOR SQLEXCEPTION with a BEGIN ... END block: a handler can run
@@ -20279,6 +20353,8 @@ BEGIN
 
         -- ROLLBACK first: undo any half-finished change before reporting.
         ROLLBACK;
+
+        -- SET: reports the failure back through the status parameter.
         SET o_status = &#39;Shipment failed - stock left unchanged&#39;;
     END;
 
@@ -20298,7 +20374,11 @@ BEGIN
 
     -- The change itself.
     UPDATE ITEM
+
+    -- SET: reduces on-hand stock by the quantity shipped.
     SET    ON_HAND = ON_HAND - i_qty_shipped
+
+    -- WHERE: the same one-row guarantee - only this item&#39;s stock changes.
     WHERE  ITEM_ID = i_item_id;
 
     -- COMMIT: reached only if the UPDATE raised nothing. If it had, the
@@ -20313,6 +20393,8 @@ END //
 DELIMITER ;</pre>
       <pre class="code-block">-- CALL: a real item. Stock falls by three and the status says so.
 CALL SHIP_ITEM(&#39;CF21&#39;, 3, @status);
+
+-- SELECT: reads back the status message confirming the shipment.
 SELECT @status AS STATUS;
 
 -- SELECT: confirm the new stock figure.
@@ -20321,6 +20403,8 @@ SELECT ITEM_ID, DESCRIPTION, ON_HAND FROM ITEM WHERE ITEM_ID = &#39;CF21&#39;;
 -- CALL: an item id that does not exist. The NOT FOUND handler stops the
 --   procedure before the transaction is even opened.
 CALL SHIP_ITEM(&#39;ZZ99&#39;, 1, @status);
+
+-- SELECT: reads back the status message explaining why nothing shipped.
 SELECT @status AS STATUS;</pre>
       <p>The first call reports Shipped 3 of Grain-Free Dry Food 30lb and leaves <code class="inline-code">ON_HAND</code> at 45, down from 48. The second reports No item numbered ZZ99 and never opens a transaction, because the <code class="inline-code">EXIT</code> handler for <code class="inline-code">NOT FOUND</code> returns before <code class="inline-code">START TRANSACTION</code> is reached.</p>
       <p>The <code class="inline-code">SQLEXCEPTION</code> handler is the insurance policy, and it is worth being exact about when it earns its keep. KimTay&#39;s <code class="inline-code">ON_HAND</code> is a plain <code class="inline-code">SMALLINT</code>, so shipping more units than exist would quietly produce a negative number rather than an error, which is a data-quality problem this procedure does not solve. Declare the column <code class="inline-code">SMALLINT UNSIGNED</code> instead and the same subtraction raises ERROR 1264, out of range value, under MySQL&#39;s default strict SQL mode. Then the handler does its job: the <code class="inline-code">ROLLBACK</code> undoes the change and the caller is told the shipment failed.</p>
@@ -20335,6 +20419,8 @@ DELETE FROM CUSTOMER;</pre>
       <p>The procedure version takes the customer number as a parameter, confirms that the customer exists, and turns the foreign key error into a sentence a person can read:</p>
       <pre class="code-block">DELIMITER //
 
+-- DROP PROCEDURE IF EXISTS: and again for DEL_CUSTOMER, so this script can run
+--   more than once.
 DROP PROCEDURE IF EXISTS DEL_CUSTOMER //
 
 -- CREATE PROCEDURE: a delete that can only ever remove one named row, and that
@@ -20343,6 +20429,7 @@ CREATE PROCEDURE DEL_CUSTOMER(
     IN  i_customer_num CHAR(4),
     OUT o_status       VARCHAR(70))
 BEGIN
+    -- A local to hold the customer&#39;s name, used later in the status message.
     DECLARE v_name VARCHAR(35);
 
     -- Handler 1 - an actual error. The likeliest one here is a foreign key
@@ -20373,15 +20460,21 @@ DELIMITER ;</pre>
       <p>Two handlers, two different failures. <code class="inline-code">NOT FOUND</code> belongs to SQLSTATE class 02 and <code class="inline-code">SQLEXCEPTION</code> covers the classes outside 00, 01, and 02, so they cannot both claim the same condition.</p>
       <pre class="code-block">-- CALL: a customer with no invoices - the delete succeeds.
 CALL DEL_CUSTOMER(&#39;1310&#39;, @status);
+
+-- SELECT: reads back the status message confirming the delete.
 SELECT @status AS STATUS;
 
 -- CALL: a customer that DOES have invoices. The foreign key refuses the delete,
 --   the SQLEXCEPTION handler catches it, and the row survives.
 CALL DEL_CUSTOMER(&#39;1120&#39;, @status);
+
+-- SELECT: reads back the status message explaining the foreign key refusal.
 SELECT @status AS STATUS;
 
 -- CALL: a customer that never existed. The NOT FOUND handler answers this one.
 CALL DEL_CUSTOMER(&#39;9999&#39;, @status);
+
+-- SELECT: reads back the status message for the missing customer.
 SELECT @status AS STATUS;
 
 -- SELECT: three outcomes, and the table shows exactly one row gone.
@@ -20389,7 +20482,7 @@ SELECT CUSTOMER_NUM, CUSTOMER_NAME FROM CUSTOMER ORDER BY CUSTOMER_NUM;</pre>
       <p>Three calls, three endings. Companion Care Clinic has no invoice, so 1310 is removed and the status reads Deleted Companion Care Clinic. Access Pet Center appears on invoice 50710, so the <code class="inline-code">DELETE</code> raises the foreign key error, the <code class="inline-code">SQLEXCEPTION</code> handler catches it, and the status reads Could not delete 1120 - invoices still reference it, with the row still in place. Customer 9999 never existed, so <code class="inline-code">NOT FOUND</code> fires before the <code class="inline-code">DELETE</code> is reached. The final listing shows 1120, 1225, and 1420 remaining.</p>
       <p>Put Companion Care Clinic back before you move on, so that the rest of the course&#39;s examples still match:</p>
       <pre class="code-block">-- INSERT INTO with no column list: put the deleted customer back, supplying a
---   value for all nine columns in the table's own order. This is the tidy-up
+--   value for all nine columns in the table&#39;s own order. This is the tidy-up
 --   step, so the rest of the module works against the shipped data.
 INSERT INTO CUSTOMER
 VALUES (&#39;1310&#39;, &#39;Companion Care Clinic&#39;, &#39;89 River Rd.&#39;, &#39;Maple Grove&#39;, &#39;OH&#39;,
@@ -20550,6 +20643,8 @@ SELECT BALANCE, CREDIT_LIMIT
 
     -- INTO: two columns land in two variables, matched by position.
     INTO v_balance, v_credit_limit
+
+    -- FROM: the customer table this lookup reads.
     FROM CUSTOMER
 
     -- Filtering on the key is what guarantees the single row.
@@ -20596,6 +20691,8 @@ DECLARE cust_cursor CURSOR FOR
     -- The query the cursor will walk. Four columns, so four variables will be
     --   needed to receive each row.
     SELECT CUSTOMER_NUM, CUSTOMER_NAME, BALANCE, CREDIT_LIMIT
+
+    -- FROM: the customer table the cursor&#39;s query reads.
     FROM CUSTOMER
 
     -- A cursor query may use a parameter exactly like any other query.
@@ -20629,7 +20726,7 @@ FETCH cust_cursor INTO v_customer_num, v_customer_name,
                        v_balance, v_credit_limit;</pre>
       <p>The match is positional. The variable list must have exactly as many variables as the cursor query has columns, in the same order, with compatible types. The cursor above selects four columns, so the FETCH names four variables. Get the count wrong and MySQL reports <code class="inline-code">ERROR 1328: Incorrect number of FETCH variables</code>. Get the order wrong and the procedure runs happily while writing a balance into a name.</p>
       <p>One FETCH gives you one row. To reach them all, the FETCH goes inside a loop, and the loop needs a way to know it has run out of rows. That is what the NOT FOUND handler does. When a FETCH is attempted past the last row, MySQL raises the NOT FOUND condition; the handler catches it and sets a flag you control:</p>
-      <pre class="code-block">-- DECLARE ... DEFAULT: a flag variable, starting at 0 meaning "not finished".
+      <pre class="code-block">-- DECLARE ... DEFAULT: a flag variable, starting at 0 meaning &quot;not finished&quot;.
 DECLARE v_done INT DEFAULT 0;
 
 -- CONTINUE HANDLER FOR NOT FOUND: when a FETCH runs past the last row, NOT FOUND
@@ -20651,6 +20748,8 @@ cust_loop: LOOP
 
         -- LEAVE: jumps out of the named loop. Without it this runs forever.
         LEAVE cust_loop;
+    -- END IF: when the flag is still 0, there is no LEAVE, so control falls
+    --   straight through to the row-processing step below.
     END IF;
 
     -- work on the row that was retrieved goes here
@@ -20696,6 +20795,8 @@ CREATE TABLE CUST_REVIEW
       <p>Stage 1. Note the declaration order: variables, then the cursor, then the handler.</p>
       <pre class="code-block">DELIMITER //
 
+-- DROP PROCEDURE IF EXISTS: makes the script re-runnable. Without it, the
+--   second run fails because REP_CREDIT_REVIEW already exists.
 DROP PROCEDURE IF EXISTS REP_CREDIT_REVIEW //
 
 -- CREATE PROCEDURE: stage one of building a cursor procedure - declarations only,
@@ -20721,9 +20822,17 @@ BEGIN
     --   variables first, then cursors, then handlers. Get it wrong and the
     --   procedure will not compile.
     DECLARE cust_cursor CURSOR FOR
+
+        -- The same four columns walked through earlier in this section.
         SELECT CUSTOMER_NUM, CUSTOMER_NAME, BALANCE, CREDIT_LIMIT
+
+        -- FROM: the customer table this procedure reviews.
         FROM CUSTOMER
+
+        -- WHERE: the rep parameter, so one procedure serves every rep.
         WHERE REP_NUM = i_rep_num
+
+        -- ORDER BY: keeps the fetch order predictable, as before.
         ORDER BY CUSTOMER_NUM;
 
     -- The handler comes last of the three, and arms the finished flag.
@@ -20737,19 +20846,25 @@ END //
 
 DELIMITER ;</pre>
       <p>Stage 2. Add the loop between the OPEN and the CLOSE. Only the middle of the procedure changes:</p>
-      <pre class="code-block">    -- OPEN: run the query and get ready to read.
+      <pre class="code-block">-- OPEN: run the query and get ready to read.
     OPEN cust_cursor;
 
     -- The loop skeleton: fetch, test, leave. Stage two adds the walking, still
     --   without doing anything to the rows.
     cust_loop: LOOP
+
+        -- FETCH: read the next row into the variables, same call as before.
         FETCH cust_cursor INTO v_customer_num, v_customer_name,
                                v_balance, v_credit_limit;
 
         -- The exit test goes straight after the FETCH and before any processing.
         IF v_done = 1 THEN
             LEAVE cust_loop;
+        -- END IF: with the flag still 0, there is no row work yet in this stage,
+        --   so control falls straight through to the bottom of the loop.
         END IF;
+    -- END LOOP: sends control back to the top for the next FETCH; stage three
+    --   will add row-processing work before this line.
     END LOOP cust_loop;
 
     -- CLOSE: tidy up once the rows are exhausted.
@@ -20757,6 +20872,8 @@ DELIMITER ;</pre>
       <p>Stage 3. Fill in the loop body and the procedure is finished:</p>
       <pre class="code-block">DELIMITER //
 
+-- DROP PROCEDURE IF EXISTS: makes the script re-runnable, same reason as
+--   every earlier version of this procedure.
 DROP PROCEDURE IF EXISTS REP_CREDIT_REVIEW //
 
 -- CREATE PROCEDURE: the finished version - declarations, cursor, loop, and real
@@ -20779,9 +20896,17 @@ BEGIN
 
     -- The cursor: the set of rows to be walked, one at a time.
     DECLARE cust_cursor CURSOR FOR
+
+        -- The same four columns as the earlier stages, ready for the FETCH below.
         SELECT CUSTOMER_NUM, CUSTOMER_NAME, BALANCE, CREDIT_LIMIT
+
+        -- FROM: the customer table, same as every version of this cursor.
         FROM CUSTOMER
+
+        -- WHERE: this call&#39;s rep parameter.
         WHERE REP_NUM = i_rep_num
+
+        -- ORDER BY: keeps the walk order predictable, as before.
         ORDER BY CUSTOMER_NUM;
 
     -- The handler that trips the flag when the rows run out.
@@ -20800,6 +20925,8 @@ BEGIN
         -- Stop as soon as the fetch fails, before processing stale values.
         IF v_done = 1 THEN
             LEAVE cust_loop;
+        -- END IF: with the flag still 0, control falls through to the row work
+        --   below instead of leaving the loop.
         END IF;
 
         -- Row-at-a-time work, part 1: a calculation.
@@ -20809,9 +20936,14 @@ BEGIN
         --   plain SQL can compute the number, but choosing different actions per
         --   row is procedural logic.
         IF v_available &lt; 5000 THEN
+            -- SET: under $5,000 of available credit, so this row gets flagged
+            --   for a follow-up call.
             SET v_note = &#39;Call rep&#39;;
+        -- ELSE: everyone else clears the $5,000 threshold, so no follow-up is
+        --   logged.
         ELSE
             SET v_note = &#39;No action&#39;;
+        -- END IF: the verdict now sits in v_note, ready for the INSERT below.
         END IF;
 
         -- Row-at-a-time work, part 3: write the verdict out. One INSERT per pass
@@ -20819,6 +20951,7 @@ BEGIN
         INSERT INTO CUST_REVIEW
                (CUSTOMER_NUM, CUSTOMER_NAME, AVAILABLE_CREDIT, REVIEW_NOTE)
         VALUES (v_customer_num, v_customer_name, v_available, v_note);
+    -- END LOOP: sends control back to the top for the next customer.
     END LOOP cust_loop;
 
     -- Release the cursor.
@@ -20834,6 +20967,8 @@ CALL REP_CREDIT_REVIEW(&#39;20&#39;);
 -- SELECT: read the results table to see what the loop produced, one row per
 --   customer the cursor walked.
 SELECT * FROM CUST_REVIEW
+
+-- ORDER BY: the same customer order the cursor walked, for an easy check.
 ORDER BY CUSTOMER_NUM;</pre>
       <div class="table-scroll"><table class="data-table wrap-cells">
         <caption>CUST_REVIEW after CALL REP_CREDIT_REVIEW(&#39;20&#39;)</caption>
@@ -20847,7 +20982,7 @@ ORDER BY CUSTOMER_NUM;</pre>
       </div>
       <h4>8-7f Using More Complex Cursors</h4>
       <p>Nothing about a cursor restricts it to one table. The cursor query is an ordinary SELECT, so joins, calculated columns, GROUP BY, and HAVING are all fair game. Here is a cursor over a four-table join that also computes a line total:</p>
-      <pre class="code-block">-- DECLARE ... CURSOR FOR: a cursor's query can be as complex as any other. This
+      <pre class="code-block">-- DECLARE ... CURSOR FOR: a cursor&#39;s query can be as complex as any other. This
 --   one joins four tables, and the procedure still walks the result one row at a
 --   time exactly as before.
 DECLARE line_cursor CURSOR FOR
@@ -20856,6 +20991,8 @@ DECLARE line_cursor CURSOR FOR
     --   have to correspond to anything stored.
     SELECT C.CUSTOMER_NAME, I.INVOICE_NUM, T.DESCRIPTION,
            L.NUM_ORDERED * L.QUOTED_PRICE
+
+    -- FROM: the customer table, aliased C for the joins below.
     FROM CUSTOMER C
 
     -- Hop 1 - customer to invoice.
@@ -20926,10 +21063,12 @@ CREATE TABLE BIG_LINE_LOG
 
 DELIMITER //
 
+-- DROP PROCEDURE IF EXISTS: makes the script re-runnable. Without it, the
+--   second run fails because BIG_LINE_ITEMS already exists.
 DROP PROCEDURE IF EXISTS BIG_LINE_ITEMS //
 
 -- CREATE PROCEDURE: two parameters this time, and both are used inside the
---   cursor's query rather than in the loop.
+--   cursor&#39;s query rather than in the loop.
 CREATE PROCEDURE BIG_LINE_ITEMS (IN i_rep_num CHAR(2),
                                  IN i_min_total DECIMAL(7,2))
 BEGIN
@@ -20945,12 +21084,25 @@ BEGIN
 
     -- The cursor over a four-table join.
     DECLARE line_cursor CURSOR FOR
+
+        -- The same three stored columns and one calculated column as the
+        --   walkthrough above.
         SELECT C.CUSTOMER_NAME, I.INVOICE_NUM, T.DESCRIPTION,
                L.NUM_ORDERED * L.QUOTED_PRICE
+
+        -- FROM: the customer table, aliased C, same starting point as before.
         FROM CUSTOMER C
+
+        -- Hop 1 - customer to invoice.
         JOIN INVOICE I ON C.CUSTOMER_NUM = I.CUSTOMER_NUM
+
+        -- Hop 2 - invoice to line item.
         JOIN INVOICE_LINE L ON I.INVOICE_NUM = L.INVOICE_NUM
+
+        -- Hop 3 - line item to item.
         JOIN ITEM T ON L.ITEM_ID = T.ITEM_ID
+
+        -- WHERE: the rep parameter, same as the earlier cursors.
         WHERE C.REP_NUM = i_rep_num
 
         -- The second parameter filters on the CALCULATION, not on a stored
@@ -20958,6 +21110,9 @@ BEGIN
         --   fewer rows are ever fetched - the database is better at discarding
         --   rows than your loop is.
           AND L.NUM_ORDERED * L.QUOTED_PRICE &gt;= i_min_total
+
+        -- ORDER BY: fixes the fetch order for the loop, same as the earlier
+        --   cursors.
         ORDER BY I.INVOICE_NUM, T.DESCRIPTION;
 
     -- The handler that ends the loop.
@@ -20968,10 +21123,17 @@ BEGIN
 
     -- Walk the rows.
     line_loop: LOOP
+
+        -- FETCH: read the next row into the four variables, matched by position.
         FETCH line_cursor INTO v_customer_name, v_invoice_num,
                                v_description, v_line_total;
+
+        -- Test the flag right after the FETCH, before the possibly stale values
+        --   get used.
         IF v_done = 1 THEN
             LEAVE line_loop;
+        -- END IF: with the flag still 0, control falls through to the row work
+        --   below.
         END IF;
 
         -- The only work per row: copy it into the log table. Because the cursor
@@ -20979,6 +21141,7 @@ BEGIN
         INSERT INTO BIG_LINE_LOG
                (CUSTOMER_NAME, INVOICE_NUM, DESCRIPTION, LINE_TOTAL)
         VALUES (v_customer_name, v_invoice_num, v_description, v_line_total);
+    -- END LOOP: sends control back to the top for the next line item.
     END LOOP line_loop;
 
     -- Tidy up.
@@ -21036,6 +21199,8 @@ DECLARE invoice_cursor CURSOR FOR
     -- Two grouping columns and one aggregate.
     SELECT I.INVOICE_NUM, C.CUSTOMER_NAME,
            SUM(L.NUM_ORDERED * L.QUOTED_PRICE)
+
+    -- FROM: the invoice table this grouped query starts from.
     FROM INVOICE I
 
     -- Hop 1 - invoice to customer, for the name.
@@ -21047,6 +21212,9 @@ DECLARE invoice_cursor CURSOR FOR
     -- GROUP BY: one row per invoice, so the cursor walks invoices rather than
     --   lines. Every non-aggregated column in the SELECT list appears here.
     GROUP BY I.INVOICE_NUM, C.CUSTOMER_NAME
+
+    -- ORDER BY: fixes the invoice order the cursor will walk, same as any
+    --   other cursor query.
     ORDER BY I.INVOICE_NUM;</pre>
       <div class="sandbox" data-sandbox data-seed="kimtay_full" data-starter="-- One row per invoice: this is what a cursor over a GROUP BY hands the loop.
 SELECT I.INVOICE_NUM, C.CUSTOMER_NAME,
@@ -21319,7 +21487,10 @@ BEGIN
     -- SELECT ... INTO fills the two locals.
     SELECT CUSTOMER_NAME, BALANCE
     INTO   L_NAME, L_BALANCE
+    -- FROM: the customer table this lookup reads.
     FROM   CUSTOMER
+    -- WHERE: filters to the one row this call targets - the customer number
+    --   passed in as I_CUSTOMER_NUM.
     WHERE  CUSTOMER_NUM = I_CUSTOMER_NUM;
 
     -- MySQL has no print statement, so output is produced by SELECTing the
@@ -21332,7 +21503,7 @@ DELIMITER ;</pre>
 --   any existing procedure of the same name in one statement.
 CREATE OR REPLACE PROCEDURE GET_CUSTOMER (I_CUSTOMER_NUM IN CHAR) AS
 
-    -- %TYPE: declare the variable as "whatever type that column is". If the
+    -- %TYPE: declare the variable as &quot;whatever type that column is&quot;. If the
     --   column is widened later, the variable follows automatically. Note there
     --   is no DECLARE keyword here - in Oracle, declarations simply sit between
     --   AS and BEGIN. Oracle also puts the direction AFTER the parameter name.
@@ -21343,19 +21514,21 @@ BEGIN
     -- SELECT ... INTO works the same way as in MySQL.
     SELECT CUSTOMER_NAME, BALANCE
     INTO   L_NAME, L_BALANCE
+    -- FROM: same customer table as the MySQL version.
     FROM   CUSTOMER
+    -- WHERE: filters to the single row identified by the parameter.
     WHERE  CUSTOMER_NUM = I_CUSTOMER_NUM;
 
-    -- DBMS_OUTPUT.PUT_LINE: Oracle's print. || joins strings, and TO_CHAR formats
+    -- DBMS_OUTPUT.PUT_LINE: Oracle&#39;s print. || joins strings, and TO_CHAR formats
     --   the number to a fixed picture so columns line up.
     DBMS_OUTPUT.PUT_LINE(L_NAME || &#39;  &#39; || TO_CHAR(L_BALANCE, &#39;99999.99&#39;));
 
--- EXCEPTION: Oracle's error handling is a block at the END of the procedure,
+-- EXCEPTION: Oracle&#39;s error handling is a block at the END of the procedure,
 --   rather than handlers declared at the top as in MySQL.
 EXCEPTION
 
     -- NO_DATA_FOUND: the named condition for a SELECT ... INTO that matched
-    --   nothing - Oracle's equivalent of MySQL's NOT FOUND.
+    --   nothing - Oracle&#39;s equivalent of MySQL&#39;s NOT FOUND.
     WHEN NO_DATA_FOUND THEN
         DBMS_OUTPUT.PUT_LINE(&#39;No customer numbered &#39; || I_CUSTOMER_NUM);
 
@@ -21371,7 +21544,7 @@ EXCEPTION
 END;
 
 -- The lone / on its own line is what tells SQL*Plus to send the block to the
---   server - Oracle's equivalent of MySQL's DELIMITER dance.
+--   server - Oracle&#39;s equivalent of MySQL&#39;s DELIMITER dance.
 /</pre>
       <p>Everything above the word <code class="inline-code">EXCEPTION</code> is the happy path. Everything below it is what to do instead when the happy path fails. Oracle calls a failure an exception, and it hands you three named ones for free. <code class="inline-code">NO_DATA_FOUND</code> means the <code class="inline-code">SELECT ... INTO</code> matched zero rows. <code class="inline-code">TOO_MANY_ROWS</code> means it matched two or more. <code class="inline-code">OTHERS</code> means anything else at all, and <code class="inline-code">SQLERRM</code> is the message Oracle would have printed if you had not caught it.</p>
       <div class="callout callout-definition">
@@ -21449,7 +21622,10 @@ BEGIN
     -- The change is made first, then checked. Everything is inside a transaction
     --   until COMMIT, so it can still be taken back.
     UPDATE CUSTOMER
+    -- SET: adds the signed amount to the current balance - the caller controls
+    --   the sign, so this same line handles a charge or a payment.
     SET    BALANCE = BALANCE + I_AMOUNT
+    -- WHERE: targets only the customer named by the parameter.
     WHERE  CUSTOMER_NUM = I_CUSTOMER_NUM;
 
     -- SQL%ROWCOUNT: how many rows the last statement affected. Zero means the
@@ -21465,7 +21641,10 @@ BEGIN
     -- Read the row back to see what the update actually produced.
     SELECT BALANCE, CREDIT_LIMIT
     INTO   L_BALANCE, L_LIMIT
+    -- FROM: the same customer table the UPDATE just changed.
     FROM   CUSTOMER
+    -- WHERE: the same customer the UPDATE targeted, so the values read back are
+    --   the ones the change just produced.
     WHERE  CUSTOMER_NUM = I_CUSTOMER_NUM;
 
     -- The business rule. Nothing in the database forbids this, so the procedure
@@ -21477,6 +21656,8 @@ BEGIN
     -- COMMIT: reached only when both checks passed. Until this line, nothing is
     --   permanent.
     COMMIT;
+-- EXCEPTION: catches both the built-in NO_DATA_FOUND case and the OVER_LIMIT
+--   rule this procedure raises on itself.
 EXCEPTION
 
     -- Every handler rolls back first, so a rejected change leaves no trace.
@@ -21537,12 +21718,18 @@ ORDER BY CUSTOMER_NUM;">
       <pre class="code-block">-- Oracle PL/SQL: the cursor loop, Oracle style.
 CREATE OR REPLACE PROCEDURE REP_CUSTOMER_LIST (I_REP_NUM IN CHAR) AS
 
-    -- CURSOR ... IS: Oracle's cursor declaration. Same idea as MySQL's
+    -- CURSOR ... IS: Oracle&#39;s cursor declaration. Same idea as MySQL&#39;s
     --   DECLARE ... CURSOR FOR, different wording.
     CURSOR CUSTGROUP IS
+        -- SELECT: the three columns each FETCH below will copy into the loop&#39;s
+        --   variables, in this order.
         SELECT CUSTOMER_NUM, CUSTOMER_NAME, BALANCE
+        -- FROM: the same customer table the sandbox version above queried.
         FROM   CUSTOMER
+        -- WHERE: the parameter stands in for the literal &#39;20&#39; used in the
+        --   sandbox - one cursor definition serves every rep.
         WHERE  REP_NUM = I_REP_NUM
+        -- ORDER BY: keeps the rows in customer-number order as they&#39;re fetched.
         ORDER BY CUSTOMER_NUM;
 
     -- One variable per cursor column, typed from the columns themselves.
@@ -21572,7 +21759,11 @@ BEGIN
 
     -- Release the cursor on the normal path.
     CLOSE CUSTGROUP;
+-- EXCEPTION: a single catch-all for this listing - nothing here raises a
+--   business exception of its own, so there is only one failure shape to name.
 EXCEPTION
+    -- WHEN OTHERS: the only handler; anything that goes wrong during the fetch
+    --   loop ends up here.
     WHEN OTHERS THEN
 
         -- %ISOPEN: if the failure happened mid-loop the cursor is still open, so
@@ -21601,12 +21792,15 @@ BEGIN
     --   and closes it - all implicitly. Compare it with the version above: the
     --   same job, with every place a mistake could hide taken away.
     FOR C IN (SELECT CUSTOMER_NUM, CUSTOMER_NAME, BALANCE
+              -- FROM, WHERE, ORDER BY: the same query as the CUSTGROUP cursor
+              --   above, unchanged - only how it&#39;s opened, walked, and closed
+              --   is different here.
               FROM   CUSTOMER
               WHERE  REP_NUM = I_REP_NUM
               ORDER BY CUSTOMER_NUM)
     LOOP
 
-        -- C is the loop record, and its fields are named after the query's
+        -- C is the loop record, and its fields are named after the query&#39;s
         --   columns. Nothing had to be declared for it.
         DBMS_OUTPUT.PUT_LINE(C.CUSTOMER_NUM || &#39;  &#39; || C.CUSTOMER_NAME);
     END LOOP;
@@ -21721,11 +21915,14 @@ DECLARE @L_NAME    VARCHAR(35);
 DECLARE @L_BALANCE DECIMAL(9,2);
 DECLARE @L_ROWS    INT;
 
--- SELECT @variable = column: T-SQL's way of loading variables from a query -
+-- SELECT @variable = column: T-SQL&#39;s way of loading variables from a query -
 --   assignments inside the SELECT list, with no INTO clause at all.
 SELECT @L_NAME    = CUSTOMER_NAME,
        @L_BALANCE = BALANCE
+-- FROM: the customer table this lookup reads.
 FROM   CUSTOMER
+-- WHERE: the parameter value passed in as @I_CUSTOMER_NUM. Nothing here
+--   guarantees exactly one match - that is what @L_ROWS checks below.
 WHERE  CUSTOMER_NUM = @I_CUSTOMER_NUM;
 
 -- @@ROWCOUNT: how many rows the previous statement touched. Capture it
@@ -21736,11 +21933,14 @@ SET @L_ROWS = @@ROWCOUNT;
 --   test the count itself. Zero rows means no such customer.
 IF @L_ROWS = 0
 
-    -- PRINT: T-SQL's print statement. + joins strings here, where Oracle used ||.
+    -- PRINT: T-SQL&#39;s print statement. + joins strings here, where Oracle used ||.
     PRINT &#39;No customer numbered &#39; + @I_CUSTOMER_NUM;
 
 -- More than one row means the variables hold the LAST row read, silently.
 ELSE IF @L_ROWS &gt; 1
+
+    -- No CAST needed here - the message is plain text, unlike the ELSE branch
+    --   below.
     PRINT &#39;That condition matched more than one customer.&#39;;
 
 -- Exactly one row: the normal path.
@@ -21750,7 +21950,7 @@ ELSE
     PRINT @L_NAME + &#39;  &#39; + CAST(@L_BALANCE AS VARCHAR(20));
 
 -- GO: not SQL at all, but a batch separator the client uses to decide where one
---   piece of work ends. It plays the same role as MySQL's DELIMITER and Oracle's /.
+--   piece of work ends. It plays the same role as MySQL&#39;s DELIMITER and Oracle&#39;s /.
 GO</pre>
       <pre class="code-block">-- EXEC: SQL Server's way of running a procedure - MySQL says CALL, Oracle uses
 --   the procedure name on its own. Arguments follow with no parentheses.
@@ -21800,7 +22000,10 @@ BEGIN TRY
 
     -- The change itself.
     UPDATE CUSTOMER
+    -- SET: adds the amount to the existing balance rather than replacing it.
     SET    BALANCE = BALANCE + @I_AMOUNT
+    -- WHERE: the customer number passed in - the one row this call is allowed
+    --   to touch.
     WHERE  CUSTOMER_NUM = @I_CUSTOMER_NUM;
 
     -- An UPDATE that matched nothing is not an error, so check the count and
@@ -21813,6 +22016,8 @@ BEGIN TRY
 
     -- Reached only when the update touched a row.
     COMMIT TRANSACTION;
+-- END TRY: marks the end of the protected block. If nothing failed, execution
+--   continues after END CATCH, skipping the CATCH block entirely.
 END TRY
 
 -- BEGIN CATCH: runs only when something in the TRY block failed.
@@ -21821,11 +22026,15 @@ BEGIN CATCH
     -- @@TRANCOUNT: how many transactions are open. Test it before rolling back -
     --   a ROLLBACK with no open transaction is itself an error.
     IF @@TRANCOUNT &gt; 0
+
+        -- Undoes the update - reached only when TRY&#39;s error triggered CATCH
+        --   with a transaction still open.
         ROLLBACK TRANSACTION;
 
     -- ERROR_MESSAGE(): the text of whatever went wrong, available only inside a
     --   CATCH block.
     PRINT &#39;ADD_TO_BALANCE failed: &#39; + ERROR_MESSAGE();
+-- END CATCH: closes the error-handling block that BEGIN CATCH opened.
 END CATCH;
 GO</pre>
       <pre class="code-block">-- EXEC: two arguments, separated by a comma, in the order the procedure declares
@@ -21881,25 +22090,40 @@ WHERE CUSTOMER_NUM = &#39;1225&#39;;">
 CREATE PROCEDURE DELETE_ITEM
     @I_ITEM_ID CHAR(4)
 AS
+
+-- BEGIN TRY: same protected-block pattern as ADD_TO_BALANCE - a failure
+--   inside jumps straight to CATCH below.
 BEGIN TRY
 
     -- The delete, with its WHERE clause built into the procedure.
     DELETE FROM ITEM
+    -- WHERE: the one item number the caller passed in.
     WHERE  ITEM_ID = @I_ITEM_ID;
 
     -- Outcome 1: nothing matched. Not an error, so it is detected by the count.
     IF @@ROWCOUNT = 0
+
+        -- No CAST needed here - @I_ITEM_ID is already a string, unlike
+        --   @L_BALANCE back in GET_CUSTOMER.
         PRINT &#39;No item numbered &#39; + @I_ITEM_ID + &#39;. Nothing was deleted.&#39;;
 
     -- Outcome 2: the row was removed.
     ELSE
+
+        -- Confirms the delete succeeded - the mirror image of Outcome 1&#39;s
+        --   message.
         PRINT &#39;Item &#39; + @I_ITEM_ID + &#39; deleted.&#39;;
+-- END TRY: closes the protected block. Getting here means neither outcome
+--   above threw, so CATCH below is skipped entirely.
 END TRY
+-- BEGIN CATCH: reached only if the DELETE above raised an error - a normal
+--   &quot;no rows matched&quot; is not one.
 BEGIN CATCH
 
     -- Outcome 3: the delete was refused - typically by a foreign key, because
     --   invoice lines still point at the item. ERROR_MESSAGE() reports which.
     PRINT &#39;Could not delete &#39; + @I_ITEM_ID + &#39;: &#39; + ERROR_MESSAGE();
+-- END CATCH: closes the error-handling block; GO ends the batch right after it.
 END CATCH;
 GO</pre>
       <pre class="code-block">-- EXEC: DG04 appears on an invoice line, so the foreign key refuses the delete
@@ -21978,9 +22202,15 @@ DECLARE @L_BALANCE       DECIMAL(9,2);
 
 -- DECLARE ... CURSOR FOR: the query to be walked.
 DECLARE CUSTGROUP CURSOR FOR
+    -- SELECT: the three columns the loop below will print.
     SELECT CUSTOMER_NUM, CUSTOMER_NAME, BALANCE
+    -- FROM: the customer table this cursor walks.
     FROM   CUSTOMER
+    -- WHERE: limits the cursor to customers belonging to the rep passed in as
+    --   @I_REP_NUM.
     WHERE  REP_NUM = @I_REP_NUM
+    -- ORDER BY: fixes the order the cursor visits rows in - without it, the
+    --   engine could hand rows back in any order it likes.
     ORDER BY CUSTOMER_NUM;
 
 -- Run the query and get ready to read.
@@ -21992,8 +22222,10 @@ FETCH NEXT FROM CUSTGROUP
     INTO @L_CUSTOMER_NUM, @L_CUSTOMER_NAME, @L_BALANCE;
 
 -- @@FETCH_STATUS: 0 means the last fetch worked. Testing it at the TOP of the
---   loop replaces MySQL's flag-and-handler arrangement entirely.
+--   loop replaces MySQL&#39;s flag-and-handler arrangement entirely.
 WHILE @@FETCH_STATUS = 0
+-- BEGIN: opens the loop body. T-SQL&#39;s WHILE, like its IF, needs BEGIN ... END
+--   around anything longer than a single statement.
 BEGIN
 
     -- The work for this row.
@@ -22004,12 +22236,14 @@ BEGIN
     --   loop repeats the same row forever - the classic T-SQL cursor bug.
     FETCH NEXT FROM CUSTGROUP
         INTO @L_CUSTOMER_NUM, @L_CUSTOMER_NAME, @L_BALANCE;
+-- END: closes the loop body. Control returns to the WHILE line above, which
+--   re-tests @@FETCH_STATUS against the fetch that just ran.
 END
 
 -- CLOSE releases the rows...
 CLOSE CUSTGROUP;
 
--- ...and DEALLOCATE releases the cursor's name. T-SQL needs both; MySQL and
+-- ...and DEALLOCATE releases the cursor&#39;s name. T-SQL needs both; MySQL and
 --   Oracle need only the close.
 DEALLOCATE CUSTGROUP;
 GO</pre>
@@ -22068,8 +22302,12 @@ DECLARE @L_RUNNING_TOTAL DECIMAL(9,2) = 0;
 
 -- The cursor: three stored columns and one calculated one, across four tables.
 DECLARE LINEGROUP CURSOR FOR
+    -- SELECT: the calculated column (NUM_ORDERED * QUOTED_PRICE) is what
+    --   @L_LINE_TOTAL receives below; the other three columns copy straight
+    --   across.
     SELECT I.INVOICE_NUM, C.CUSTOMER_NAME, IT.DESCRIPTION,
            IL.NUM_ORDERED * IL.QUOTED_PRICE
+    -- FROM: CUSTOMER is the base table each hop below joins outward from.
     FROM   CUSTOMER C
 
            -- Hop 1 - customer to invoice.
@@ -22080,19 +22318,26 @@ DECLARE LINEGROUP CURSOR FOR
 
            -- Hop 3 - line item to item.
            JOIN ITEM IT         ON IL.ITEM_ID     = IT.ITEM_ID
+    -- WHERE: limits the join to the rep&#39;s own customers.
     WHERE  C.REP_NUM = @I_REP_NUM
+    -- ORDER BY: invoice first, then description within it - the order the
+    --   cursor will print and total rows in.
     ORDER BY I.INVOICE_NUM, IT.DESCRIPTION;
 
+-- OPEN: runs the four-table query above and positions the cursor before the
+--   first row.
 OPEN LINEGROUP;
 
 -- The priming fetch, before the loop.
 FETCH NEXT FROM LINEGROUP
     INTO @L_INVOICE_NUM, @L_CUSTOMER_NAME, @L_DESCRIPTION, @L_LINE_TOTAL;
 
+-- The same fetch-and-test loop as REP_CUSTOMER_LIST, now walking the
+--   four-table cursor above.
 WHILE @@FETCH_STATUS = 0
 BEGIN
 
-    -- Add this row's total to the accumulator. The variable survives from one
+    -- Add this row&#39;s total to the accumulator. The variable survives from one
     --   pass of the loop to the next, which is how the running total builds.
     SET @L_RUNNING_TOTAL = @L_RUNNING_TOTAL + @L_LINE_TOTAL;
 
@@ -22105,10 +22350,12 @@ BEGIN
         INTO @L_INVOICE_NUM, @L_CUSTOMER_NAME, @L_DESCRIPTION, @L_LINE_TOTAL;
 END
 
+-- CLOSE: releases the rows this cursor was holding, same as in
+--   REP_CUSTOMER_LIST.
 CLOSE LINEGROUP;
 DEALLOCATE LINEGROUP;
 
--- The grand total, printed once after the loop - the accumulator's final value.
+-- The grand total, printed once after the loop - the accumulator&#39;s final value.
 PRINT &#39;Total for rep &#39; + @I_REP_NUM + &#39;: &#39; +
       CAST(@L_RUNNING_TOTAL AS VARCHAR(20));
 GO</pre>
@@ -22163,36 +22410,51 @@ WHERE C.REP_NUM = &#39;20&#39;;">
       <p>Declaring a cursor <code class="inline-code">FOR UPDATE OF</code> a column lets the loop modify the row it has just fetched, using <code class="inline-code">WHERE CURRENT OF</code> instead of a <code class="inline-code">WHERE</code> clause that has to find the row all over again.</p>
       <pre class="code-block">-- SQL Server T-SQL: an UPDATABLE cursor - one that changes the rows it walks.
 DECLARE @L_ITEM_ID CHAR(4);
+-- @L_ON_HAND: holds the quantity column this cursor is about to update.
 DECLARE @L_ON_HAND SMALLINT;
 
+-- DECLARE ITEMGROUP CURSOR FOR: the query to be walked, made updatable by
+--   the FOR UPDATE OF clause below.
 DECLARE ITEMGROUP CURSOR FOR
+    -- SELECT: the item id and the quantity the loop will adjust.
     SELECT ITEM_ID, ON_HAND
+    -- FROM: the item table this cursor updates.
     FROM   ITEM
+    -- WHERE: limits the cursor to the Habitat category - the two items the
+    --   loop below will touch.
     WHERE  CATEGORY = &#39;Habitat&#39;
 
 -- FOR UPDATE OF: declares which column the loop intends to change, and tells the
 --   engine to hold the rows so they can be updated in place.
 FOR UPDATE OF ON_HAND;
 
+-- OPEN: runs the query and locks the matching rows for update.
 OPEN ITEMGROUP;
 
 -- The priming fetch.
 FETCH NEXT FROM ITEMGROUP INTO @L_ITEM_ID, @L_ON_HAND;
 
+-- WHILE @@FETCH_STATUS = 0: the same loop test as the earlier cursors - keep
+--   going while the last fetch found a row.
 WHILE @@FETCH_STATUS = 0
 BEGIN
+    -- The update this cursor exists to make - to the row it just fetched.
     UPDATE ITEM
+    -- SET: increases ON_HAND by 10 for that row.
     SET    ON_HAND = ON_HAND + 10
 
-    -- WHERE CURRENT OF: "the row this cursor is sitting on" - no key comparison
+    -- WHERE CURRENT OF: &quot;the row this cursor is sitting on&quot; - no key comparison
     --   is needed, because the cursor already knows which row that is. Worth
     --   knowing, and worth avoiding: a single UPDATE ... WHERE CATEGORY =
-    --   'Habitat' does the same job in one statement and far more quickly.
+    --   &#39;Habitat&#39; does the same job in one statement and far more quickly.
     WHERE  CURRENT OF ITEMGROUP;
 
+    -- Advances the cursor - required every pass, or @@FETCH_STATUS never
+    --   changes and the loop never ends.
     FETCH NEXT FROM ITEMGROUP INTO @L_ITEM_ID, @L_ON_HAND;
 END
 
+-- CLOSE: releases the rows this cursor was holding.
 CLOSE ITEMGROUP;
 DEALLOCATE ITEMGROUP;</pre>
       <p>That loop touches the two Habitat items, <code class="inline-code">AV07</code> and <code class="inline-code">FT88</code>, and adds 10 to each. It is also a good example of a cursor that should not have been written, because one <code class="inline-code">UPDATE ITEM SET ON_HAND = ON_HAND + 10 WHERE CATEGORY = &#39;Habitat&#39;;</code> does the identical job in a single statement. Reserve <code class="inline-code">WHERE CURRENT OF</code> for the case where the new value depends on a decision you can only make row by row.</p>
