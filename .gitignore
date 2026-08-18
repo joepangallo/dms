@@ -9,3 +9,12 @@ node_modules/
 
 # Grading rubrics hold worked answer keys. This repo is public - they stay local.
 rubrics/
+
+# Module 9 (Python/MySQL) local artifacts - real credentials and interpreter
+# state that must never end up in a public repo or in a student's commit.
+.env
+__pycache__/
+*.pyc
+.pytest_cache/
+.venv/
+venv/

@@ -1,0 +1,24 @@
+-- ======================================================================
+-- Migration 0001 · Add a NOTES column to ITEM
+-- ======================================================================
+--
+-- ALTER TABLE: changes the shape of an existing table rather than creating
+--   a new one -- the whole reason migrations exist is that ITEM already
+--   holds real rows by the time you need this column, so "just edit
+--   00-setup-both.sql and re-run it" isn't an option without losing data.
+-- ITEM: the table every CRUD function in this module already targets.
+ALTER TABLE ITEM
+    -- ADD COLUMN: NOTES, a free-text field for whatever a staff member
+    --   wants to jot down about an item (a supplier quirk, a damaged-box
+    --   note, anything that doesn't deserve its own typed column).
+    -- VARCHAR(200): long enough for a real sentence or two, short enough
+    --   that it can't quietly become a second DESCRIPTION field.
+    -- NULL: every row that already exists gets NOTES = NULL for free --
+    --   MySQL never asks you to backfill a value for rows it can't know
+    --   one for, which is exactly why this column is nullable instead of
+    --   NOT NULL. A NOT NULL ADD COLUMN with no DEFAULT would instead be
+    --   rejected outright by a server running in strict mode (MySQL's
+    --   default since 5.7), because it has no value to put in existing
+    --   rows -- nullable is what makes an additive migration like this one
+    --   safe to run against a table that already has data in it.
+    ADD COLUMN NOTES VARCHAR(200) NULL;

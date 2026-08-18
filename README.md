@@ -70,6 +70,7 @@ tools/                       maintenance scripts (Node, no dependencies to insta
 labs/                        SQL to run outside the browser, in a real client
   module4/                   every Module 4 statement as .sql files, plus the seed databases
   module5/                   the same for Module 5, with the page's line-by-line commentary
+  module9/                   hand-written: a Python app doing parameterized CRUD, an API, and migrations against Module 8's MySQL database
 homework/                    assignment pages
   Assigned/                  what students receive
   Solutions/                 answer keys — gitignored, never published
