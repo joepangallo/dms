@@ -58,6 +58,7 @@ Editor, then run `12-postgres-procedures.sql`. See "The Postgres/PL-pgSQL port" 
 | `10-using-a-trigger.sql` | Section 8-10 — SQLite triggers: `AFTER`/`BEFORE`, `WHEN`, `RAISE(ABORT)` |
 | `11-review-and-cases.sql` | Module summary, review questions, case exercises |
 | `12-postgres-procedures.sql` | **Hand-written, not regenerated.** Working PL/pgSQL translations of the MySQL/Oracle procedure and cursor material, verified live against Supabase |
+| `13-mysql-port-of-8.8-8.9.sql` | **Hand-written, not regenerated.** Working MySQL translations of section 8-8's Oracle PL/SQL and 8-9's T-SQL procedure and cursor material, verified live against MySQL 9.7 |
 | `90-exercise-solutions.sql` | Finished query for all 42 sandbox exercises, with the starter each began from |
 | `91-verification-queries.sql` | All 134 statements the module asserts a result for, each with its expected result as a comment |
 
@@ -204,5 +205,5 @@ python3 tools/gen-module-labs.py module8
 ```
 
 It is idempotent — running it against an unchanged page reproduces those files byte for byte. The
-`00-*.sql` setup file and `12-postgres-procedures.sql` are not touched by the generator and are not
-regenerated; edit them by hand.
+`00-*.sql` setup file, `12-postgres-procedures.sql`, and `13-mysql-port-of-8.8-8.9.sql` are not touched
+by the generator and are not regenerated; edit them by hand.
