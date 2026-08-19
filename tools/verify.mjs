@@ -8,7 +8,7 @@ const require_ = createRequire('/Users/joepangallo/.nvm/versions/node/v24.11.1/l
 const puppeteer = require_('puppeteer');
 
 const URL = 'file:///Users/joepangallo/keiser/db/db.html';
-const PAGES = ['home', 'module1', 'module2', 'module3', 'module4', 'module5', 'module6', 'module7', 'module8', 'supabase', 'project'];
+const PAGES = ['home', 'module1', 'module2', 'module3', 'module4', 'module5', 'module6', 'module7', 'module8', 'module9', 'supabase', 'project'];
 
 const fails = [];
 const note = (ok, msg) => { console.log(`${ok ? '  ok ' : '  FAIL '} ${msg}`); if (!ok) fails.push(msg); };

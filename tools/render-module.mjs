@@ -10,6 +10,8 @@
    Idempotent per pageId: refuses to run if that page already exists. */
 
 import { readFileSync, writeFileSync, copyFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 
 const [, , CONTENT, PAGE_ID, KICKER, TITLE, LEDE, AFTER = 'supabase'] = process.argv;
 if (!CONTENT || !PAGE_ID || !KICKER || !TITLE) {
@@ -18,7 +20,11 @@ if (!CONTENT || !PAGE_ID || !KICKER || !TITLE) {
 }
 
 const FILE = '/Users/joepangallo/keiser/db/db.html';
-const BAK = `/private/tmp/claude-501/-Users-joepangallo-keiser-db/a5f72db8-a23f-44c4-a51c-9b24e1912e7b/scratchpad/db.pre-${PAGE_ID}.html`;
+// A fixed OS temp path, not a Claude session's scratchpad -- a scratchpad
+// directory is deleted once its session ends, so a backup path pinned to
+// one would silently stop working (ENOENT on copyFileSync) for anyone who
+// runs this tool later, in a different session or from a plain terminal.
+const BAK = join(tmpdir(), `db.pre-${PAGE_ID}.html`);
 
 let html = readFileSync(FILE, 'utf8');
 if (html.includes(`<section class="page" id="${PAGE_ID}"`)) {
@@ -246,13 +252,13 @@ if (bad) { console.error(`aborted with ${bad} error(s); file untouched`); proces
 
   const tocPanel = `toc-panel-${PAGE_ID}`;
   const tocEntry = `<div class="toc-module">
-          <button class="toc-module-btn" aria-expanded="false" aria-controls="${tocPanel}">${esc(KICKER + '. ' + TITLE)}
+          <button type="button" class="toc-module-btn" aria-expanded="false" aria-controls="${tocPanel}">${esc(KICKER + '. ' + TITLE)}
             <svg class="accordion-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M6 9l6 6 6-6" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
           </button>
           <ul class="toc-leaves" id="${tocPanel}" hidden>${sections.map((s) =>
             `<li><a href="#${PAGE_ID}:${esc(s.id)}" class="toc-leaf">${esc(s.num + '. ' + s.title)}</a></li>`).join('')}</ul>
         </div>`;
-  const tocAfter = '<div class="toc-module">\n          <button class="toc-module-btn" aria-expanded="false" aria-controls="toc-panel-supa">';
+  const tocAfter = '<div class="toc-module">\n          <button type="button" class="toc-module-btn" aria-expanded="false" aria-controls="toc-panel-supa">';
   if (!html.includes(tocAfter)) { console.error('home TOC anchor not found'); process.exit(1); }
   html = html.replace(tocAfter, tocEntry + tocAfter);
 }

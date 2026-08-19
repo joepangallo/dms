@@ -1,0 +1,1055 @@
+{
+  "groups": [
+    {
+      "key": "m9a",
+      "sections": [
+        {
+          "id": "m9-1",
+          "num": "9-1",
+          "title": "Connecting to Python from a Program",
+          "blocks": [
+            {
+              "type": "p",
+              "text": "Module 8 spent its whole length inside the database: stored procedures, cursors, error handling, all written from the point of view of code that already lives on the server, reacting to whatever a client sends it. Module 9 steps outside the database and looks at the other half of that same conversation -- the program doing the sending. That program is real, it is not a demo: labs/module9/ in this repository is a working Python application, connecting to the identical KimTay Pet Supplies MySQL database Module 8 built its stored procedures against, reading and writing the same ITEM table. This module is about what that program has to get right for the database on the other end of the connection to behave the way you expect."
+            },
+            {
+              "type": "callout",
+              "variant": "warning",
+              "label": "Nothing in this module runs in the sandbox at the bottom of any page here",
+              "text": "This page's live engine is SQLite, running entirely in your browser, and it understands SQL -- not Python. Module 9 is a Python application, not a dialect of SQL, so nothing below is wired to a Run button anywhere on this page. Every code block in this module is meant to be read, the way Module 8's Oracle PL/SQL and SQL Server T-SQL blocks were meant to be read. The actual, runnable code -- a real Flask API, real parameterized queries, a real migration runner, all backed by an automated test suite -- lives in labs/module9/ in the repository. To run any of it yourself, follow labs/module9/README.md's \"Start here\" walkthrough: create a virtual environment, install the dependencies, point it at a real MySQL server carrying Module 8's KimTay data, and go from there."
+            },
+            {
+              "type": "p",
+              "text": "Start with db.py, because every other file in this module calls its one function, get_connection(), rather than opening a connection of its own. That is a deliberate choice: with exactly one place in the whole application that knows how to reach the database, there is exactly one place to change if the credential story ever changes -- a connection pool, a socket instead of a host and port, anything. Read it below."
+            },
+            {
+              "type": "code",
+              "text": "# Not runnable in this page's SQLite sandbox -- see labs/module9/ to run this for real.\n\"\"\"Connection helper for the Module 9 labs.\"\"\"\n\nimport os\n\nimport mysql.connector\nfrom dotenv import load_dotenv\n\n# A no-op if there's no .env file in the working directory (for example in\n# a CI job that exports real environment variables another way).\n# load_dotenv() never overwrites a variable the environment already has, so\n# a real shell export always beats a stale .env left over from an earlier lab.\nload_dotenv()\n\nREQUIRED_VARS = (\"DB_HOST\", \"DB_USER\", \"DB_PASSWORD\", \"DB_NAME\")\n\n# Bounds how long a single connect() attempt can hang against a slow or\n# unreachable DB_HOST, instead of falling back to the OS's own TCP default,\n# which can take tens of seconds to minutes.\nCONNECTION_TIMEOUT_SECONDS = 10\n\n\ndef get_connection():\n    \"\"\"Return a live mysql.connector connection built from the environment.\n\n    Deliberately fails closed: if any of the four required variables is\n    missing, this raises a RuntimeError naming exactly which one, instead of\n    quietly falling back to a \"convenient\" default like host=localhost,\n    user=root, password=\"\".\n    \"\"\"\n    config = {}\n    for var in REQUIRED_VARS:\n        value = os.environ.get(var)\n        if not value:\n            raise RuntimeError(\n                f\"{var} is not set. Copy .env.example to .env and fill in a \"\n                f\"real value, or export {var} in your shell before running \"\n                f\"this script.\"\n            )\n        config[var] = value\n\n    return mysql.connector.connect(\n        host=config[\"DB_HOST\"],\n        port=int(os.environ.get(\"DB_PORT\", \"3306\")),\n        user=config[\"DB_USER\"],\n        password=config[\"DB_PASSWORD\"],\n        database=config[\"DB_NAME\"],\n        connection_timeout=CONNECTION_TIMEOUT_SECONDS,\n    )"
+            },
+            {
+              "type": "p",
+              "text": "mysql.connector is the driver -- the library that translates a Python call like cursor.execute(\"SELECT ...\") into the actual bytes MySQL's wire protocol expects, and translates the rows that come back into Python values. Every SQL database has its own driver; this module's is mysql-connector-python, installed from requirements.txt like any other dependency. Nothing about that part is unusual. What is worth stopping on is the two design choices baked into get_connection() itself."
+            },
+            {
+              "type": "h4",
+              "text": "Credentials come from the environment, never from the source file"
+            },
+            {
+              "type": "p",
+              "text": "DB_HOST, DB_USER, DB_PASSWORD, and DB_NAME are read with os.environ.get(), not written anywhere in db.py or in any file this repository tracks. The real values live in a local .env file, loaded by python-dotenv's load_dotenv(), and .env is listed in .gitignore -- it is never committed. .env.example, which holds only placeholders, is the one credential-shaped file that is tracked. This matters specifically because this repository is public: a real MySQL password typed directly into db.py would be visible to anyone who ever looks at the repo's history, forever, even if it were deleted in a later commit. Keeping the value in an untracked file, and reading it from the environment at run time, is what makes the same code safe to publish."
+            },
+            {
+              "type": "p",
+              "text": "load_dotenv() has one more property worth knowing: it never overwrites a variable the environment already has. If your shell has already exported DB_HOST before this script runs, that exported value wins over whatever .env says. That is the same override order most twelve-factor deployment tooling uses -- a real, deliberately-set shell or system value should never be silently shadowed by a leftover file from an earlier lab."
+            },
+            {
+              "type": "h4",
+              "text": "get_connection() fails closed, not open"
+            },
+            {
+              "type": "p",
+              "text": "If DB_PASSWORD (or any of the other three required variables) is missing, get_connection() does not guess. It raises a RuntimeError that names the exact missing variable and tells you what to do about it. Read that against the alternative: a version of this function that quietly defaulted to host=\"localhost\", user=\"root\", password=\"\" whenever a variable was missing would \"just work\" the moment somebody's machine happened to have a wide-open local MySQL root account -- and then fail in a confusing way, or silently connect to the wrong database, the first time the same code ran anywhere else. That is exactly the insecure-by-default pattern this module is teaching you to avoid. Naming the missing variable in the error message means the fix is obvious straight from reading it, with no guessing required."
+            },
+            {
+              "type": "callout",
+              "variant": "definition",
+              "label": "Fail closed",
+              "text": "A design where, when something required is missing or uncertain, the program refuses to proceed rather than substituting a convenient guess. The opposite -- failing open -- is what happens when a missing password quietly becomes an empty one instead of an error. get_connection() is written to fail closed: a missing credential stops the program with a clear message, instead of letting it limp forward against whatever database happens to be reachable with default settings."
+            },
+            {
+              "type": "p",
+              "text": "One more small thing to notice while you're in this file: connection_timeout=10. Without it, an unreachable DB_HOST falls back to the operating system's own TCP timeout, which can take tens of seconds to minutes to give up. That matters more once you reach api.py in section 9-4: the Flask development server this module uses handles one request at a time, so a single hung connection attempt would stall every other client until it finally timed out. Ten seconds is generous for a real local or LAN database, and still short enough that a genuinely unreachable host fails fast and visibly instead of hanging the whole app."
+            }
+          ]
+        },
+        {
+          "id": "m9-2",
+          "num": "9-2",
+          "title": "Parameterized Queries and SQL Injection",
+          "blocks": [
+            {
+              "type": "p",
+              "text": "This is the section that carries the module's central idea, and it is worth sitting with. injection_demo.py is a small classroom script, meant to be run and read by hand rather than executed by the automated test suite, that puts two functions side by side against the same ITEM table and the same input. One of them is safe. The other looks almost identical and is not."
+            },
+            {
+              "type": "code",
+              "text": "# Not runnable in this page's SQLite sandbox -- see labs/module9/ to run this for real.\ndef safe_lookup(conn, item_id):\n    \"\"\"item_id travels as a bound parameter, so MySQL always treats it\n    as a single string value -- never as a fragment of the SQL statement\n    itself, no matter what characters it contains.\"\"\"\n    cursor = conn.cursor(dictionary=True)\n    try:\n        cursor.execute(\"SELECT * FROM ITEM WHERE ITEM_ID = %s\", (item_id,))\n        return cursor.fetchall()\n    finally:\n        cursor.close()\n\n\ndef unsafe_lookup(conn, item_id):\n    # !! DELIBERATELY INSECURE -- do not copy this pattern.\n    # item_id is spliced directly into the SQL text with an f-string, so\n    # whatever the caller passes becomes part of the statement MySQL\n    # parses, not a value it substitutes in afterward.\n    query = f\"SELECT * FROM ITEM WHERE ITEM_ID = '{item_id}'\"\n    cursor = conn.cursor(dictionary=True)\n    try:\n        cursor.execute(query)\n        return cursor.fetchall()\n    finally:\n        cursor.close()"
+            },
+            {
+              "type": "p",
+              "text": "Both functions take a connection and an item_id and both, on the surface, run \"a SELECT against ITEM_ID\". The difference is where the value ends up before MySQL ever parses anything. safe_lookup() hands cursor.execute() two separate arguments: the SQL text with a %s placeholder in it, and a tuple containing item_id. The driver sends those to MySQL as two separate things, and MySQL binds the value into the placeholder's position only after the statement's structure is already fixed -- item_id can never change what the query does, only which single value it's compared against. unsafe_lookup() instead builds one Python string with an f-string, splicing item_id's characters directly into the text before execute() is ever called. By the time MySQL sees it, there is no distinction left between \"the query\" and \"the value\" -- it is all just SQL text, and MySQL will parse whatever is there."
+            },
+            {
+              "type": "p",
+              "text": "injection_demo.py proves the difference with one payload: the string \"DG04' OR '1'='1\". Passed to safe_lookup(), MySQL is asked to find a row whose ITEM_ID literally equals that entire 15-character string, quote marks and all -- no such row exists, so it returns nothing. Passed to unsafe_lookup(), the f-string produces this exact SQL text:"
+            },
+            {
+              "type": "code",
+              "text": "-- Not runnable in this page's SQLite sandbox -- see labs/module9/ to run this for real.\nSELECT * FROM ITEM WHERE ITEM_ID = 'DG04' OR '1'='1'"
+            },
+            {
+              "type": "p",
+              "text": "Read that as MySQL reads it, not as English. The closing quote in the payload closes the string literal early -- MySQL now sees a complete condition, ITEM_ID = 'DG04', followed by OR '1'='1', a second condition that compares the literal text '1' to itself and is therefore true for every single row in the table, whatever that row's ITEM_ID happens to be. The WHERE clause the programmer wrote to match at most one item has been silently rewritten by the input into a clause that matches all of them. injection_demo.py's unsafe_lookup() call with this payload returns all five rows of ITEM -- the whole table -- to a caller who was only supposed to be able to look up one item at a time."
+            },
+            {
+              "type": "table",
+              "caption": "The same payload, two outcomes",
+              "headers": [
+                "",
+                "What MySQL actually receives",
+                "What comes back"
+              ],
+              "rows": [
+                [
+                  "safe_lookup(conn, payload)",
+                  "One bound parameter equal to the literal 15-character string \"DG04' OR '1'='1\"",
+                  "Nothing -- no ITEM_ID equals that whole string"
+                ],
+                [
+                  "unsafe_lookup(conn, payload)",
+                  "SELECT * FROM ITEM WHERE ITEM_ID = 'DG04' OR '1'='1' as one parsed statement",
+                  "All five ITEM rows -- OR '1'='1' is true for every row"
+                ]
+              ]
+            },
+            {
+              "type": "callout",
+              "variant": "definition",
+              "label": "SQL injection",
+              "text": "An attack where a value a program intends as data is instead interpreted as part of the SQL statement's own grammar, because that value was built directly into the query text instead of bound as a separate parameter. The attacker doesn't need a password, a bug in the schema, or access to the server -- only a single string the vulnerable code trusted enough to paste straight into SQL."
+            },
+            {
+              "type": "p",
+              "text": "Notice what did not have to be true for this to work: the attacker needed no password, no bug in ITEM's schema, and no special access to the server. All that was required was a single string reaching a line of code shaped like unsafe_lookup()'s. That is the entire lesson of this section, and it is why crud.py, which you'll read in the next section, never once builds a SQL statement this way -- every value in every function there travels through a %s placeholder and a separate params tuple, exactly like safe_lookup()."
+            },
+            {
+              "type": "p",
+              "text": "Here is the piece that ties this section back to everything Module 8 taught: Module 8 never had to teach SQL injection, and that wasn't an oversight. A MySQL stored procedure like DELETE_ITEM(i_item_id CHAR(4)) receives its parameter as a bound value the moment it's called -- CALL DELETE_ITEM('DG04') -- the same way safe_lookup() receives item_id. The procedure's body never string-builds i_item_id into a piece of SQL text the way unsafe_lookup() does with an f-string; there is no step in a plain stored-procedure call where that could even happen. The vulnerability in this section isn't a MySQL problem or a database problem at all -- it's specific to programs that construct SQL themselves, in a general-purpose language, before handing it to the database. Python's f-strings make that construction so easy to reach for that it takes a deliberate, disciplined habit -- always bind, never splice -- to avoid it."
+            }
+          ]
+        }
+      ],
+      "quizzes": [
+        {
+          "anchor": "m9-1",
+          "quizId": "m9-1-quiz",
+          "heading": "Check Yourself: Connecting to Python from a Program",
+          "questions": [
+            {
+              "scenarioTitle": "A brand-new clone with no .env file yet",
+              "stem": "A student clones labs/module9/, never creates a .env file, and runs python3 injection_demo.py. None of the four required variables -- DB_HOST, DB_USER, DB_PASSWORD, DB_NAME -- are set anywhere in the environment. What happens?",
+              "options": [
+                "get_connection() connects using an empty password, since MySQL accepts a blank password for some local accounts",
+                "get_connection() raises a RuntimeError naming the first required variable it finds missing, and the script stops before any connection is attempted",
+                "The script hangs indefinitely, waiting for the missing values to be typed at the terminal",
+                "get_connection() connects using DB_USER's value as a fallback password, since db.py treats DB_USER as a stand-in for any missing credential"
+              ],
+              "optionNotes": [
+                "This is exactly the insecure-by-default pattern get_connection() is written to avoid. It never substitutes a convenient guess for a missing credential.",
+                "Correct. REQUIRED_VARS is checked in order -- (\"DB_HOST\", \"DB_USER\", \"DB_PASSWORD\", \"DB_NAME\") -- and get_connection() raises the moment it finds one missing, naming that specific variable in the error message, before mysql.connector.connect() is ever called. With nothing exported and no .env, that first missing variable is DB_HOST.",
+                "get_connection() has no interactive prompt of any kind. It raises immediately and synchronously; there is nothing to wait for.",
+                "There is no fallback logic anywhere in get_connection() that reuses one variable's value for another. Each of the four required variables is checked and used independently."
+              ],
+              "answerIndex": 1,
+              "takeaway": "get_connection() fails closed: a missing credential stops the program immediately with a message naming exactly which variable is missing -- the first one REQUIRED_VARS checks that isn't set -- rather than guessing."
+            },
+            {
+              "scenarioTitle": "A stale .env left over from an earlier lab",
+              "stem": "A student has exported DB_HOST=prod-db.example.com in their shell, but their .env file still says DB_HOST=localhost from an earlier lab. db.py calls load_dotenv() before REQUIRED_VARS is even checked. Which host does get_connection() actually connect to?",
+              "options": [
+                "localhost, because .env is loaded after the shell environment and its values always take priority",
+                "prod-db.example.com, because load_dotenv() never overwrites a variable the environment already has",
+                "Neither -- get_connection() raises an error because DB_HOST is effectively defined twice",
+                "Whichever value was written most recently to disk, since load_dotenv() compares file timestamps"
+              ],
+              "optionNotes": [
+                "This gets the mechanism backwards. load_dotenv() being called later does not mean its values win -- python-dotenv specifically declines to overwrite a variable that's already set.",
+                "Correct. load_dotenv() skips any variable already present in the environment, so the real, deliberately-exported shell value beats a leftover .env every time -- the same override order most twelve-factor tooling uses.",
+                "There is no duplicate-definition check anywhere in db.py. A variable being set in both the shell and .env is not treated as an error at all.",
+                "load_dotenv() does not compare timestamps or do any kind of \"most recent value wins\" resolution. Its rule is simply: never overwrite what's already there."
+              ],
+              "answerIndex": 1,
+              "takeaway": "A real, exported shell variable always beats a stale .env file, because load_dotenv() never overwrites a variable the environment already has."
+            },
+            {
+              "scenarioTitle": "Why get_connection() bothers with a timeout at all",
+              "stem": "db.py sets connection_timeout=10 on every connection mysql.connector.connect() opens. If DB_HOST points at a server that is genuinely unreachable, what does that setting actually prevent?",
+              "options": [
+                "It retries the connection attempt up to ten times before finally giving up",
+                "It limits the total number of simultaneous connections the application can hold open",
+                "connect() fails after 10 seconds instead of hanging on the OS's own default TCP timeout, which can take tens of seconds to minutes",
+                "It has no real effect unless DB_PORT is also set explicitly in the environment"
+              ],
+              "optionNotes": [
+                "connection_timeout is not a retry count. There is exactly one connection attempt; the number bounds how long that single attempt is allowed to hang.",
+                "This describes a connection pool's size limit. db.py opens one connection per call to get_connection() and has no pooling logic at all.",
+                "Correct. Without a driver-imposed timeout, an unreachable host falls back to OS-level TCP defaults. That matters especially in api.py, where the Flask dev server handles one request at a time -- a single hung connect attempt would stall every other client until it resolved.",
+                "connection_timeout works independently of whether DB_PORT was set -- DB_PORT only ever affects which port is dialed, defaulting to 3306 when absent."
+              ],
+              "answerIndex": 2,
+              "takeaway": "connection_timeout bounds a single connect() attempt so an unreachable host fails fast and visibly, instead of hanging the whole app for a long OS-level default."
+            }
+          ]
+        },
+        {
+          "anchor": "m9-2",
+          "quizId": "m9-2-quiz",
+          "heading": "Check Yourself: Parameterized Queries and SQL Injection",
+          "questions": [
+            {
+              "scenarioTitle": "The payload against safe_lookup()",
+              "stem": "injection_demo.py passes the payload \"DG04' OR '1'='1\" to safe_lookup(conn, item_id). What does MySQL actually do with it?",
+              "options": [
+                "It parses out the leading \"DG04\" portion and matches that row, ignoring the rest of the string",
+                "It looks for an ITEM_ID that literally equals the entire payload string, quote characters included, finds none, and returns nothing",
+                "It evaluates OR '1'='1' as a boolean condition and returns every row in ITEM",
+                "It raises a syntax error, because the payload contains an unescaped single quote"
+              ],
+              "optionNotes": [
+                "%s binds the whole argument as one opaque value. MySQL never partially parses a bound parameter looking for a \"real\" prefix inside it.",
+                "Correct. Because item_id is bound through %s and a params tuple, MySQL treats the entire payload as a single literal string to compare against ITEM_ID -- no row's id equals that string, so nothing matches.",
+                "Evaluating OR '1'='1' as a live condition is exactly what happens in unsafe_lookup(), not safe_lookup(). A bound parameter never gets parsed as SQL grammar.",
+                "The driver handles quoting for a bound parameter automatically; there's no unescaped-quote problem to raise a syntax error over, because the value never becomes SQL text at all."
+              ],
+              "answerIndex": 1,
+              "takeaway": "A bound parameter is compared as one whole literal value, no matter what characters -- including quotes -- it contains."
+            },
+            {
+              "scenarioTitle": "The same payload against unsafe_lookup()",
+              "stem": "The identical payload, \"DG04' OR '1'='1\", is passed to unsafe_lookup(conn, item_id) instead. What SQL text does MySQL actually receive, and what comes back?",
+              "options": [
+                "SELECT * FROM ITEM WHERE ITEM_ID = 'DG04' OR '1'='1' -- the payload's quote closes the string literal early, turning OR '1'='1' into a second, always-true condition, so all five ITEM rows come back",
+                "The same query, but mysql.connector automatically escapes the embedded quote before running it, so only DG04 is returned",
+                "A syntax error, because the stray quote in the middle of the f-string leaves the resulting SQL malformed",
+                "Only the DG04 row, because ITEM_ID = 'DG04' is still evaluated first and short-circuits the rest of the WHERE clause"
+              ],
+              "optionNotes": [
+                "Correct. The f-string splices item_id straight into the SQL text. The payload's own closing quote ends the string literal early, and OR '1'='1' becomes a real second condition -- true for every row -- so the query returns the whole table.",
+                "unsafe_lookup() calls cursor.execute(query) with a single, already-built string. There's no params tuple involved at that point, so there is nothing left for the driver to escape.",
+                "The resulting text is syntactically valid SQL -- the quote closes cleanly and OR '1'='1' is a well-formed condition. It's semantically wrong, not malformed.",
+                "SQL's OR has no short-circuit-and-stop behavior across rows the way this option implies. OR '1'='1' is evaluated for every row independently, and it's true for all of them."
+              ],
+              "answerIndex": 0,
+              "takeaway": "Splicing a value into SQL text lets that value redefine the statement's structure, not just supply data to it -- here, turning a single-row lookup into a full table scan."
+            },
+            {
+              "scenarioTitle": "Why Module 8 never had to teach this",
+              "stem": "A student asks why Module 8's stored procedures, which also accept parameters like I_ITEM_ID, never needed a lesson on SQL injection the way this section does. What's the accurate reason?",
+              "options": [
+                "Stored procedures run inside the database engine itself, which makes them immune to injection by design",
+                "A stored procedure's parameter is bound the moment it's called (as in CALL DELETE_ITEM('DG04')) and is never string-built into the procedure's SQL text, so there's no step where an attacker-controlled value could restructure the statement",
+                "MySQL validates every incoming CALL statement's arguments against the table's schema before the procedure body runs",
+                "Module 8's procedures only ever used SELECT statements, and injection is only possible against statements that modify data"
+              ],
+              "optionNotes": [
+                "Running inside the engine doesn't make a procedure immune on its own -- a procedure that built dynamic SQL internally from unbound input could still be vulnerable. It's the calling convention, not the location, that protects Module 8's procedures.",
+                "Correct. CALL DELETE_ITEM('DG04') binds the argument the same way a %s placeholder does. Nothing in a plain stored-procedure call ever splices a caller's string into SQL text the way unsafe_lookup()'s f-string does, so there's no comparable code path to protect against.",
+                "MySQL performs no such schema-driven argument validation on CALL. Type-checking a parameter's declared type is not the same mechanism as preventing injection.",
+                "Module 8's DELETE_ITEM procedure runs a DELETE, not a SELECT, and every one of Module 8's procedures accepted parameters the same bound way regardless of statement type."
+              ],
+              "answerIndex": 1,
+              "takeaway": "Injection is a property of how a query gets built, not of which language runs it. A parameter that's always bound, never spliced, has no vulnerable step to exploit."
+            }
+          ]
+        }
+      ],
+      "matchers": [
+        {
+          "anchor": "m9-2",
+          "matchId": "m9-2-match",
+          "heading": "Sort Safe from Unsafe",
+          "prompt": "Each card is a pattern for building a SQL statement in Python against a value the program does not control, such as a request field. Sort it by whether that value could still change the statement's structure.",
+          "zones": [
+            {
+              "key": "safe",
+              "label": "Safe (parameterized)",
+              "hint": "The value is bound through a placeholder and a separate params argument"
+            },
+            {
+              "key": "unsafe",
+              "label": "Unsafe (SQL built by hand)",
+              "hint": "The value becomes part of the SQL text itself, before execute() ever sees it"
+            }
+          ],
+          "cards": [
+            {
+              "text": "cursor.execute(\"SELECT * FROM ITEM WHERE ITEM_ID = %s\", (item_id,))",
+              "zone": "safe",
+              "why": "item_id travels as a bound parameter in its own tuple -- the same pattern crud.get_item() and injection_demo.safe_lookup() both use. MySQL fixes the statement's structure before item_id is ever substituted in."
+            },
+            {
+              "text": "query = f\"SELECT * FROM ITEM WHERE ITEM_ID = '{item_id}'\"; cursor.execute(query)",
+              "zone": "unsafe",
+              "why": "This is injection_demo.unsafe_lookup()'s exact pattern. item_id is spliced into the SQL text with an f-string before execute() is called, so any quote characters it contains can change what the statement means."
+            },
+            {
+              "text": "cursor.execute(\"UPDATE ITEM SET PRICE = %s WHERE ITEM_ID = %s\", (new_price, item_id))",
+              "zone": "safe",
+              "why": "crud.update_item_price()'s pattern: both values are bound, in the same order as the two %s placeholders, so neither one can restructure the statement."
+            },
+            {
+              "text": "cursor.execute(\"DELETE FROM ITEM WHERE ITEM_ID = '\" + item_id + \"'\")",
+              "zone": "unsafe",
+              "why": "String concatenation is the same mistake as an f-string wearing different punctuation. item_id still becomes SQL text before execute() runs, not a bound value."
+            },
+            {
+              "text": "cursor.execute(\"SELECT * FROM ITEM WHERE CATEGORY = %s ORDER BY ITEM_ID\", (category,))",
+              "zone": "safe",
+              "why": "crud.list_items()'s pattern. Even a filter value that looks low-risk is still bound with %s here, rather than trusted to be pasted in safely because it seems harmless."
+            },
+            {
+              "text": "cursor.execute(f\"INSERT INTO ITEM (ITEM_ID, DESCRIPTION) VALUES ('{item_id}', '{description}')\")",
+              "zone": "unsafe",
+              "why": "Two interpolated values instead of one, but the identical mistake twice over -- both item_id and description become literal SQL text an attacker-controlled string could break out of."
+            },
+            {
+              "text": "cursor.execute(\"SELECT * FROM ITEM WHERE ITEM_ID = %s\" % item_id)",
+              "zone": "unsafe",
+              "why": "This looks parameterized because %s appears in it, but Python's own %-operator formats item_id into the string before execute() is ever called -- by the time the driver sees it, it's a single already-built string, with nothing left to bind."
+            },
+            {
+              "text": "cursor.execute(\"INSERT INTO ITEM (ITEM_ID, DESCRIPTION, CATEGORY, ON_HAND, PRICE, REORDER_LEVEL) VALUES (%s, %s, %s, %s, %s, %s)\", (item_id, description, category, on_hand, price, reorder_level))",
+              "zone": "safe",
+              "why": "crud.create_item()'s pattern: all six values are bound, one placeholder per column, in the same order as the INSERT's column list."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "key": "m9b",
+      "sections": [
+        {
+          "id": "m9-3",
+          "num": "9-3",
+          "title": "CRUD from Python",
+          "blocks": [
+            {
+              "type": "p",
+              "text": "crud.py holds five functions against KimTay's ITEM table -- create_item, get_item, list_items, update_item_price, and delete_item -- and every one of them follows the rule the previous section just earned: every value that becomes part of a query travels through a %s placeholder and a separate params tuple, never through string interpolation. Even list_items()'s category filter, which only ever narrows a list and looks about as low-risk as a value can look, is bound with %s exactly like everything else. The file's own docstring says why plainly: building that one WHERE clause by string interpolation \"just this once, because it's a simple filter\" is exactly the habit that later produces an injectable code path somewhere less carefully reviewed."
+            },
+            {
+              "type": "code",
+              "text": "# Not runnable in this page's SQLite sandbox -- see labs/module9/ to run this for real.\ndef get_item(conn, item_id):\n    \"\"\"Return the ITEM row for item_id as a dict, or None if it\n    doesn't exist.\"\"\"\n    cursor = conn.cursor(dictionary=True)\n    try:\n        cursor.execute(\"SELECT * FROM ITEM WHERE ITEM_ID = %s\", (item_id,))\n        return cursor.fetchone()\n    finally:\n        cursor.close()\n\n\ndef update_item_price(conn, item_id, new_price):\n    \"\"\"Update ITEM.PRICE for one item_id.\n\n    Returns the number of rows affected rather than raising when\n    nothing matches -- 0 rows means \"no such item_id,\" an expected\n    outcome with a name, not an engine failure.\"\"\"\n    cursor = conn.cursor()\n    try:\n        cursor.execute(\n            \"UPDATE ITEM SET PRICE = %s WHERE ITEM_ID = %s\",\n            (new_price, item_id),\n        )\n        conn.commit()\n        return cursor.rowcount\n    except mysql.connector.Error:\n        conn.rollback()\n        raise\n    finally:\n        cursor.close()"
+            },
+            {
+              "type": "p",
+              "text": "get_item() uses conn.cursor(dictionary=True) rather than a plain cursor, so the row comes back with column names as keys instead of a bare positional tuple -- worth the small extra cost here because api.py turns this result straight into a JSON response, and matching tuple positions to column names by hand is exactly the kind of thing an unnoticed schema change quietly corrupts without raising anything. update_item_price() shows the other recurring pattern in this file: it returns 0 rather than raising when item_id doesn't match any row, because \"no such item_id\" is an expected outcome that already has a name, not an unforeseen engine failure. A dropped connection or a genuine bug in the SQL is left to propagate as an exception instead -- catching that here and inventing a string status to describe it would just push the real \"now what?\" decision onto every caller."
+            },
+            {
+              "type": "h4",
+              "text": "delete_item(): the one function that catches a driver error on purpose"
+            },
+            {
+              "type": "p",
+              "text": "Every other function in crud.py either lets an exception propagate or reports a zero-row outcome. delete_item() does both of those things and one more: it catches a specific driver-level exception and turns it into a value, because KimTay's data makes that exception a completely ordinary, expected outcome rather than a bug."
+            },
+            {
+              "type": "code",
+              "text": "# Not runnable in this page's SQLite sandbox -- see labs/module9/ to run this for real.\ndef delete_item(conn, item_id):\n    \"\"\"Delete one ITEM row. Returns a structured result instead of\n    raising for either of ITEM's two expected non-success outcomes:\n\n        {\"deleted\": True}\n        {\"deleted\": False, \"reason\": \"not_found\"}\n        {\"deleted\": False, \"reason\": \"referenced\"}\n    \"\"\"\n    cursor = conn.cursor()\n    try:\n        cursor.execute(\"DELETE FROM ITEM WHERE ITEM_ID = %s\", (item_id,))\n        if cursor.rowcount == 0:\n            conn.rollback()\n            return {\"deleted\": False, \"reason\": \"not_found\"}\n        conn.commit()\n        return {\"deleted\": True}\n    except mysql.connector.errors.IntegrityError as exc:\n        conn.rollback()\n        # errno 1451: \"Cannot delete or update a parent row: a\n        #   foreign key constraint fails\" -- the exact error a real\n        #   MySQL server raises for this table shape.\n        if exc.errno == 1451:\n            return {\"deleted\": False, \"reason\": \"referenced\"}\n        raise\n    finally:\n        cursor.close()"
+            },
+            {
+              "type": "p",
+              "text": "delete_item(\"DG04\") against the seeded KimTay data fails on the very first try, and it fails for a reason you have already watched happen once, from the SQL side. Module 8's 00-setup-both.sql seeds invoice 50710 with an INVOICE_LINE row ordering two of item DG04, which means a row in INVOICE_LINE still points at the ITEM row the DELETE is trying to remove. MySQL's own foreign key enforcement refuses the delete and raises error 1451 -- and that specific errno, checked with exc.errno == 1451, is exactly what turns a normal DELETE into the {\"deleted\": False, \"reason\": \"referenced\"} result rather than an unhandled crash."
+            },
+            {
+              "type": "p",
+              "text": "This is the same lesson Module 8 already taught, told from the other side of the connection. Look at DELETE_ITEM in labs/module8/09-tsql-sql-server.sql: its BEGIN TRY block attempts the exact same DELETE FROM ITEM WHERE ITEM_ID = @I_ITEM_ID, and its BEGIN CATCH block reports whatever ERROR_MESSAGE() holds when the foreign key refuses it. The MySQL port of that same procedure, in labs/module8/13-mysql-port-of-8.8-8.9.sql, does the identical job with DECLARE EXIT HANDLER FOR SQLEXCEPTION, catching the same MySQL error 1451 and reporting that the item is \"still referenced by an invoice line.\" Three implementations -- T-SQL, MySQL's own procedural dialect, and now Python -- attempt the identical DELETE, hit the identical foreign key, and catch the identical error for the identical reason. Nothing about the underlying rule changed by moving from a stored procedure to a Python program; only which language is doing the catching did."
+            },
+            {
+              "type": "table",
+              "caption": "Catching the same foreign-key error from three sides",
+              "headers": [
+                "Implementation",
+                "How it attempts the delete",
+                "How it catches error 1451"
+              ],
+              "rows": [
+                [
+                  "T-SQL (09-tsql-sql-server.sql)",
+                  "DELETE FROM ITEM WHERE ITEM_ID = @I_ITEM_ID inside BEGIN TRY",
+                  "BEGIN CATCH, reporting ERROR_MESSAGE()"
+                ],
+                [
+                  "MySQL procedure (13-mysql-port-of-8.8-8.9.sql)",
+                  "DELETE FROM ITEM WHERE ITEM_ID = i_item_id",
+                  "DECLARE EXIT HANDLER FOR SQLEXCEPTION"
+                ],
+                [
+                  "Python (crud.delete_item)",
+                  "cursor.execute(\"DELETE FROM ITEM WHERE ITEM_ID = %s\", (item_id,))",
+                  "except mysql.connector.errors.IntegrityError, checking exc.errno == 1451"
+                ]
+              ]
+            },
+            {
+              "type": "callout",
+              "variant": "note",
+              "label": "You already learned this once, from the other side",
+              "text": "Nothing here is a new rule about foreign keys. It's the same rule you met in Module 8, seen from the client's side of the connection instead of the server's: a program that deletes rows has to decide what to do when the database refuses, and \"catch the specific error the constraint raises and turn it into a clear answer\" is the right response whether that catching happens in T-SQL, in a MySQL procedure, or in a Python except clause."
+            }
+          ]
+        },
+        {
+          "id": "m9-4",
+          "num": "9-4",
+          "title": "A Minimal CRUD API",
+          "blocks": [
+            {
+              "type": "p",
+              "text": "api.py wraps crud.py in a small Flask application: GET and POST on /items, GET, PUT, and DELETE on /items/<item_id>. It has no authentication of any kind -- every route is open to anyone who can reach it, which the file's own docstring calls an acceptable trade only for a local sandbox where the only thing on the other end is you and curl, and never acceptable anywhere network-reachable. Two things about this file are worth close attention: what happens before a request ever touches the database, and what a client is allowed to see after something goes wrong."
+            },
+            {
+              "type": "h4",
+              "text": "Validation runs before crud.py is ever called"
+            },
+            {
+              "type": "p",
+              "text": "create_item_route checks every field of an incoming request -- item_id's length, description's length and non-emptiness, category's length, on_hand and reorder_level's integer range, and price's shape -- before crud.create_item() runs at all. A bad request never reaches the database. The price check is the one worth reading in full, because it guards against a mistake that is easy to miss and that this module's own security review actually found and fixed."
+            },
+            {
+              "type": "code",
+              "text": "# Not runnable in this page's SQLite sandbox -- see labs/module9/ to run this for real.\ndef _validate_price(price):\n    \"\"\"Return None if price is a valid ITEM.PRICE value, else an\n    error message.\"\"\"\n    if isinstance(price, bool) or not isinstance(price, (int, float)):\n        return \"price must be a positive number.\"\n    if not math.isfinite(price):\n        return \"price must be a positive number.\"\n    if price <= 0:\n        return \"price must be a positive number.\"\n    if price > PRICE_MAX:\n        return f\"price must be at most {PRICE_MAX} (the column is DECIMAL(7,2)).\"\n    return None"
+            },
+            {
+              "type": "p",
+              "text": "The line that matters most is math.isfinite(price). Python's own json module accepts the non-standard tokens NaN, Infinity, and -Infinity when it parses a request body -- so a client can send {\"price\": NaN} and Flask's request.get_json() will happily hand your route a Python float that is not a number at all. Without the isfinite() check, that value sails straight past the obvious-looking guard price <= 0: NaN compares False against every comparison, including <= 0, and Infinity is not <= 0 either. The bad value would then reach mysql-connector-python, which renders a float onto the wire as a bare, unquoted token -- turning what should have been a clean, field-named 400 response into a confusing SQL-syntax error surfacing as a 500. Reading validation code, this is the concrete lesson: a check that looks complete because it covers the range you were thinking about (\"reject anything at or below zero\") can still let through values that were never really numbers in the first place. isinstance() plus a plain range comparison was not enough; isfinite() is what closed the gap."
+            },
+            {
+              "type": "h4",
+              "text": "Raw database errors never reach the client"
+            },
+            {
+              "type": "p",
+              "text": "The second thing to notice is what a client is shown when something actually breaks. Every route that returns 400, 404, or 409 does so on purpose, with a specific field-named message. Anything else -- a dropped connection, a genuine bug, a MySQL error nobody anticipated -- is caught in exactly one place and turned into exactly one generic response."
+            },
+            {
+              "type": "code",
+              "text": "# Not runnable in this page's SQLite sandbox -- see labs/module9/ to run this for real.\n@app.errorhandler(Exception)\ndef handle_unexpected_error(exc):\n    # The only place a database or programming error is allowed to\n    # reach a client at all -- and only ever as this one generic\n    # message. The real exception goes to the server log instead.\n    logger.exception(\"Unhandled error in %s %s\", request.method, request.path)\n    return _error(500, \"internal_error\", \"Something went wrong. Check the server log.\")"
+            },
+            {
+              "type": "p",
+              "text": "logger.exception() writes the real error -- table names, column names, the driver's own message -- to the server's log, where only whoever runs the app can see it. The HTTP response the client actually receives never contains any of that detail; it is always the same {\"error\": \"internal_error\", \"message\": \"Something went wrong. Check the server log.\"} body, regardless of what actually failed underneath. This is the same don't-leak-internals-to-an-attacker principle behind section 9-2's warning about SQL injection, applied here to error responses instead of query text: handing a client (who might be an attacker probing the API rather than a legitimate user) the raw driver error would be a free look at your schema, your table names, and sometimes even fragments of the query itself -- information that makes the next attack easier to aim."
+            },
+            {
+              "type": "p",
+              "text": "The DELETE route shows both ideas -- validation before the database, and a controlled response after -- working together with the foreign-key case from the previous section."
+            },
+            {
+              "type": "code",
+              "text": "# Not runnable in this page's SQLite sandbox -- see labs/module9/ to run this for real.\n@app.delete(\"/items/<item_id>\")\ndef delete_item_route(item_id):\n    error = _invalid_item_id_response(item_id)\n    if error is not None:\n        return error\n\n    result = crud.delete_item(_db(), item_id)\n\n    if result[\"deleted\"]:\n        return \"\", 204\n    if result[\"reason\"] == \"not_found\":\n        return _error(404, \"not_found\", f\"No item with id {item_id!r}.\")\n\n    return _error(\n        409, \"referenced\",\n        f\"Item {item_id!r} is still referenced by an invoice line and cannot be deleted.\",\n    )"
+            },
+            {
+              "type": "p",
+              "text": "A DELETE for DG04 against the seeded data never reaches handle_unexpected_error at all, because crud.delete_item() already caught error 1451 and turned it into an ordinary {\"reason\": \"referenced\"} value two layers down. The route just translates that expected outcome into HTTP's own vocabulary for it: 409 Conflict, with a message a client can actually act on, instead of a 500 that looks like the server broke."
+            }
+          ]
+        }
+      ],
+      "quizzes": [
+        {
+          "anchor": "m9-3",
+          "quizId": "m9-3-quiz",
+          "heading": "Check Yourself: CRUD from Python",
+          "questions": [
+            {
+              "scenarioTitle": "Deleting DG04 against the seeded data",
+              "stem": "crud.delete_item(conn, 'DG04') is called against a database carrying Module 8's seed data, where invoice 50710 has an INVOICE_LINE row ordering DG04. What does the call return, and why?",
+              "options": [
+                "It raises an uncaught IntegrityError, crashing whatever program called it",
+                "{\"deleted\": True}, because item_id was passed through a %s placeholder, which bypasses foreign-key checks",
+                "{\"deleted\": False, \"reason\": \"referenced\"}, because MySQL's foreign key refuses the DELETE with error 1451, and delete_item() catches exactly that error",
+                "{\"deleted\": False, \"reason\": \"not_found\"}, because DG04 was already removed by an earlier call in this scenario"
+              ],
+              "optionNotes": [
+                "delete_item() specifically wraps the DELETE in a try/except for mysql.connector.errors.IntegrityError, checking exc.errno == 1451. This exact case is what that except clause exists for.",
+                "Parameterization changes how the SQL statement's text is built. It has no effect on which constraints the database enforces once the statement runs -- the foreign key check applies exactly the same either way.",
+                "Correct. Invoice 50710's INVOICE_LINE row still points at DG04, so the DELETE is refused with MySQL error 1451. delete_item() catches that specific errno and reports it as a normal, named outcome instead of letting it propagate.",
+                "The scenario describes the seed data as loaded, where DG04 exists and is referenced. There's no earlier deletion in this scenario for \"not_found\" to describe."
+              ],
+              "answerIndex": 2,
+              "takeaway": "delete_item(\"DG04\") fails on the first try against the seeded data, for the same foreign-key reason Module 8's DELETE_ITEM procedures fail on it too."
+            },
+            {
+              "scenarioTitle": "What the Python and SQL versions actually share",
+              "stem": "Python's crud.delete_item, MySQL's stored-procedure DELETE_ITEM, and SQL Server's T-SQL DELETE_ITEM are compared side by side. What do all three genuinely have in common when deleting DG04?",
+              "options": [
+                "All three query INVOICE_LINE first to check for a reference, and only attempt the DELETE if nothing is found",
+                "All three attempt the DELETE directly, let the database's own foreign key refuse it with the same underlying error, and catch that specific error to report it as a normal outcome",
+                "All three roll the failed transaction back and automatically retry the DELETE using ON DELETE CASCADE",
+                "Only the Python version actually handles the failure -- both SQL versions let the raw database error propagate uncaught to whatever called them"
+              ],
+              "optionNotes": [
+                "None of the three implementations pre-checks INVOICE_LINE before attempting the delete. All three attempt the DELETE first and react to what the database reports.",
+                "Correct. Python's except IntegrityError checking errno 1451, MySQL's DECLARE EXIT HANDLER FOR SQLEXCEPTION, and T-SQL's BEGIN CATCH block all wrap the identical attempted DELETE and catch the identical foreign-key refusal.",
+                "None of the three implementations uses CASCADE or retries the delete in any form. Each one reports the refusal; none of them works around it automatically.",
+                "Both SQL versions explicitly catch the failure -- T-SQL's BEGIN CATCH / ERROR_MESSAGE() and MySQL's DECLARE EXIT HANDLER FOR SQLEXCEPTION -- exactly the way the Python version does."
+              ],
+              "answerIndex": 1,
+              "takeaway": "Three languages, one underlying rule: attempt the DELETE, let the foreign key refuse it, catch that specific refusal, and report it as an expected outcome rather than a crash."
+            },
+            {
+              "scenarioTitle": "Why update_item_price() returns instead of raising",
+              "stem": "crud.py's module docstring distinguishes an \"unexpected engine failure\" from an \"expected outcome that already has a name.\" Under that rule, why does update_item_price() return 0 (not raise) when item_id matches no row, while still letting a dropped-connection error propagate as an exception?",
+              "options": [
+                "MySQL itself raises a distinct exception type for a zero-row UPDATE, separate from the exception type it raises for a dropped connection",
+                "\"No such item_id\" is an expected outcome with a name the caller can act on directly (like answering a 404); a dropped connection is a genuine unforeseen failure with no clean caller-side response, so it's left to propagate",
+                "Returning a plain value executes measurably faster in Python than raising and catching an exception",
+                "api.py has no mechanism for catching exceptions, so every function it calls is written to return values instead of raising"
+              ],
+              "optionNotes": [
+                "A zero-row UPDATE is not an exception at all in MySQL -- it's simply cursor.rowcount == 0 on an otherwise successful statement. There's no distinct exception type involved for that case.",
+                "Correct. Forcing every caller to wrap a try/except around \"the item doesn't exist yet\" invites exactly the kind of blanket except-and-ignore code that quietly swallows real bugs along with the expected case -- so the expected case gets a plain return value instead.",
+                "Performance is never the stated rationale in crud.py's docstring, and isn't the reason for this design choice.",
+                "api.py explicitly does catch exceptions -- its @app.errorhandler(Exception) handler exists specifically for that purpose. It just isn't relied on for outcomes that already have a name."
+              ],
+              "answerIndex": 1,
+              "takeaway": "An outcome with a name (no such row) becomes a return value; a genuinely unexpected failure is left to propagate, so the real decision isn't silently relocated to every caller."
+            }
+          ]
+        },
+        {
+          "anchor": "m9-4",
+          "quizId": "m9-4-quiz",
+          "heading": "Check Yourself: A Minimal CRUD API",
+          "questions": [
+            {
+              "scenarioTitle": "A price of NaN",
+              "stem": "A client POSTs to /items with \"price\": NaN in the JSON body -- a token Python's json module accepts even though it isn't standard JSON. What does create_item_route actually do with it?",
+              "options": [
+                "NaN passes every check, because NaN <= 0 evaluates to False, and the request reaches mysql-connector, which turns it into a confusing SQL-syntax 500",
+                "_validate_price()'s math.isfinite(price) check catches it, so the route answers 400 before crud.create_item() -- and the database -- is ever touched",
+                "Flask's request.get_json() rejects the body outright, since NaN is not part of the standard JSON specification",
+                "_validate_price() only compares price against PRICE_MAX, so NaN passes because it isn't literally greater than 99999.99"
+              ],
+              "optionNotes": [
+                "This describes the actual bug this module's security review found and fixed -- it's what would happen without the isfinite() check, not what the current code does.",
+                "Correct. isinstance(price, bool) is False, isinstance(price, (int, float)) is True, but math.isfinite(price) is False for NaN, so _validate_price() returns its error message and the route responds 400, never reaching create_item().",
+                "Python's json module (which Flask uses under the hood) accepts NaN, Infinity, and -Infinity by default. Nothing rejects the body at the JSON-parsing stage.",
+                "This describes only the price <= 0 and price > PRICE_MAX branches, but skips isfinite(), which runs first and specifically exists to catch NaN and Infinity before either of those comparisons matters."
+              ],
+              "answerIndex": 1,
+              "takeaway": "math.isfinite() is what closes the gap that isinstance() and a plain range check leave open -- NaN and Infinity pass both of those but fail isfinite()."
+            },
+            {
+              "scenarioTitle": "An unanticipated database error",
+              "stem": "Deep inside crud.py, an unhandled mysql.connector.Error is raised while processing a request -- something no route's own validation or except clause was written to expect. What does the client actually receive?",
+              "options": [
+                "The raw MySQL error message and errno, so the client has enough detail to diagnose exactly what went wrong",
+                "A 500 response with a generic body -- {\"error\": \"internal_error\", \"message\": \"Something went wrong. Check the server log.\"} -- while the real exception is written to the server log via logger.exception()",
+                "A 400 response, since api.py treats every database-layer error as a client input problem",
+                "The connection closes with no HTTP response at all, leaving the client to time out"
+              ],
+              "optionNotes": [
+                "Returning the raw driver error to the client is exactly what @app.errorhandler(Exception) exists to prevent -- it would hand anyone probing the API a free look at schema and driver internals.",
+                "Correct. handle_unexpected_error() catches any exception that reaches it, logs the real one server-side with logger.exception(), and always returns the same generic 500 body to the client, regardless of what actually failed.",
+                "400s in this API are reserved for input the routes themselves rejected before ever calling the database. An unanticipated database-layer failure is always a 500, not a 400.",
+                "Flask's errorhandler(Exception) always produces an HTTP response for an unhandled exception; the request never simply goes unanswered."
+              ],
+              "answerIndex": 1,
+              "takeaway": "Every unanticipated failure is caught in exactly one place and turned into exactly one generic response -- the real detail goes to the server log, never to the client."
+            },
+            {
+              "scenarioTitle": "Deleting DG04 through the API",
+              "stem": "A client sends DELETE /items/DG04 against the seeded KimTay data. What status code and body does the client receive?",
+              "options": [
+                "500, because the foreign-key violation is an unhandled database error that reaches handle_unexpected_error()",
+                "204 with an empty body, since a well-formed DELETE request always succeeds",
+                "404, because DG04's row no longer matches what the client expected to delete",
+                "409, with a message stating the item is still referenced by an invoice line and cannot be deleted"
+              ],
+              "optionNotes": [
+                "crud.delete_item() already catches error 1451 two layers below the route, converting it into {\"reason\": \"referenced\"} before it can ever reach handle_unexpected_error() as an unhandled exception.",
+                "204 is returned only when result[\"deleted\"] is True. A foreign-key refusal is a different, named outcome, and delete_item_route checks for it explicitly before ever returning 204.",
+                "404 corresponds to crud.delete_item()'s \"not_found\" reason -- item_id doesn't exist at all. DG04 does exist; it's being refused for a different, specific reason.",
+                "Correct. delete_item_route reads result[\"reason\"] == \"referenced\" and answers with _error(409, \"referenced\", ...), translating the foreign-key refusal into HTTP's own vocabulary for a conflict."
+              ],
+              "answerIndex": 3,
+              "takeaway": "delete_item_route maps crud.delete_item()'s three named outcomes directly onto HTTP status codes: success to 204, not_found to 404, referenced to 409 -- never a generic 500."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "key": "m9c",
+      "sections": [
+        {
+          "id": "m9-5",
+          "num": "9-5",
+          "title": "Schema Migrations",
+          "blocks": [
+            {
+              "type": "p",
+              "text": "Every table this module has touched so far -- ITEM, INVOICE_LINE -- already existed, built by Module 8's 00-setup-both.sql. But schemas change: this module itself needs to add one new column, NOTES, for staff to jot free-text remarks on an item. The tempting shortcut is to just run ALTER TABLE ITEM ADD COLUMN NOTES VARCHAR(200) NULL; by hand against your database and remember that you did it. That works fine for exactly one person against exactly one database. It stops working the moment a second person, or a second environment -- your laptop, a teammate's laptop, a staging server, production -- needs the identical schema, and nobody has a reliable answer to \"has this database already gotten that column, or not?\" migrations/migrate.py exists to answer that question mechanically instead of by memory."
+            },
+            {
+              "type": "p",
+              "text": "The migration itself is a plain, numbered SQL file."
+            },
+            {
+              "type": "code",
+              "text": "-- Not runnable in this page's SQLite sandbox -- see labs/module9/ to run this for real.\n-- Migration 0001 - Add a NOTES column to ITEM\nALTER TABLE ITEM\n    ADD COLUMN NOTES VARCHAR(200) NULL;"
+            },
+            {
+              "type": "p",
+              "text": "NULL, not NOT NULL, is the detail worth pausing on. ITEM already has five real rows by the time this migration runs, and MySQL has no value of its own to put in NOTES for any of them. A nullable column costs nothing here: every existing row gets NOTES = NULL for free, with nothing to backfill by hand. A NOT NULL ADD COLUMN with no DEFAULT, by contrast, would be rejected outright by a server running in strict mode -- MySQL's default since version 5.7 -- because it has no value to put in rows that already exist. Nullable is what makes an additive migration like this one safe to run against a table that already holds data."
+            },
+            {
+              "type": "h4",
+              "text": "schema_migrations: a table that tracks itself"
+            },
+            {
+              "type": "p",
+              "text": "migrate.py's actual job is deciding which .sql files in migrations/ have already been applied to this specific database, and running only the ones that haven't. It answers that by keeping a table of its own."
+            },
+            {
+              "type": "code",
+              "text": "# Not runnable in this page's SQLite sandbox -- see labs/module9/ to run this for real.\nCREATE_TRACKING_TABLE = \"\"\"\nCREATE TABLE IF NOT EXISTS schema_migrations (\n    filename    VARCHAR(255) PRIMARY KEY,\n    applied_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP\n)\n\"\"\"\n\n\ndef pending_migrations(conn, migrations_dir):\n    \"\"\"Return the filenames in migrations_dir that schema_migrations\n    does not yet list, in the order they should be applied.\"\"\"\n    cursor = conn.cursor()\n    try:\n        cursor.execute(\"SELECT filename FROM schema_migrations\")\n        applied = {row[0] for row in cursor.fetchall()}\n    finally:\n        cursor.close()\n\n    return [\n        name for name in _migration_filenames(migrations_dir)\n        if name not in applied\n    ]"
+            },
+            {
+              "type": "p",
+              "text": "One row goes into schema_migrations per applied filename, the moment that file's SQL succeeds. The next time apply_migrations() runs -- on the same laptop five minutes later, or on a completely different machine next month -- pending_migrations() reads that table, takes the set difference against every .sql file actually present in migrations/, and hands back only the files that are genuinely missing. Run the whole script twice in a row on a database that's already current, and the second run does nothing at all: it prints \"Nothing to apply -- already up to date\" and touches no table. That property, running the same script repeatedly with no additional effect beyond the first run, is called idempotency, and it is the whole reason a migration runner is worth having instead of a folder of .sql files a person runs by hand and hopes to remember."
+            },
+            {
+              "type": "callout",
+              "variant": "definition",
+              "label": "Idempotent",
+              "text": "Describes an operation that produces the same end state no matter how many times it runs. migrate.py is idempotent by design: applying migration 0001 once adds the NOTES column and records the filename; running the whole script again finds that filename already recorded, applies nothing, and leaves the schema exactly as it was after the first run."
+            },
+            {
+              "type": "h4",
+              "text": "What running this for real caught, that mocking never could"
+            },
+            {
+              "type": "p",
+              "text": "This module's own README tells an honest story worth knowing, because it's a concrete example of a rule this course keeps insisting on: verify against the real thing, not just against your own reasoning about it. apply_migrations() originally read each migration file's whole text and ran it in one call, using cursor.execute(sql_text, multi=True) -- a real, documented mysql-connector-python feature for running more than one statement at once. Every one of this module's mocked tests passed against that version, because a mocked test replaces cursor.execute() with a stand-in before it ever matters whether multi=True is really supported."
+            },
+            {
+              "type": "p",
+              "text": "It was only running migrate.py against a real, live MySQL server that surfaced the problem: multi=True (and its sibling, the connection-level cmd_query_iter()) only work under mysql-connector-python's pure-Python connection implementation. The C-extension implementation -- what pip install mysql-connector-python actually installs by default -- raises NotImplementedError for both. The fix, visible in the finished code below, is to split a migration file's text on \";\" and run each non-empty statement through a plain, single-statement cursor.execute() instead."
+            },
+            {
+              "type": "code",
+              "text": "# Not runnable in this page's SQLite sandbox -- see labs/module9/ to run this for real.\n# cursor.execute() only accepts a single statement, but a migration\n# file isn't guaranteed to stay one statement forever.\nstatements = [s.strip() for s in sql_text.split(\";\")]\nfor statement in statements:\n    if statement:\n        cursor.execute(statement)"
+            },
+            {
+              "type": "p",
+              "text": "The fix is honest about the limitation it leaves behind, documented directly in migrate.py's own comments: a semicolon inside a string literal, or inside a stored-procedure body of the kind Module 8's DELIMITER dance exists to handle, would be split in the wrong place by this simple approach. That's fine for this lab's plain DDL and DML migrations; a migration that genuinely needs a semicolon inside a procedure body belongs in its own file, run by hand the way Module 8 already teaches, not through this runner. What matters for this section is where the bug was found. This module's automated test suite is fully mocked -- 73 passing tests, none of them touching a real database -- and every single one of them kept passing straight through this bug, because mocking the driver only ever verifies that your code calls the driver the way you expect it to, never that your expectation of the driver's real behavior is actually correct. Only a live run against a real server could have caught this, and it did."
+            }
+          ]
+        },
+        {
+          "id": "m9-summary",
+          "num": "Summary",
+          "title": "What You Learned in Module 9",
+          "blocks": [
+            {
+              "type": "p",
+              "text": "Module 8 and Module 9 taught the same underlying story about a client sending SQL to a database, from two different sides of the connection. Module 8 lived inside the engine: a stored procedure receives a parameter, and that parameter is bound the moment the procedure is called -- there is no step in CALL DELETE_ITEM('DG04') where the item id could ever be spliced into SQL text, because the procedure's body was already compiled before any caller supplied a value. Module 9 lived outside the engine, in a Python program that has to build its own SQL statements from scratch every time -- and that extra step, string-building a query in a general-purpose language, is exactly where a program can go wrong in a way a stored procedure structurally cannot. safe_lookup() and unsafe_lookup() run the identical query against the identical table; only one of them survives a hostile input, because only one of them keeps the value out of the SQL text until MySQL has already fixed what the statement means."
+            },
+            {
+              "type": "p",
+              "text": "Parameterization -- binding a value through a placeholder like %s and a separate params tuple, instead of splicing it into the SQL text with an f-string, %-format, or concatenation -- is the one property that actually matters across this whole module. Every function in crud.py uses it, on every value, for every operation. api.py's input validation, run before any of those functions is ever called, and its refusal to hand a client a raw database error afterward, are the same underlying instinct applied to the rest of the program's surface: never trust an input more than you have to, and never reveal more about your own internals than the caller needs. delete_item()'s foreign-key handling closed the loop back to Module 8 directly -- the identical MySQL error 1451, caught for the identical reason, in three different languages: T-SQL's BEGIN CATCH, MySQL's DECLARE EXIT HANDLER, and Python's except IntegrityError."
+            },
+            {
+              "type": "p",
+              "text": "Migrations were this module's other half, and a quieter one: not about a single dangerous line of code, but about a database's schema being a shared, changing thing that more than one person or one environment eventually has to agree on. schema_migrations turns \"did we already run that ALTER TABLE?\" from a question someone has to remember the answer to into a question the database can answer for itself, and the honest story behind migrate.py's own multi=True bug is a reminder that mocked tests verify your model of a driver's behavior, not whether that model is actually true -- which is exactly why this course keeps insisting you run things for real."
+            },
+            {
+              "type": "p",
+              "text": "Put the two modules together and the whole picture is this: a database's security and correctness were never only about what happens inside the engine. Module 8 showed you the half that a stored procedure gets right by construction. Module 9 showed you the half a program has to get right on purpose, by discipline, because nothing forces it to -- and showed you exactly what it looks like when that discipline slips."
+            }
+          ]
+        },
+        {
+          "id": "m9-terms",
+          "num": "Terms",
+          "title": "Key Terms",
+          "blocks": [
+            {
+              "type": "p",
+              "text": "Every term below appeared in this module. None of them are specific to MySQL the way Module 8's stored-procedure vocabulary was specific to a dialect -- these are ideas that apply to a Python program talking to essentially any SQL database."
+            },
+            {
+              "type": "table",
+              "caption": "Module 9 key terms",
+              "headers": [
+                "Term",
+                "What it means",
+                "Where it applies"
+              ],
+              "rows": [
+                [
+                  "Parameterized query",
+                  "A SQL statement written with placeholders (such as %s) for its values, sent to the driver together with those values kept separate from the statement text",
+                  "Python + any SQL database"
+                ],
+                [
+                  "SQL injection",
+                  "An attack where a value a program treats as data is instead interpreted as part of the SQL statement's own structure, because it was built into the query text instead of bound as a parameter",
+                  "Any program that builds SQL from untrusted input"
+                ],
+                [
+                  "Driver",
+                  "The library that translates a program's calls (like cursor.execute()) into the wire protocol a specific database server speaks -- mysql-connector-python, for this module's MySQL server",
+                  "Python + any SQL database (a different driver per database)"
+                ],
+                [
+                  "Connection string / environment variable",
+                  "The host, port, credentials, and database name a program needs to open a connection, kept out of source code and supplied at run time instead",
+                  "Python + any SQL database"
+                ],
+                [
+                  "CRUD",
+                  "The four basic operations a program performs against stored data: Create, Read, Update, Delete",
+                  "Any application layer talking to a database"
+                ],
+                [
+                  "Migration",
+                  "A single, numbered, version-controlled file that changes the schema by one step, applied in order and recorded so it never runs twice against the same database",
+                  "Python + any SQL database"
+                ],
+                [
+                  "schema_migrations table",
+                  "A table the migration runner creates for itself, holding one row per migration filename that has already been applied",
+                  "Python + any SQL database"
+                ],
+                [
+                  "Least-privilege (database) user",
+                  "A database account granted only the permissions the application actually needs (for example SELECT/INSERT/UPDATE/DELETE on one table), not full administrative rights",
+                  "Any database account an application connects as"
+                ],
+                [
+                  "Idempotent",
+                  "Describes an operation that produces the same end state no matter how many times it runs; running it a second time is a safe no-op, not a repeated effect",
+                  "Python + any SQL database"
+                ]
+              ]
+            },
+            {
+              "type": "callout",
+              "variant": "tip",
+              "label": "The one to never mix up",
+              "text": "\"Parameterized\" and \"validated\" are not the same guarantee, and it's worth being precise about the difference. api.py validates price and item_id before crud.py ever runs -- that check exists to give a clean 400 instead of a confusing failure. But every value in crud.py, validated or not, is still bound with %s. Validation catches malformed input; parameterization is what actually prevents SQL injection, and it has to be applied to every value regardless of whether that value was already checked for something else."
+            },
+            {
+              "type": "p",
+              "text": "The matcher below sorts each of these terms into the part of the module it belongs to. Every card fits exactly one zone."
+            }
+          ]
+        },
+        {
+          "id": "m9-review",
+          "num": "Review",
+          "title": "Module 9 Review",
+          "blocks": [
+            {
+              "type": "p",
+              "text": "The quiz below is cumulative, spanning everything from opening a connection in section 9-1 through running a migration twice in section 9-5. Answer each question before reading the note under the options, and pay close attention to any pair of options that look almost identical -- that is usually exactly where the real distinction lives."
+            },
+            {
+              "type": "callout",
+              "variant": "note",
+              "label": "How to read a wrong answer",
+              "text": "Every option carries a note naming the specific misconception behind it, not simply the word \"incorrect\". If you picked an option, read its note first and the correct option's note second. Working out why the wrong idea was tempting is worth more than confirming the right one."
+            },
+            {
+              "type": "p",
+              "text": "There is no sandbox on this page for Module 9 the way there was for Module 8 -- nothing here is SQLite, so there is no in-page way to run a Flask route or watch injection_demo.py print its output live. If a review question makes you want to check a claim against real behavior rather than take it on faith, that instinct is exactly right -- follow labs/module9/README.md's \"Start here\" walkthrough and run the actual code locally."
+            }
+          ]
+        },
+        {
+          "id": "m9-exercises",
+          "num": "Practice",
+          "title": "Hands-On Exercises",
+          "blocks": [
+            {
+              "type": "p",
+              "text": "Nothing in this module runs on this page, so every exercise here means actually running labs/module9/ on your own machine. The commands below are copied exactly from labs/module9/README.md's \"Start here\" section -- follow them in order the first time through."
+            },
+            {
+              "type": "steps",
+              "items": [
+                {
+                  "title": "1. Create and activate a virtual environment",
+                  "body": "From labs/module9/: python3 -m venv .venv, then source .venv/bin/activate (Windows: .venv\\Scripts\\activate)."
+                },
+                {
+                  "title": "2. Install the dependencies",
+                  "body": "pip install -r requirements.txt for the runtime dependencies, then pip install -r requirements-dev.txt as well so you can run the test suite."
+                },
+                {
+                  "title": "3. Set up real credentials",
+                  "body": "cp .env.example .env, then edit .env with real values. Read the README's \"Use a least-privilege database user\" section before you decide what to put in DB_USER -- do not point it at root beyond a throwaway personal sandbox."
+                },
+                {
+                  "title": "4. Apply the schema migration",
+                  "body": "python3 migrations/migrate.py adds the ITEM.NOTES column this module ships and records it in schema_migrations."
+                },
+                {
+                  "title": "5. Run the CRUD functions and the injection demo directly",
+                  "body": "python3 injection_demo.py runs safe_lookup() and unsafe_lookup() against a real connection and prints exactly what each one returns."
+                },
+                {
+                  "title": "6. Run the API",
+                  "body": "flask --app api run --debug starts the Flask app. In another terminal, try curl http://127.0.0.1:5000/items and curl http://127.0.0.1:5000/items/DG04."
+                },
+                {
+                  "title": "7. Run the automated test suite",
+                  "body": "pytest runs all 73 tests. They are fully mocked, so this step needs no live database connection at all."
+                }
+              ]
+            },
+            {
+              "type": "p",
+              "text": "Once the walkthrough above runs cleanly, try these and pay attention to exactly what you observe -- each one is a direct continuation of something this module argued for, not just a command to type."
+            },
+            {
+              "type": "checklist",
+              "items": [
+                "Run injection_demo.py and read its output line by line. Confirm for yourself that safe_lookup(payload) returns nothing, while unsafe_lookup(payload) returns all five ITEM rows -- and be able to explain, in your own words, exactly what character in the payload is doing the work.",
+                "With the API running, try DELETE http://127.0.0.1:5000/items/DG04 (curl -X DELETE). Read the 409 response body and match it against crud.delete_item()'s {\"reason\": \"referenced\"} case and Module 8's DELETE_ITEM procedures -- same underlying refusal, same reason, three different languages reporting it.",
+                "Run python3 migrations/migrate.py a second time, immediately after the first. Confirm the second run prints \"Nothing to apply -- already up to date\" and changes nothing -- that's idempotency, not luck.",
+                "Try POST-ing an item with \"price\": null or a price above 99999.99 through curl, and read the 400 response's field name and message. Then compare it against what _validate_price() actually checks in api.py."
+              ]
+            }
+          ]
+        }
+      ],
+      "quizzes": [
+        {
+          "anchor": "m9-5",
+          "quizId": "m9-5-quiz",
+          "heading": "Check Yourself: Schema Migrations",
+          "questions": [
+            {
+              "scenarioTitle": "Running migrate.py a second time",
+              "stem": "migrations/migrate.py is run once, applying 0001_add_item_notes_column.sql successfully. It's then run a second time, immediately after, against the same database. What happens?",
+              "options": [
+                "It raises a \"Duplicate column\" error, because ALTER TABLE ADD COLUMN NOTES runs again",
+                "pending_migrations() finds 0001_add_item_notes_column.sql already recorded in schema_migrations, returns an empty list, and the script reports \"Nothing to apply -- already up to date\" without touching ITEM again",
+                "It silently drops and recreates the NOTES column, to guarantee a clean, freshly-applied state every run",
+                "It re-runs 0001's SQL but skips inserting a second row into schema_migrations, since filename is a PRIMARY KEY"
+              ],
+              "optionNotes": [
+                "That is exactly the failure this design exists to prevent. It only happens if a migration is re-run without a tracking mechanism -- which is not what migrate.py does.",
+                "Correct. apply_migrations() calls pending_migrations() first, which reads schema_migrations and filters out every filename already recorded there -- 0001 is already recorded after the first run, so nothing is re-applied on the second.",
+                "migrate.py has no destructive drop-and-recreate behavior anywhere in it. It only ever adds what's pending; it never undoes anything.",
+                "The re-run never reaches the ALTER TABLE at all -- pending_migrations() filters 0001 out before apply_migrations()'s loop body runs, so there's no duplicate-key error to avoid in the first place."
+              ],
+              "answerIndex": 1,
+              "takeaway": "Safety here comes from checking what's already applied before attempting anything, not from attempting and recovering from a duplicate-key failure."
+            },
+            {
+              "scenarioTitle": "Why the file gets split on \";\"",
+              "stem": "apply_migrations() splits each migration file's text on \";\" and runs each statement through a plain cursor.execute(), instead of a single cursor.execute(sql_text, multi=True) call. Why?",
+              "options": [
+                "Splitting the statements is measurably faster than a single multi-statement call",
+                "MySQL itself forbids more than one statement from appearing in a single migration file",
+                "multi=True (and cmd_query_iter()) only work under mysql-connector-python's pure-Python connection implementation; the C-extension implementation pip actually installs raises NotImplementedError for both -- a limitation only a live run against a real server surfaced, since every mocked test replaces cursor.execute() before it matters",
+                "cursor.execute()'s multi=True argument is deprecated and scheduled for removal in a future mysql-connector-python release"
+              ],
+              "optionNotes": [
+                "Speed was never the stated reason in migrate.py's own comments, and splitting statements isn't presented as a performance optimization.",
+                "MySQL the server has no such restriction. This is a limitation of the driver's C-extension implementation, not a rule the database enforces.",
+                "Correct. The bug was invisible to the fully mocked test suite because mocking replaces cursor.execute() itself -- it only ever confirms your code calls the driver the way you expect, never that the expectation is actually true of the real driver.",
+                "Nothing in the module's source describes multi=True as deprecated. The reason given is that the default installed implementation never supported it in the first place, not that support was removed."
+              ],
+              "answerIndex": 2,
+              "takeaway": "Mocked tests verify that your code calls the driver the way you expect; they cannot verify that your expectation of the driver's real behavior is correct. Only a live run caught this."
+            },
+            {
+              "scenarioTitle": "What NULL actually buys the ADD COLUMN",
+              "stem": "0001_add_item_notes_column.sql adds NOTES VARCHAR(200) NULL to ITEM, a table that already holds five real rows. What does the NULL (with no DEFAULT) specifically guarantee?",
+              "options": [
+                "Every existing row gets NOTES set to an empty string '' automatically",
+                "MySQL requires a separate UPDATE to backfill NOTES for the five existing rows before the ALTER TABLE will even succeed",
+                "Every existing row gets NOTES = NULL for free, with nothing to backfill -- and it's specifically what keeps the ALTER TABLE legal under a server running in strict mode, which would reject a NOT NULL ADD COLUMN that has no DEFAULT to fill existing rows with",
+                "ADD COLUMN NOTES VARCHAR(200) NULL behaves identically to ADD COLUMN NOTES VARCHAR(200) NOT NULL on a table that already has rows"
+              ],
+              "optionNotes": [
+                "NULL and an empty string are different values. A nullable column with no DEFAULT gets NULL, not '', for rows that already existed before the column was added.",
+                "This describes the opposite of what nullable buys you. A separate backfill step is exactly what NULL makes unnecessary -- MySQL fills existing rows with NULL automatically.",
+                "Correct. Strict mode (MySQL's default since 5.7) rejects a NOT NULL ADD COLUMN with no DEFAULT, because it would have no value to put in rows that already exist. Nullable is what makes this additive migration legal against a table that already holds data.",
+                "The two are not equivalent on an existing table. NOT NULL with no DEFAULT would be rejected outright under strict mode; NULL succeeds precisely because it has an answer for every existing row."
+              ],
+              "answerIndex": 2,
+              "takeaway": "A nullable ADD COLUMN with no DEFAULT is what lets a migration run safely against a table that already has data -- MySQL never has to invent a value for rows it can't know one for."
+            }
+          ]
+        },
+        {
+          "anchor": "m9-review",
+          "quizId": "m9-review-quiz",
+          "heading": "Module 9 Review Quiz",
+          "questions": [
+            {
+              "scenarioTitle": "A missing .env, from the very first section",
+              "stem": "A teammate clones labs/module9/, never runs cp .env.example .env, and runs python3 injection_demo.py. What actually happens?",
+              "options": [
+                "get_connection() raises a RuntimeError naming the first required variable it finds missing, rather than connecting to any default host, user, or database",
+                "The script connects to localhost as root with an empty password, since those are common local MySQL defaults",
+                "The script exits silently with status 0, having done nothing",
+                "Python prompts interactively in the terminal for the four missing values"
+              ],
+              "optionNotes": [
+                "Correct. get_connection() loops over REQUIRED_VARS and raises the moment one is missing, naming it directly -- exactly the fail-closed behavior section 9-1 covers.",
+                "This is precisely the insecure-by-default pattern get_connection() refuses to fall back to. A missing credential is an error, never a guessed default.",
+                "A raised RuntimeError is an uncaught exception in a __main__ script -- it prints a traceback and exits non-zero, not silently and successfully.",
+                "Nothing in db.py has any interactive input logic. It raises immediately and synchronously, with no prompt."
+              ],
+              "answerIndex": 0,
+              "takeaway": "The very first thing this module teaches -- fail closed on a missing credential -- holds all the way through every script that calls get_connection()."
+            },
+            {
+              "scenarioTitle": "Why this specific injection payload",
+              "stem": "injection_demo.py's payload is \"DG04' OR '1'='1\", not something more destructive like a second statement. What does that specific, simple choice let the demo show cleanly?",
+              "options": [
+                "That the same exact string, passed to safe_lookup() and to unsafe_lookup(), produces wildly different results -- nothing from one, all five ITEM rows from the other -- using nothing more exotic than an ordinary SELECT",
+                "That mysql-connector-python is fundamentally incapable of ever executing a DROP TABLE statement",
+                "That MySQL automatically detects and blocks tautology-based conditions like OR '1'='1'",
+                "That ITEM_ID would need to be a numeric column for injection to be possible at all"
+              ],
+              "optionNotes": [
+                "Correct. A single-clause tautology is the simplest payload that makes the contrast between bound and spliced values visible in one SELECT's result set -- no multi-statement trickery required to see the point.",
+                "This isn't what the demo shows or claims. cursor.execute() without multi=True generally accepts one statement at a time, but that's a separate detail from why this particular payload was chosen.",
+                "MySQL performs no such detection. OR '1'='1' is evaluated as an ordinary, syntactically valid condition -- true for every row -- with nothing special done about its shape.",
+                "ITEM_ID is CHAR(4) in this schema, not numeric, and that has no bearing on the vulnerability. Injection depends on how a value reaches the SQL text, not on the column's data type."
+              ],
+              "answerIndex": 0,
+              "takeaway": "The simplest payload that makes a real difference visible is usually the clearest teaching tool -- and a single tautology does that here without needing anything more elaborate."
+            },
+            {
+              "scenarioTitle": "delete_item and DELETE_ITEM, side by side",
+              "stem": "crud.delete_item('DG04') in Python and Module 8's MySQL DELETE_ITEM('DG04') stored procedure are both run against the same seeded database. What do they have in common?",
+              "options": [
+                "Both attempt the DELETE directly, both let MySQL's foreign-key check on INVOICE_LINE refuse it with error 1451, and both catch that specific error and report it as a normal, named outcome",
+                "Both first query INVOICE_LINE to check for a reference, and refuse to attempt the DELETE at all if one is found",
+                "Only the Python version handles the failure -- the stored procedure lets the raw MySQL error propagate to whatever called it",
+                "Both permanently delete DG04 and then restore it afterward through a compensating transaction"
+              ],
+              "optionNotes": [
+                "Correct. Neither implementation pre-checks; both attempt the DELETE and react to the identical error 1451 the database raises, catching it in their own language's error-handling construct.",
+                "Neither one pre-checks INVOICE_LINE before attempting the delete -- both discover the conflict the same way, by attempting the DELETE and reacting to MySQL's refusal.",
+                "The MySQL stored procedure catches this with DECLARE EXIT HANDLER FOR SQLEXCEPTION, reporting that the item is still referenced -- it does not let the error propagate uncaught.",
+                "Neither implementation deletes and restores anything. DG04 is never actually removed in this scenario; the DELETE is refused before it takes effect."
+              ],
+              "answerIndex": 0,
+              "takeaway": "The same underlying rule -- attempt, get refused by a foreign key, catch that specific refusal -- holds whether it's written in T-SQL, MySQL's procedural dialect, or Python."
+            },
+            {
+              "scenarioTitle": "A boolean where a quantity was expected",
+              "stem": "A client POSTs to /items with \"on_hand\": true instead of a number. What does create_item_route actually do, and why?",
+              "options": [
+                "It rejects the request with 400, because the validation explicitly excludes bool from passing the on_hand check, even though isinstance(True, int) is technically True in Python",
+                "It accepts the request and stores on_hand as 1, since True equals 1 under Python's own equality rules",
+                "It raises an uncaught TypeError, which becomes a generic 500 response",
+                "Flask's request.get_json() silently converts JSON booleans to integers before the route ever runs"
+              ],
+              "optionNotes": [
+                "Correct. The check is isinstance(on_hand, int) and not isinstance(on_hand, bool) -- bool being a subclass of int would otherwise let a JSON true/false quietly masquerade as a quantity, which the validation explicitly guards against.",
+                "This describes exactly what would happen without the explicit bool exclusion. The actual code checks for and rejects this case with a clean 400 instead.",
+                "This is caught as ordinary input validation before crud.create_item() is ever called -- it never reaches a point where a TypeError could be raised or an unhandled exception could occur.",
+                "No such conversion happens anywhere in Flask's JSON parsing. A JSON boolean arrives in Python as an actual bool value, unchanged."
+              ],
+              "answerIndex": 0,
+              "takeaway": "isinstance(x, bool) has to be checked separately from isinstance(x, int) in Python, because bool is a subclass of int -- a check that forgets this lets true/false pass as 1/0 unnoticed."
+            },
+            {
+              "scenarioTitle": "Two developers, two databases, one migration",
+              "stem": "Developer A has already run migrate.py and applied 0001 against their own local database. Developer B has not yet run it against theirs. Both run migrate.py independently, with no communication between them. What keeps this safe?",
+              "options": [
+                "migrate.py contacts a shared coordination server to determine which migrations are safe to apply before running anything",
+                "Each database's own schema_migrations table records which filenames it has applied, so pending_migrations() returns 0001 only for Developer B's database -- where it's genuinely still missing -- and nothing for Developer A's",
+                "migrate.py inspects whether ITEM already has a NOTES column and decides whether to run based on that, rather than checking any tracking table",
+                "The two developers must manually agree over chat on who runs the migration first, since the tool itself has no way to detect what's already been applied"
+              ],
+              "optionNotes": [
+                "There is no networked coordination anywhere in migrate.py. It only ever reads the local schema_migrations table of whichever database it's pointed at.",
+                "Correct. Tracking is per-database, not global -- schema_migrations lives inside each database and reflects only what that specific database has recorded, so the same script run twice against two different databases does exactly the right thing in each.",
+                "pending_migrations() checks recorded filenames in schema_migrations, not the live shape of ITEM itself. It has no logic that inspects column existence directly.",
+                "Manual coordination is exactly what schema_migrations exists to make unnecessary -- each database answers the \"is this applied?\" question for itself, independent of what any other database or developer has done."
+              ],
+              "answerIndex": 1,
+              "takeaway": "schema_migrations tracks state per database, not globally -- that's what lets the same script be run safely and independently against however many separate databases actually need it."
+            }
+          ]
+        }
+      ],
+      "matchers": [
+        {
+          "anchor": "m9-terms",
+          "matchId": "m9-terms-match",
+          "heading": "Match the Term to What It's About",
+          "prompt": "Each card names a term from this module. Sort it into the part of the module's story it belongs to. Every card fits exactly one zone.",
+          "zones": [
+            {
+              "key": "safety",
+              "label": "Writing and controlling safe queries",
+              "hint": "Defends the query itself, or who's allowed to run it"
+            },
+            {
+              "key": "connecting",
+              "label": "Reaching the database",
+              "hint": "About opening and configuring the connection itself"
+            },
+            {
+              "key": "schema",
+              "label": "Changing the schema and the data",
+              "hint": "About CRUD operations or tracked, repeatable schema change"
+            }
+          ],
+          "cards": [
+            {
+              "text": "Parameterized query",
+              "zone": "safety",
+              "why": "The technique that keeps a value from ever restructuring the SQL statement it's part of."
+            },
+            {
+              "text": "SQL injection",
+              "zone": "safety",
+              "why": "The specific attack a parameterized query defends against."
+            },
+            {
+              "text": "Least-privilege (database) user",
+              "zone": "safety",
+              "why": "A second layer of defense: even if a query or a bug went wrong, a scoped account limits what it could actually do."
+            },
+            {
+              "text": "Driver",
+              "zone": "connecting",
+              "why": "The library translating Python calls into the wire protocol the database server speaks -- the first thing that has to work before any query runs."
+            },
+            {
+              "text": "Connection string / environment variable",
+              "zone": "connecting",
+              "why": "How the program is told which database to reach and with what credentials, kept out of source code."
+            },
+            {
+              "text": "CRUD",
+              "zone": "schema",
+              "why": "The four basic operations -- Create, Read, Update, Delete -- crud.py performs against ITEM."
+            },
+            {
+              "text": "Migration",
+              "zone": "schema",
+              "why": "A single, numbered step that changes the schema, tracked so it's never applied twice."
+            },
+            {
+              "text": "schema_migrations table",
+              "zone": "schema",
+              "why": "The mechanism migrate.py uses to know which migrations a given database has already applied."
+            },
+            {
+              "text": "Idempotent",
+              "zone": "schema",
+              "why": "The property that makes running migrate.py a second time a safe no-op instead of a repeated effect."
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
