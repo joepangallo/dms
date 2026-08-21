@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Module 7 SQL homework on creating, using, and dropping views, view-based security, indexes, the system catalog, and integrity constraints.">
+<title>Module 7 Homework: Views, Indexes, and Constraints</title>
+<style>
+:root{
+  --navy:#1b2559;
+  --navy-2:#2d3f91;
+  --orange:#d9782d;
+  --orange-soft:#fff0e3;
+  --teal:#087568;
+  --green:#176b42;
+  --green-soft:#e8f6ee;
+  --red:#a33a35;
+  --red-soft:#fff0ee;
+  --yellow:#7a5600;
+  --yellow-soft:#fff7d6;
+  --ink:#1f2937;
+  --muted:#5f6b7a;
+  --line:#d7dce4;
+  --paper:#fff;
+  --page:#f4f6fa;
+  --radius:13px;
+  --shadow:0 8px 24px rgba(27,37,89,.08);
+  --sans:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+  --mono:"SFMono-Regular",Consolas,"Liberation Mono",monospace;
+}
+*,*::before,*::after{box-sizing:border-box}
+html{scroll-behavior:smooth;scroll-padding-top:72px}
+body{margin:0;background:var(--page);color:var(--ink);font:16px/1.55 var(--sans);-webkit-font-smoothing:antialiased}
+button,input,textarea{font:inherit}button{cursor:pointer}code,pre,textarea{font-family:var(--mono)}
+:focus-visible{outline:3px solid #f0a64f;outline-offset:3px}
+.wrap{width:min(1160px,calc(100% - 36px));margin:auto}
+.skip{position:absolute;left:12px;top:-60px;z-index:50;padding:8px 13px;background:#111827;color:#fff}.skip:focus{top:0}
+
+header{color:#fff;background:linear-gradient(125deg,var(--navy),var(--navy-2));border-bottom:6px solid var(--orange)}
+.hero{padding:36px 0 30px}.kicker{display:block;margin-bottom:7px;color:#dce3ff;font-size:.74rem;font-weight:850;letter-spacing:.1em;text-transform:uppercase}
+h1,h2,h3{margin:0;color:var(--navy);line-height:1.2}header h1{color:#fff;font-size:clamp(2rem,5vw,3.35rem);letter-spacing:-.035em}header p{margin:11px 0 0;color:#e4e8ff;font-size:1.05rem}
+.meta-chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:17px}.meta-chips span{padding:5px 10px;border:1px solid rgba(255,255,255,.3);border-radius:999px;background:rgba(255,255,255,.09);font-size:.76rem;font-weight:750}
+
+.toolbar{position:sticky;top:0;z-index:25;background:rgba(255,255,255,.96);border-bottom:1px solid var(--line);box-shadow:0 4px 14px rgba(31,41,55,.06);backdrop-filter:blur(8px)}
+.toolbar-inner{min-height:58px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}.save-status{margin-right:auto;color:var(--muted);font-size:.78rem}.save-status strong{color:var(--green)}
+.btn{min-height:38px;border:1px solid transparent;border-radius:8px;padding:7px 12px;background:var(--navy);color:#fff;font-weight:760}.btn:hover{background:var(--navy-2)}.btn:disabled{cursor:not-allowed;opacity:.56}
+.btn.secondary{border-color:#aab3c2;background:#fff;color:var(--ink)}.btn.secondary:hover{background:#f1f3f7}.btn.danger{border-color:#dfaaa6;background:#fff;color:var(--red)}.btn.danger:hover{background:var(--red-soft)}
+
+main{padding:32px 0 58px}.student-grid{max-width:410px;margin-bottom:20px}label{display:block;color:var(--navy);font-size:.78rem;font-weight:800;letter-spacing:.02em}
+input[type="text"]{width:100%;height:42px;margin-top:4px;padding:8px 10px;border:1px solid #aeb7c5;border-radius:8px;background:#fff;color:var(--ink)}
+.card{min-width:0;margin-bottom:20px;padding:22px;background:var(--paper);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow)}
+.card h2{font-size:clamp(1.4rem,3vw,1.95rem);letter-spacing:-.02em}.section-label{display:block;margin-bottom:5px;color:var(--orange);font-size:.7rem;font-weight:900;letter-spacing:.11em;text-transform:uppercase}
+.direct-note{margin:9px 0 0;color:var(--muted)}code{color:var(--navy);font-weight:700}
+
+.engine{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:15px;padding:11px 13px;border:1px solid #b8c3d6;border-radius:9px;background:#f7f9fd}.engine-dot{width:10px;height:10px;border-radius:50%;background:#c39418;box-shadow:0 0 0 4px #fff1b7}.engine.ready .engine-dot{background:var(--green);box-shadow:0 0 0 4px #ccebd9}.engine.error .engine-dot{background:var(--red);box-shadow:0 0 0 4px #f5cfcb}.engine strong{color:var(--navy)}.engine span:last-child{color:var(--muted);font-size:.82rem}
+
+.schema-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(205px,1fr));gap:10px;margin-top:16px}.schema{min-width:0;overflow:hidden;border:1px solid #aeb7c5;border-radius:9px;background:#fff}.schema h3{padding:10px 11px;background:var(--navy);color:#fff;font:850 .82rem/1.2 var(--mono)}.schema ul{margin:0;padding:0;list-style:none}.schema li{display:flex;align-items:center;gap:8px;min-height:34px;padding:6px 9px;border-top:1px solid var(--line);font:12px/1.3 var(--mono)}.schema li span{margin-left:auto;color:var(--muted);font:700 .58rem/1 var(--sans);text-align:right;text-transform:uppercase}.schema li.pk{background:var(--yellow-soft)}.schema li.fk{background:#edf2ff}
+.relations{margin-top:12px;padding:11px 12px;border:1px dashed #98a4b6;border-radius:9px;background:#f8f9fb;color:var(--navy);font:750 12px/1.6 var(--mono);overflow-wrap:anywhere}
+.data-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin-top:16px}.data-grid .wide{grid-column:1/-1}.table-wrap{min-width:0;overflow-x:auto;border:1px solid var(--line);border-radius:9px}
+table{width:100%;border-collapse:collapse;background:#fff;font-size:.78rem}caption{padding:9px 11px;background:var(--navy);color:#fff;text-align:left;font-weight:800}th,td{padding:7px 8px;border-right:1px solid var(--line);border-bottom:1px solid var(--line);text-align:left;vertical-align:top;white-space:nowrap}th:last-child,td:last-child{border-right:0}tbody tr:last-child td{border-bottom:0}thead th{background:#edf0f6;color:#2c3650;font:800 .67rem/1.25 var(--mono)}td.null{color:var(--red);font-family:var(--mono);font-style:italic}
+
+.rules{margin:13px 0 0;padding-left:21px}.rules li+li{margin-top:5px}
+.task{min-width:0;margin-top:17px;padding:18px;border:1px solid var(--line);border-radius:11px;background:#fff}.task-head{display:grid;grid-template-columns:42px minmax(0,1fr) auto;gap:11px;align-items:start}.task-num{display:grid;place-items:center;width:42px;height:42px;border-radius:10px;background:var(--navy);color:#fff;font:850 .9rem/1 var(--mono)}.task-title h3{font-size:1.08rem}.task-title p{margin:4px 0 0;color:var(--ink);font-size:.9rem}.points{padding:4px 8px;border-radius:999px;background:var(--orange-soft);color:#9b4c18;font-size:.7rem;font-weight:850;white-space:nowrap}
+.requirements{display:flex;flex-wrap:wrap;gap:6px;margin:12px 0 0 53px}.requirements span{padding:4px 7px;border-radius:5px;background:#eef1f6;color:#4d5869;font:750 .68rem/1.25 var(--mono)}
+.editor-wrap{margin:12px 0 0 53px}textarea{display:block;width:100%;min-height:176px;padding:13px 14px;resize:vertical;border:1px solid #aeb7c5;border-radius:8px;background:#fff;color:var(--ink);font-size:13px;line-height:1.55;tab-size:2}textarea::placeholder{color:#8993a1}
+.task-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:8px}.task-actions .run{background:var(--teal)}.task-actions .run:hover{background:#09665c}.shortcut{color:var(--muted);font-size:.72rem}
+.output{display:none;margin-top:11px;border:1px solid var(--line);border-radius:8px;overflow:hidden}.output.has-content{display:block}.output-head{padding:8px 10px;background:#edf0f6;color:#3c485b;font-size:.74rem;font-weight:800}.output-scroll{overflow:auto;max-height:330px}.output table{font-size:.75rem}.output+.output-head{border-top:1px solid var(--line)}.message{padding:12px 13px;font-size:.84rem}.message.ok{background:var(--green-soft);color:var(--green)}.message.error{background:var(--red-soft);color:var(--red)}.message.loading{background:var(--yellow-soft);color:var(--yellow)}
+footer{padding:24px 0;border-top:1px solid var(--line);color:var(--muted);font-size:.78rem}
+
+@media(max-width:760px){.wrap{width:min(100% - 22px,1160px)}.toolbar{position:static}.toolbar-inner{padding:9px 0}.save-status{width:100%}.data-grid{grid-template-columns:1fr}.data-grid .wide{grid-column:auto}.card{padding:16px}.task{padding:14px}.task-head{grid-template-columns:38px minmax(0,1fr)}.task-num{width:38px;height:38px}.points{grid-column:2;justify-self:start}.requirements,.editor-wrap{margin-left:0}textarea{min-height:205px}}
+@media print{@page{margin:.5in}body{background:#fff;font-size:10pt}.toolbar,.skip,.engine,.task-actions{display:none!important}.wrap{width:100%}.hero{padding:18px 0}header{background:#fff;color:#000;border-bottom:3px solid #000}header h1,header p,.kicker{color:#000}.meta-chips span{border-color:#777;color:#000;background:#fff}main{padding:18px 0}.card,.task{box-shadow:none;break-inside:avoid}.schema-grid{grid-template-columns:repeat(3,1fr)}.data-grid{grid-template-columns:1fr 1fr}.task textarea{overflow:visible;resize:none;border-color:#777}.output-scroll{max-height:none;overflow:visible}footer{display:none}}
+</style>
+</head>
+<body>
+<a class="skip" href="#main">Skip to assignment</a>
+
+<header>
+  <div class="wrap hero">
+    <span class="kicker">Homework assignment · Module 7</span>
+    <h1>Views, Indexes, and Constraints</h1>
+    <p>Complete all ten SQL tasks using the database below.</p>
+    <div class="meta-chips"><span>100 points</span><span>10 SQL tasks</span><span>SQLite</span><span>Fresh database for every Run</span></div>
+  </div>
+</header>
+
+<div class="toolbar" role="toolbar" aria-label="Assignment tools">
+  <div class="wrap toolbar-inner">
+    <span class="save-status" id="saveStatus">SQL saves in this browser.</span>
+    <button class="btn secondary" id="setupBtn" type="button">Download starter SQL</button>
+    <button class="btn secondary" id="exportBtn" type="button">Export my SQL</button>
+    <button class="btn secondary" id="printBtn" type="button">Print / Save PDF</button>
+    <button class="btn danger" id="clearBtn" type="button">Clear my work</button>
+  </div>
+</div>
+
+<main id="main">
+  <div class="wrap">
+    <div class="student-grid">
+      <label>Student name<input type="text" id="studentName" data-save="meta" autocomplete="name"></label>
+    </div>
+
+    <section class="card" id="database">
+      <span class="section-label">Database</span>
+      <h2>Riverbend Garden Supply</h2>
+      <p class="direct-note">A wholesale garden distributor: three sales reps, eight retail customers, eight stocked items. Every Run reloads these three tables and all 19 source rows.</p>
+
+      <div class="schema-grid" role="group" aria-label="Database schema">
+        <article class="schema"><h3>REP</h3><ul><li class="pk">REP_NUM <span>CHAR(2) · PK</span></li><li>LAST_NAME <span>VARCHAR(20) · NOT NULL</span></li><li>FIRST_NAME <span>VARCHAR(15) · NOT NULL</span></li><li>RATE <span>DECIMAL(3,2) · NOT NULL</span></li></ul></article>
+        <article class="schema"><h3>CUSTOMER</h3><ul><li class="pk">CUSTOMER_NUM <span>CHAR(4) · PK</span></li><li>CUSTOMER_NAME <span>VARCHAR(35) · NOT NULL</span></li><li>CITY <span>VARCHAR(20) · NOT NULL</span></li><li>STATE <span>CHAR(2) · NOT NULL</span></li><li>BALANCE <span>DECIMAL(9,2) · NOT NULL</span></li><li>CREDIT_LIMIT <span>DECIMAL(9,2) · NOT NULL</span></li><li class="fk">REP_NUM <span>CHAR(2) · FK</span></li></ul></article>
+        <article class="schema"><h3>ITEM</h3><ul><li class="pk">ITEM_ID <span>CHAR(4) · PK</span></li><li>DESCRIPTION <span>VARCHAR(30) · NOT NULL</span></li><li>CATEGORY <span>VARCHAR(10) · NOT NULL</span></li><li>ON_HAND <span>INTEGER · NOT NULL</span></li><li>PRICE <span>DECIMAL(7,2) · NOT NULL</span></li></ul></article>
+      </div>
+
+      <div class="relations">REP.REP_NUM → CUSTOMER.REP_NUM</div>
+
+      <div class="data-grid">
+        <div class="table-wrap"><table data-source-table="REP"><caption>Source table: REP — all 3 rows</caption><thead><tr><th>REP_NUM</th><th>LAST_NAME</th><th>FIRST_NAME</th><th>RATE</th></tr></thead><tbody>
+          <tr><td>15</td><td>Chen</td><td>Amara</td><td>0.06</td></tr>
+          <tr><td>25</td><td>Ortiz</td><td>Diego</td><td>0.07</td></tr>
+          <tr><td>35</td><td>Novak</td><td>Petra</td><td>0.06</td></tr>
+        </tbody></table></div>
+
+        <div class="table-wrap"><table data-source-table="ITEM"><caption>Source table: ITEM — all 8 rows</caption><thead><tr><th>ITEM_ID</th><th>DESCRIPTION</th><th>CATEGORY</th><th>ON_HAND</th><th>PRICE</th></tr></thead><tbody>
+          <tr><td>GT01</td><td>Steel Garden Trowel</td><td>Tool</td><td>48</td><td>12.75</td></tr>
+          <tr><td>GT02</td><td>Bypass Pruning Shears</td><td>Tool</td><td>22</td><td>24.50</td></tr>
+          <tr><td>SD11</td><td>Wildflower Seed Mix</td><td>Seed</td><td>75</td><td>6.95</td></tr>
+          <tr><td>SD12</td><td>Heirloom Tomato Seeds</td><td>Seed</td><td>40</td><td>4.25</td></tr>
+          <tr><td>SL21</td><td>Organic Potting Soil 20qt</td><td>Soil</td><td>60</td><td>11.40</td></tr>
+          <tr><td>SL22</td><td>Cedar Mulch 2cu ft</td><td>Soil</td><td>35</td><td>8.90</td></tr>
+          <tr><td>DC31</td><td>Ceramic Planter 12in</td><td>Decor</td><td>18</td><td>29.95</td></tr>
+          <tr><td>DC32</td><td>Solar Path Light Set</td><td>Decor</td><td>12</td><td>42.00</td></tr>
+        </tbody></table></div>
+
+        <div class="table-wrap wide"><table data-source-table="CUSTOMER"><caption>Source table: CUSTOMER — all 8 rows</caption><thead><tr><th>CUSTOMER_NUM</th><th>CUSTOMER_NAME</th><th>CITY</th><th>STATE</th><th>BALANCE</th><th>CREDIT_LIMIT</th><th>REP_NUM</th></tr></thead><tbody>
+          <tr><td>2110</td><td>Willow Creek Nursery</td><td>Fairview</td><td>FL</td><td>1245.00</td><td>5000.00</td><td>15</td></tr>
+          <tr><td>2135</td><td>Garden Gate Market</td><td>Seabrook</td><td>FL</td><td>2860.25</td><td>7500.00</td><td>25</td></tr>
+          <tr><td>2160</td><td>Bloom &amp; Branch</td><td>Fairview</td><td>FL</td><td>740.50</td><td>5000.00</td><td>35</td></tr>
+          <tr><td>2205</td><td>Palm Terrace Landscaping</td><td>Crestwood</td><td>FL</td><td>4380.00</td><td>10000.00</td><td>25</td></tr>
+          <tr><td>2230</td><td>Sunrise Growers</td><td>Seabrook</td><td>FL</td><td>0.00</td><td>6000.00</td><td>15</td></tr>
+          <tr><td>2275</td><td>The Potting Shed</td><td>Fairview</td><td>FL</td><td>1595.75</td><td>4000.00</td><td>25</td></tr>
+          <tr><td>2310</td><td>Coastal Lawn Care</td><td>Crestwood</td><td>FL</td><td>3120.00</td><td>9000.00</td><td>35</td></tr>
+          <tr><td>2345</td><td>Evergreen Estates</td><td>Seabrook</td><td>FL</td><td>925.40</td><td>5500.00</td><td>15</td></tr>
+        </tbody></table></div>
+      </div>
+
+      <div class="engine" id="engineStatus">
+        <span class="engine-dot" aria-hidden="true"></span>
+        <div><strong>Loading SQLite…</strong><br><span>The runner uses a fresh copy of the source data for each task.</span></div>
+      </div>
+    </section>
+
+    <section class="card" id="assignment">
+      <span class="section-label">Assignment</span>
+      <h2>Write and run ten scripts</h2>
+      <ol class="rules">
+        <li>Use the exact table and column names shown above.</li>
+        <li>Complete each task in its own box. Every Run starts from the original data, so begin each script with the <code>DROP ... IF EXISTS</code> housekeeping it asks for — that habit is what makes real scripts re-runnable.</li>
+        <li>Include every requested <code>SELECT</code> so the result can be graded.</li>
+        <li>Task 10 is supposed to end with an error. The error message printed under your results is part of your evidence — do not remove the failing statement.</li>
+      </ol>
+
+      <article class="task" data-task="1">
+        <div class="task-head"><span class="task-num">1</span><div class="task-title"><h3>Create a row-and-column view</h3><p>Start with <code>DROP VIEW IF EXISTS FAIRVIEW_CUST</code>. Create a view named <code>FAIRVIEW_CUST</code> that shows <code>CUSTOMER_NUM</code>, <code>CUSTOMER_NAME</code>, <code>BALANCE</code>, and <code>CREDIT_LIMIT</code> for customers located in <code>Fairview</code> only. End by selecting everything from the view ordered by <code>CUSTOMER_NUM</code>.</p></div><span class="points">10 points</span></div>
+        <div class="requirements"><span>CREATE VIEW</span><span>rows and columns restricted</span><span>3 final rows</span><span>2110 · 2160 · 2275</span></div>
+        <div class="editor-wrap"><textarea id="query1" data-save="query" aria-label="SQL for task 1" spellcheck="false" placeholder="-- Task 1 SQL"></textarea><div class="task-actions"><button class="btn run" type="button">Run SQL</button><button class="btn secondary clear-query" type="button">Clear</button><span class="shortcut">Ctrl/⌘ + Enter</span></div><div class="output" aria-live="polite"></div></div>
+      </article>
+
+      <article class="task" data-task="2">
+        <div class="task-head"><span class="task-num">2</span><div class="task-title"><h3>Put a calculation inside a view</h3><p>Create a view named <code>ITEM_VALUE</code> over <code>ITEM</code> that shows <code>ITEM_ID</code>, <code>DESCRIPTION</code>, <code>ON_HAND</code>, <code>PRICE</code>, and <code>ROUND(ON_HAND * PRICE, 2) AS STOCK_VALUE</code>. Then query the view like a table: select every column for rows where <code>STOCK_VALUE</code> is at least <code>520</code>, ordered by <code>STOCK_VALUE</code> from highest to lowest. Include the housekeeping <code>DROP VIEW IF EXISTS</code> first. In Module 6 you froze this same calculation into a table with <code>CREATE TABLE ... AS SELECT</code>, and the copy went stale the moment anything changed — a view is the other choice: same name, same columns, but the calculation stays live.</p></div><span class="points">10 points</span></div>
+        <div class="requirements"><span>computed STOCK_VALUE</span><span>WHERE on the view</span><span>5 rows</span><span>SL21 first at 684</span></div>
+        <div class="editor-wrap"><textarea id="query2" data-save="query" aria-label="SQL for task 2" spellcheck="false" placeholder="-- Task 2 SQL"></textarea><div class="task-actions"><button class="btn run" type="button">Run SQL</button><button class="btn secondary clear-query" type="button">Clear</button><span class="shortcut">Ctrl/⌘ + Enter</span></div><div class="output" aria-live="polite"></div></div>
+      </article>
+
+      <article class="task" data-task="3">
+        <div class="task-head"><span class="task-num">3</span><div class="task-title"><h3>Prove a view stores no data</h3><p>Create a view named <code>REP_ROSTER</code> that joins <code>CUSTOMER</code> to <code>REP</code> with <code>INNER JOIN ... ON</code> and shows <code>CUSTOMER_NUM</code>, <code>CUSTOMER_NAME</code>, <code>LAST_NAME</code>, <code>FIRST_NAME</code>, and the commission each rep has earned on the account so far, computed as <code>ROUND(BALANCE * RATE, 2) AS EARNED</code>. Select everything from it ordered by <code>CUSTOMER_NUM</code>. Then update the base <code>REP</code> table so rep <code>35</code> has a rate of <code>0.08</code>, and select from the view again. The view was never touched, yet Novak's two rows now show a bigger <code>EARNED</code> — that is the point.</p></div><span class="points">10 points</span></div>
+        <div class="requirements"><span>INNER JOIN inside the view</span><span>computed EARNED</span><span>8 rows twice</span><span>2310 earns 187.2, then 249.6</span></div>
+        <div class="editor-wrap"><textarea id="query3" data-save="query" aria-label="SQL for task 3" spellcheck="false" placeholder="-- Task 3 SQL"></textarea><div class="task-actions"><button class="btn run" type="button">Run SQL</button><button class="btn secondary clear-query" type="button">Clear</button><span class="shortcut">Ctrl/⌘ + Enter</span></div><div class="output" aria-live="polite"></div></div>
+      </article>
+
+      <article class="task" data-task="4">
+        <div class="task-head"><span class="task-num">4</span><div class="task-title"><h3>Watch an aggregate view follow its table</h3><p>Create a view named <code>CITY_BALANCE</code> that groups <code>CUSTOMER</code> by <code>CITY</code> and shows <code>CITY</code>, <code>COUNT(*) AS NUM_CUSTOMERS</code>, and <code>ROUND(SUM(BALANCE), 2) AS TOTAL_BALANCE</code>. Select it ordered by <code>CITY</code>. Then insert a new customer: number <code>2380</code>, name <code>Harbor View Hotel</code>, city <code>Crestwood</code>, state <code>FL</code>, balance <code>500.00</code>, credit limit <code>6000.00</code>, rep <code>35</code>. Select the view again and confirm the <code>Crestwood</code> row changed.</p></div><span class="points">10 points</span></div>
+        <div class="requirements"><span>GROUP BY CITY inside the view</span><span>3 rows twice</span><span>Crestwood becomes 3 customers</span><span>TOTAL_BALANCE 8000</span></div>
+        <div class="editor-wrap"><textarea id="query4" data-save="query" aria-label="SQL for task 4" spellcheck="false" placeholder="-- Task 4 SQL"></textarea><div class="task-actions"><button class="btn run" type="button">Run SQL</button><button class="btn secondary clear-query" type="button">Clear</button><span class="shortcut">Ctrl/⌘ + Enter</span></div><div class="output" aria-live="polite"></div></div>
+      </article>
+
+      <article class="task" data-task="5">
+        <div class="task-head"><span class="task-num">5</span><div class="task-title"><h3>Drop a view and prove what survived</h3><p>Create a view named <code>SEABROOK_CUST</code> showing <code>CUSTOMER_NUM</code>, <code>CUSTOMER_NAME</code>, and <code>BALANCE</code> for <code>Seabrook</code> customers. Prove it exists by selecting <code>name</code> and <code>type</code> from <code>sqlite_master</code> where <code>type = 'view'</code>. Drop the view with <code>DROP VIEW</code>, run the same catalog query again to prove it is gone, and end with <code>SELECT COUNT(*) AS CUSTOMERS_LEFT FROM CUSTOMER</code> to prove dropping a view never deletes base rows.</p></div><span class="points">10 points</span></div>
+        <div class="requirements"><span>sqlite_master before and after</span><span>DROP VIEW</span><span>second catalog query = 0 rows</span><span>CUSTOMERS_LEFT = 8</span></div>
+        <div class="editor-wrap"><textarea id="query5" data-save="query" aria-label="SQL for task 5" spellcheck="false" placeholder="-- Task 5 SQL"></textarea><div class="task-actions"><button class="btn run" type="button">Run SQL</button><button class="btn secondary clear-query" type="button">Clear</button><span class="shortcut">Ctrl/⌘ + Enter</span></div><div class="output" aria-live="polite"></div></div>
+      </article>
+
+      <article class="task" data-task="6">
+        <div class="task-head"><span class="task-num">6</span><div class="task-title"><h3>Build a view as a security tool</h3><p>The billing clerk who works rep 25's accounts may see who owes money but must never see credit limits, addresses, or anyone else's customers. Create a view named <code>BILLING_DESK</code> showing only <code>CUSTOMER_NUM</code>, <code>CUSTOMER_NAME</code>, and <code>BALANCE</code> for customers of rep <code>25</code>, then select everything from it ordered by <code>CUSTOMER_NUM</code>. Finish with two SQL comments (lines starting <code>--</code>) holding the MySQL statements this page cannot run: a <code>GRANT</code> giving the account <code>billing_clerk</code> SELECT on the view, and a <code>REVOKE</code> taking SELECT on the <code>CUSTOMER</code> table away from that same account.</p></div><span class="points">10 points</span></div>
+        <div class="requirements"><span>3 columns only</span><span>3 rows · 2135 · 2205 · 2275</span><span>GRANT as a comment</span><span>REVOKE as a comment</span></div>
+        <div class="editor-wrap"><textarea id="query6" data-save="query" aria-label="SQL for task 6" spellcheck="false" placeholder="-- Task 6 SQL"></textarea><div class="task-actions"><button class="btn run" type="button">Run SQL</button><button class="btn secondary clear-query" type="button">Clear</button><span class="shortcut">Ctrl/⌘ + Enter</span></div><div class="output" aria-live="polite"></div></div>
+      </article>
+
+      <article class="task" data-task="7">
+        <div class="task-head"><span class="task-num">7</span><div class="task-title"><h3>Make an index earn its keep</h3><p>Start with <code>DROP INDEX IF EXISTS CUSTOMER_INDEX1</code>. Run <code>EXPLAIN QUERY PLAN</code> on this query: select <code>CUSTOMER_NUM</code> and <code>CUSTOMER_NAME</code> from <code>CUSTOMER</code> where <code>CITY = 'Seabrook'</code> ordered by <code>CUSTOMER_NAME</code> — the plan says <code>SCAN</code>, meaning every row is read. Create a composite index named <code>CUSTOMER_INDEX1</code> on <code>CUSTOMER (CITY, CUSTOMER_NAME)</code>, run the same <code>EXPLAIN QUERY PLAN</code> again, and watch it become <code>SEARCH ... USING INDEX</code>. End by listing <code>name</code> and <code>tbl_name</code> from <code>sqlite_master</code> where <code>type = 'index'</code> and the name does not start with <code>sqlite_</code>.</p></div><span class="points">10 points</span></div>
+        <div class="requirements"><span>EXPLAIN QUERY PLAN twice</span><span>composite two-column index</span><span>SCAN becomes SEARCH</span><span>catalog lists CUSTOMER_INDEX1</span></div>
+        <div class="editor-wrap"><textarea id="query7" data-save="query" aria-label="SQL for task 7" spellcheck="false" placeholder="-- Task 7 SQL"></textarea><div class="task-actions"><button class="btn run" type="button">Run SQL</button><button class="btn secondary clear-query" type="button">Clear</button><span class="shortcut">Ctrl/⌘ + Enter</span></div><div class="output" aria-live="polite"></div></div>
+      </article>
+
+      <article class="task" data-task="8">
+        <div class="task-head"><span class="task-num">8</span><div class="task-title"><h3>Interview the system catalog</h3><p>Create a view named <code>ITEM_CATALOG</code> (any useful column subset of <code>ITEM</code>) and an index named <code>REP_INDEX</code> on <code>CUSTOMER (REP_NUM)</code>, with the usual <code>DROP ... IF EXISTS</code> housekeeping first. Then ask the catalog two questions. First: select <code>type</code> and <code>name</code> from <code>sqlite_master</code> where the name does not start with <code>sqlite_</code>, ordered by <code>type</code> then <code>name</code> — every table, view, and index the database now holds. Second: select <code>name</code> and <code>type</code> from <code>pragma_table_info('CUSTOMER')</code> ordered by <code>cid</code> — every column of one table, straight from the catalog.</p></div><span class="points">10 points</span></div>
+        <div class="requirements"><span>sqlite_master</span><span>5 objects listed</span><span>pragma_table_info</span><span>7 CUSTOMER columns</span></div>
+        <div class="editor-wrap"><textarea id="query8" data-save="query" aria-label="SQL for task 8" spellcheck="false" placeholder="-- Task 8 SQL"></textarea><div class="task-actions"><button class="btn run" type="button">Run SQL</button><button class="btn secondary clear-query" type="button">Clear</button><span class="shortcut">Ctrl/⌘ + Enter</span></div><div class="output" aria-live="polite"></div></div>
+      </article>
+
+      <article class="task" data-task="9">
+        <div class="task-head"><span class="task-num">9</span><div class="task-title"><h3>Build a fully constrained table</h3><p>Start with <code>DROP TABLE IF EXISTS RESTOCK_ORDER</code>. Create a table named <code>RESTOCK_ORDER</code> with: <code>ORDER_NUM CHAR(5)</code> as the primary key; <code>ITEM_ID CHAR(4) NOT NULL</code>; <code>QTY_WANTED SMALLINT NOT NULL</code>; <code>ORDER_DATE DATE NOT NULL</code>; a named constraint <code>CONSTRAINT QTY_POSITIVE CHECK (QTY_WANTED &gt; 0)</code>; and a table-level <code>FOREIGN KEY (ITEM_ID) REFERENCES ITEM(ITEM_ID)</code>. Insert two valid rows — <code>R5001</code> ordering 24 of item <code>DC32</code> on <code>2026-08-20</code>, and <code>R5002</code> ordering 12 of item <code>GT02</code> on <code>2026-08-21</code>. End by selecting the table ordered by <code>ORDER_NUM</code>, then selecting <code>name</code> and <code>type</code> from <code>pragma_table_info('RESTOCK_ORDER')</code> ordered by <code>cid</code>.</p></div><span class="points">10 points</span></div>
+        <div class="requirements"><span>PRIMARY KEY</span><span>NOT NULL</span><span>FOREIGN KEY … REFERENCES ITEM</span><span>named CHECK</span><span>2 rows · 4 columns</span></div>
+        <div class="editor-wrap"><textarea id="query9" data-save="query" aria-label="SQL for task 9" spellcheck="false" placeholder="-- Task 9 SQL"></textarea><div class="task-actions"><button class="btn run" type="button">Run SQL</button><button class="btn secondary clear-query" type="button">Clear</button><span class="shortcut">Ctrl/⌘ + Enter</span></div><div class="output" aria-live="polite"></div></div>
+      </article>
+
+      <article class="task" data-task="10">
+        <div class="task-head"><span class="task-num">10</span><div class="task-title"><h3>Let a constraint do its job</h3><p>Start with <code>DROP TABLE IF EXISTS CREDIT_CHANGE</code>. Create a table named <code>CREDIT_CHANGE</code> with: <code>CHANGE_ID INTEGER PRIMARY KEY</code>; <code>CUSTOMER_NUM CHAR(4) NOT NULL</code>; <code>NEW_LIMIT DECIMAL(9,2) NOT NULL</code>; a named constraint <code>CONSTRAINT LIMIT_RANGE CHECK (NEW_LIMIT BETWEEN 1000 AND 15000)</code>; and a table-level <code>FOREIGN KEY (CUSTOMER_NUM) REFERENCES CUSTOMER(CUSTOMER_NUM)</code>. Insert one valid request — customer <code>2135</code>, new limit <code>9000.00</code>, naming just the two target columns: in SQLite an <code>INTEGER PRIMARY KEY</code> fills itself in when you leave it out of the <code>INSERT</code>. Select the table to show the row landed. Then, as the <em>last</em> statement, try to insert a request for customer <code>2110</code> with a new limit of <code>25000.00</code>. The script must stop with a <code>CHECK constraint failed: LIMIT_RANGE</code> error — that error, printed under your one successful row, is the graded evidence that the constraint works.</p></div><span class="points">10 points</span></div>
+        <div class="requirements"><span>named CHECK with BETWEEN</span><span>valid row lands first</span><span>final INSERT must fail</span><span>LIMIT_RANGE error is the evidence</span></div>
+        <div class="editor-wrap"><textarea id="query10" data-save="query" aria-label="SQL for task 10" spellcheck="false" placeholder="-- Task 10 SQL"></textarea><div class="task-actions"><button class="btn run" type="button">Run SQL</button><button class="btn secondary clear-query" type="button">Clear</button><span class="shortcut">Ctrl/⌘ + Enter</span></div><div class="output" aria-live="polite"></div></div>
+      </article>
+    </section>
+  </div>
+</main>
+
+<footer><div class="wrap">Database Concepts &amp; SQL · Module 7 Homework</div></footer>
+
+<script>
+(function(){
+  'use strict';
+  var STORAGE_KEY = 'db-module7-homework-v1';
+  var SQL_JS_BASE = 'https://cdn.jsdelivr.net/npm/sql.js@1.10.3/dist/';
+  var sqlPromise = null;
+  var saveTimer;
+  var saveStatus = document.getElementById('saveStatus');
+  var engineStatus = document.getElementById('engineStatus');
+  var TASK_TITLES = [
+    'Create a row-and-column view',
+    'Put a calculation inside a view',
+    'Prove a view stores no data',
+    'Watch an aggregate view follow its table',
+    'Drop a view and prove what survived',
+    'Build a view as a security tool',
+    'Make an index earn its keep',
+    'Interview the system catalog',
+    'Build a fully constrained table',
+    'Let a constraint do its job'
+  ];
+  var SEED_SQL = [
+    'PRAGMA foreign_keys = ON;',
+    'CREATE TABLE REP (REP_NUM CHAR(2) PRIMARY KEY, LAST_NAME VARCHAR(20) NOT NULL, FIRST_NAME VARCHAR(15) NOT NULL, RATE DECIMAL(3,2) NOT NULL);',
+    'CREATE TABLE CUSTOMER (CUSTOMER_NUM CHAR(4) PRIMARY KEY, CUSTOMER_NAME VARCHAR(35) NOT NULL, CITY VARCHAR(20) NOT NULL, STATE CHAR(2) NOT NULL, BALANCE DECIMAL(9,2) NOT NULL, CREDIT_LIMIT DECIMAL(9,2) NOT NULL, REP_NUM CHAR(2) NOT NULL REFERENCES REP(REP_NUM));',
+    'CREATE TABLE ITEM (ITEM_ID CHAR(4) PRIMARY KEY, DESCRIPTION VARCHAR(30) NOT NULL, CATEGORY VARCHAR(10) NOT NULL, ON_HAND INTEGER NOT NULL CHECK (ON_HAND >= 0), PRICE DECIMAL(7,2) NOT NULL CHECK (PRICE >= 0));',
+    "INSERT INTO REP VALUES ('15','Chen','Amara',0.06),('25','Ortiz','Diego',0.07),('35','Novak','Petra',0.06);",
+    "INSERT INTO CUSTOMER VALUES ('2110','Willow Creek Nursery','Fairview','FL',1245.00,5000.00,'15'),('2135','Garden Gate Market','Seabrook','FL',2860.25,7500.00,'25'),('2160','Bloom & Branch','Fairview','FL',740.50,5000.00,'35'),('2205','Palm Terrace Landscaping','Crestwood','FL',4380.00,10000.00,'25'),('2230','Sunrise Growers','Seabrook','FL',0.00,6000.00,'15'),('2275','The Potting Shed','Fairview','FL',1595.75,4000.00,'25'),('2310','Coastal Lawn Care','Crestwood','FL',3120.00,9000.00,'35'),('2345','Evergreen Estates','Seabrook','FL',925.40,5500.00,'15');",
+    "INSERT INTO ITEM VALUES ('GT01','Steel Garden Trowel','Tool',48,12.75),('GT02','Bypass Pruning Shears','Tool',22,24.50),('SD11','Wildflower Seed Mix','Seed',75,6.95),('SD12','Heirloom Tomato Seeds','Seed',40,4.25),('SL21','Organic Potting Soil 20qt','Soil',60,11.40),('SL22','Cedar Mulch 2cu ft','Soil',35,8.90),('DC31','Ceramic Planter 12in','Decor',18,29.95),('DC32','Solar Path Light Set','Decor',12,42.00);"
+  ].join('\n');
+
+  function fields(){ return Array.prototype.slice.call(document.querySelectorAll('[data-save]')); }
+  function autoSize(el){ if (!el || el.tagName !== 'TEXTAREA') return; el.style.height = 'auto'; el.style.height = Math.max(176, el.scrollHeight + 2) + 'px'; }
+  function restore(){
+    var data = {};
+    try { data = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}'); } catch(e){}
+    fields().forEach(function(el){ if (!Object.prototype.hasOwnProperty.call(data, el.id)) return; el.value = data[el.id]; autoSize(el); });
+  }
+  function save(){
+    var data = {};
+    fields().forEach(function(el){ data[el.id] = el.value; });
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); saveStatus.innerHTML = '<strong>Saved locally</strong> · ' + new Date().toLocaleTimeString([], {hour:'numeric', minute:'2-digit'}); }
+    catch(e){ saveStatus.textContent = 'Could not save in this browser. Export before closing.'; }
+  }
+  function queueSave(){ clearTimeout(saveTimer); saveStatus.textContent = 'Saving…'; saveTimer = setTimeout(save, 250); }
+  function escapeHtml(value){ return String(value == null ? '' : value).replace(/[&<>"']/g, function(ch){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]; }); }
+  function stripComments(sql){ return sql.replace(/--[^\n]*/g, '').replace(/\/\*[\s\S]*?\*\//g, '').trim(); }
+  function safeName(value){ return (value || 'student').trim().replace(/[^a-z0-9]+/gi, '-').replace(/^-|-$/g, '').toLowerCase() || 'student'; }
+  function download(name, text, type){
+    var blob = new Blob([text], {type:type || 'text/plain;charset=utf-8'}); var url = URL.createObjectURL(blob); var a = document.createElement('a');
+    a.href = url; a.download = name; document.body.appendChild(a); a.click(); a.remove(); setTimeout(function(){ URL.revokeObjectURL(url); }, 1000);
+  }
+  function setEngine(kind, title, detail){ engineStatus.className = 'engine ' + kind; engineStatus.innerHTML = '<span class="engine-dot" aria-hidden="true"></span><div><strong>' + escapeHtml(title) + '</strong><br><span>' + escapeHtml(detail) + '</span></div>'; }
+
+  function loadSql(){
+    if (sqlPromise) return sqlPromise;
+    sqlPromise = new Promise(function(resolve, reject){
+      function init(){
+        if (typeof window.initSqlJs !== 'function'){ reject(new Error('The sql.js loader did not initialize.')); return; }
+        window.initSqlJs({locateFile:function(file){ return SQL_JS_BASE + file; }}).then(resolve).catch(reject);
+      }
+      if (typeof window.initSqlJs === 'function'){ init(); return; }
+      var script = document.createElement('script'); script.src = SQL_JS_BASE + 'sql-wasm.js'; script.async = true;
+      script.onload = init; script.onerror = function(){ reject(new Error('The SQLite engine could not be downloaded.')); }; document.head.appendChild(script);
+    }).then(function(SQL){
+      var test = new SQL.Database(); test.run(SEED_SQL); test.close();
+      setEngine('ready','SQLite ready','Three tables and 19 source rows are loaded. Every task Run starts from this state.');
+      return SQL;
+    }).catch(function(err){
+      sqlPromise = null;
+      setEngine('error','SQLite did not load','Use Download starter SQL and run the assignment in another SQLite tool.');
+      throw err;
+    });
+    return sqlPromise;
+  }
+
+  function resultTable(result, index){
+    var html = '<div class="output-head">Result ' + index + ' · ' + result.values.length + (result.values.length === 1 ? ' row' : ' rows') + '</div><div class="output-scroll"><table><thead><tr>';
+    result.columns.forEach(function(column){ html += '<th>' + escapeHtml(column) + '</th>'; }); html += '</tr></thead><tbody>';
+    if (!result.values.length) html += '<tr><td colspan="' + Math.max(1, result.columns.length) + '"><em>0 rows</em></td></tr>';
+    result.values.forEach(function(row){ html += '<tr>'; row.forEach(function(value){ html += value === null ? '<td class="null">NULL</td>' : '<td>' + escapeHtml(value) + '</td>'; }); html += '</tr>'; });
+    return html + '</tbody></table></div>';
+  }
+  function renderMessage(output, kind, text){ output.classList.add('has-content'); output.innerHTML = '<div class="message ' + kind + '">' + escapeHtml(text) + '</div>'; }
+  function runTask(task){
+    var textarea = task.querySelector('textarea'); var output = task.querySelector('.output'); var sql = stripComments(textarea.value);
+    if (!sql){ renderMessage(output,'error','Write the SQL script first.'); return; }
+    renderMessage(output,'loading','Loading a fresh database and running the script…');
+    loadSql().then(function(SQL){
+      var db = new SQL.Database();
+      var results = [];
+      var errText = null;
+      try {
+        db.run(SEED_SQL);
+        for (var statement of db.iterateStatements(textarea.value)) {
+          try {
+            var columns = statement.getColumnNames();
+            var values = [];
+            while (statement.step()) values.push(statement.get());
+            if (columns.length) results.push({columns:columns, values:values});
+          } finally { statement.free(); }
+        }
+      } catch(err){ errText = 'SQLite error: ' + (err.message || String(err)); }
+      finally { try { db.close(); } catch(e){} }
+      if (!results.length && !errText){ renderMessage(output,'ok','Script completed. Add the requested final SELECT so the result can be graded.'); return; }
+      output.classList.add('has-content');
+      var html = results.map(function(result, i){ return resultTable(result, i + 1); }).join('');
+      if (errText) html += '<div class="message error">' + escapeHtml(errText) + (results.length ? ' (The results above were produced before the script stopped.)' : '') + '</div>';
+      output.innerHTML = html;
+    }).catch(function(){ renderMessage(output,'error','SQLite is unavailable. Download the starter SQL and use another SQLite tool.'); });
+  }
+
+  fields().forEach(function(el){ el.addEventListener('input', function(){ autoSize(el); queueSave(); }); });
+  Array.prototype.forEach.call(document.querySelectorAll('.task'), function(task){
+    var textarea = task.querySelector('textarea');
+    task.querySelector('.run').addEventListener('click', function(){ runTask(task); });
+    task.querySelector('.clear-query').addEventListener('click', function(){ textarea.value = ''; autoSize(textarea); task.querySelector('.output').className = 'output'; task.querySelector('.output').innerHTML = ''; textarea.focus(); queueSave(); });
+    textarea.addEventListener('keydown', function(e){ if ((e.ctrlKey || e.metaKey) && e.key === 'Enter'){ e.preventDefault(); runTask(task); } });
+  });
+
+  document.getElementById('setupBtn').addEventListener('click', function(){ download('module-7-homework-starter.sql', SEED_SQL + '\n', 'text/sql;charset=utf-8'); });
+  document.getElementById('exportBtn').addEventListener('click', function(){
+    save();
+    var lines = ['-- MODULE 7 HOMEWORK: VIEWS, INDEXES, AND CONSTRAINTS','-- Student: ' + document.getElementById('studentName').value,''];
+    TASK_TITLES.forEach(function(title, i){ var query = document.getElementById('query' + (i + 1)); lines.push('-- ============================================================','-- TASK ' + (i + 1) + ': ' + title.toUpperCase(),'-- ============================================================',query.value.trim(),''); });
+    download(safeName(document.getElementById('studentName').value) + '-module-7-homework.sql', lines.join('\n'), 'text/sql;charset=utf-8');
+  });
+  document.getElementById('printBtn').addEventListener('click', function(){ fields().forEach(autoSize); window.print(); });
+  document.getElementById('clearBtn').addEventListener('click', function(){
+    if (!window.confirm('Clear all ten SQL scripts and the student name saved on this page?')) return;
+    localStorage.removeItem(STORAGE_KEY); fields().forEach(function(el){ el.value = ''; autoSize(el); });
+    Array.prototype.forEach.call(document.querySelectorAll('.output'), function(output){ output.className = 'output'; output.innerHTML = ''; }); saveStatus.textContent = 'Work cleared.';
+  });
+  window.addEventListener('beforeprint', function(){ fields().forEach(autoSize); });
+  restore(); loadSql().catch(function(){});
+})();
+</script>
+</body>
+</html>
